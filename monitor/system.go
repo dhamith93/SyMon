@@ -53,11 +53,11 @@ func getKernalVersion() string {
 }
 
 func getUpTime() string {
-    return util.Execute("cat", false, "/proc/uptime")
+    return util.Execute("uptime", false, "-p")
 }
 
 func getLastBootDate() string {
-    return util.Execute("hostname", false)
+    return util.Execute("uptime", false, "-s")
 }
 
 func getNoOfCurrUsers() string {
