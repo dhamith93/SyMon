@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"os/exec"
+	"symon/util"
 )
 
 // System struct with system info
@@ -29,16 +29,16 @@ func GetSystem() System {
 }
 
 func getHostName() string {
-	return execute("hostname", false)
+	return util.Execute("hostname", false)
 }
 
 func getOS() string {
-	out := execute("/usr/bin/lsb_release -ds | cut -d= -f2 | tr -d '\"'", true)
+	out := util.Execute("/usr/bin/lsb_release -ds | cut -d= -f2 | tr -d '\"'", true)
 
 	if len(out) == 0 {
-		out = execute("cat /etc/system-release | cut -d= -f2 | tr -d '\"'", true)
+		out = util.Execute("cat /etc/system-release | cut -d= -f2 | tr -d '\"'", true)
 		if len(out) == 0 {
-			out = execute("find /etc/*-release -type f -exec cat {} ; | grep PRETTY_NAME | tail -n 1 | cut -d= -f2 | tr -d '\"'", true)
+			out = util.Execute("find /etc/*-release -type f -exec cat {} ; | grep PRETTY_NAME | tail -n 1 | cut -d= -f2 | tr -d '\"'", true)
 
 			if len(out) == 0 {
 				out = "Cannot identify"
@@ -49,39 +49,21 @@ func getOS() string {
 }
 
 func getKernalVersion() string {
-	return execute("uname", false, "-r")
+	return util.Execute("uname", false, "-r")
 }
 
 func getUpTime() string {
-	return execute("cat", false, "/proc/uptime")
+	return util.Execute("cat", false, "/proc/uptime")
 }
 
 func getLastBootDate() string {
-	return execute("hostname", false)
+	return util.Execute("hostname", false)
 }
 
 func getNoOfCurrUsers() string {
-	return execute("who -u | awk '{ print $1 }' | wc -l", true)
+	return util.Execute("who -u | awk '{ print $1 }' | wc -l", true)
 }
 
 func getDateTime() string {
-	return execute("date", false)
-}
-
-func execute(command string, isUsingPipes bool, params ...string) string {
-	if isUsingPipes {
-		cmd := exec.Command("bash", "-c", command)
-		stdout, err := cmd.Output()
-		if err != nil {
-			return err.Error()
-		}
-		return string(stdout)
-	} else {
-		cmd := exec.Command(command, params...)
-		stdout, err := cmd.Output()
-		if err != nil {
-			return err.Error()
-		}
-		return string(stdout)
-	}
+	return util.Execute("date", false)
 }
