@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"os/exec"
-	"strings"
 )
 
 // System struct with system info
@@ -30,65 +29,59 @@ func GetSystem() System {
 }
 
 func getHostName() string {
-	cmd := exec.Command("hostname")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
-	}
-	return strings.TrimSpace(string(stdout))
+	return execute("hostname", false)
 }
 
 func getOS() string {
-	cmd := exec.Command("hostname")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
+	out := execute("/usr/bin/lsb_release -ds | cut -d= -f2 | tr -d '\"'", true)
+
+	if len(out) == 0 {
+		out = execute("cat /etc/system-release | cut -d= -f2 | tr -d '\"'", true)
+		if len(out) == 0 {
+			out = execute("find /etc/*-release -type f -exec cat {} ; | grep PRETTY_NAME | tail -n 1 | cut -d= -f2 | tr -d '\"'", true)
+
+			if len(out) == 0 {
+				out = "Cannot identify"
+			}
+		}
 	}
-	return strings.TrimSpace(string(stdout))
+	return out
 }
 
 func getKernalVersion() string {
-	cmd := exec.Command("uname", "-ra")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
-	}
-	return strings.TrimSpace(string(stdout))
+	return execute("uname", false, "-r")
 }
 
 func getUpTime() string {
-	cmd := exec.Command("cat", "/proc/uptime")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
-	}
-	return strings.TrimSpace(string(stdout))
+	return execute("cat", false, "/proc/uptime")
 }
 
 func getLastBootDate() string {
-	cmd := exec.Command("hostname")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
-	}
-	return strings.TrimSpace(string(stdout))
+	return execute("hostname", false)
 }
 
 func getNoOfCurrUsers() string {
-	cmd := exec.Command("bash", "-c", "who -u | awk '{ print $1 }' | wc -l")
-
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
-	}
-	return strings.TrimSpace(string(stdout))
+	return execute("who -u | awk '{ print $1 }' | wc -l", true)
 }
 
 func getDateTime() string {
-	cmd := exec.Command("date")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return err.Error()
+	return execute("date", false)
+}
+
+func execute(command string, isUsingPipes bool, params ...string) string {
+	if isUsingPipes {
+		cmd := exec.Command("bash", "-c", command)
+		stdout, err := cmd.Output()
+		if err != nil {
+			return err.Error()
+		}
+		return string(stdout)
+	} else {
+		cmd := exec.Command(command, params...)
+		stdout, err := cmd.Output()
+		if err != nil {
+			return err.Error()
+		}
+		return string(stdout)
 	}
-	return strings.TrimSpace(string(stdout))
 }
