@@ -10,5 +10,5 @@ import (
 
 func main() {
 	// conf := config.Config{MonitorInterval: 5, LogFileEnabled: true, LogFilePath: "/path/to", DBPath: "/path/to"}
-	server.Run()
+	server.Run(":5000")
 }

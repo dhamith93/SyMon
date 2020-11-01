@@ -10,16 +10,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func handleRequests() {
+func handleRequests(port string) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/system", returnSystem)
 	router.HandleFunc("/memory", returnMemory)
-	log.Fatal(http.ListenAndServe(":5000", router))
+	log.Fatal(http.ListenAndServe(port, router))
 }
 
-func Run() {
-	fmt.Println("API started...")
-	handleRequests()
+func Run(port string) {
+	fmt.Println("API running on..." + port)
+	handleRequests(port)
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
