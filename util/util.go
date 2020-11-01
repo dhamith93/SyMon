@@ -27,6 +27,13 @@ func Execute(command string, isUsingPipes bool, params ...string) string {
 	return string(stdout)
 }
 
+func GetFreeCommandOutputAsArr(row int) []string {
+	result := Execute("free", false, "-b")
+	resultSplit := strings.Split(result, "\n")
+	line := resultSplit[row]
+	return strings.Fields(line)
+}
+
 func ByteToM(input uint64) uint64 {
 	if input == 0 {
 		return 0
