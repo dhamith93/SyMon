@@ -16,6 +16,7 @@ func handleRequests(port string) {
 	router.HandleFunc("/system", returnSystem)
 	router.HandleFunc("/memory", returnMemory)
 	router.HandleFunc("/swap", returnSwap)
+	router.HandleFunc("/disks", returnDisks)
 	log.Fatal(http.ListenAndServe(port, router))
 }
 
@@ -52,4 +53,14 @@ func returnSwap(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: returnSwap -- " + ip)
 	swap := monitor.GetSwap()
 	json.NewEncoder(w).Encode(swap)
+}
+
+func returnDisks(w http.ResponseWriter, r *http.Request) {
+	ip, err := util.GetIncomingIPAddr(r)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("Endpoint Hit: returnDisks -- " + ip)
+	disks := monitor.GetDisks()
+	json.NewEncoder(w).Encode(disks)
 }
