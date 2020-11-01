@@ -11,9 +11,10 @@ import (
 )
 
 func handleRequests() {
-	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.HandleFunc("/system", returnSystem)
-	log.Fatal(http.ListenAndServe(":5000", myRouter))
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/system", returnSystem)
+	router.HandleFunc("/memory", returnMemory)
+	log.Fatal(http.ListenAndServe(":5000", router))
 }
 
 func Run() {
@@ -25,4 +26,10 @@ func returnSystem(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: returnSystem")
 	system := monitor.GetSystem()
 	json.NewEncoder(w).Encode(system)
+}
+
+func returnMemory(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: returnMemory")
+	memory := monitor.GetMemory()
+	json.NewEncoder(w).Encode(memory)
 }

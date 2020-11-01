@@ -8,19 +8,19 @@ import (
 
 // Memory struct with memory info
 type Memory struct {
-	used           string
-	free           string
-	total          string
-	precentageUsed string
+	Used           string
+	Free           string
+	Total          string
+	PrecentageUsed string
 }
 
 // GetMemory returns Memory struct
 func GetMemory() Memory {
 	return Memory{
-		used:           strconv.FormatUint(util.ByteToM(getUsed()), 10) + "M",
-		free:           strconv.FormatUint(util.ByteToM(getFree()), 10) + "M",
-		total:          strconv.FormatUint(util.ByteToM(getTotal()), 10) + "M",
-		precentageUsed: getPrecentage(),
+		Used:           strconv.FormatUint(util.ByteToM(getUsed()), 10) + "M",
+		Free:           strconv.FormatUint(util.ByteToM(getFree()), 10) + "M",
+		Total:          strconv.FormatUint(util.ByteToM(getTotal()), 10) + "M",
+		PrecentageUsed: getPrecentage(),
 	}
 }
 
