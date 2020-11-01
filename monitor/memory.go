@@ -1,8 +1,8 @@
 package monitor
 
 import (
+	"math"
 	"strconv"
-	"strings"
 	"symon/util"
 )
 
@@ -25,7 +25,7 @@ func GetMemory() Memory {
 }
 
 func getUsed() uint64 {
-	output := getFreeCommandOutputAsArr()
+	output := util.GetFreeCommandOutputAsArr(1)
 	out, err := strconv.ParseUint(output[2], 10, 64)
 	if err != nil {
 		return 0
@@ -34,7 +34,7 @@ func getUsed() uint64 {
 }
 
 func getFree() uint64 {
-	output := getFreeCommandOutputAsArr()
+	output := util.GetFreeCommandOutputAsArr(1)
 	outFree, err := strconv.ParseUint(output[3], 10, 64)
 	if err != nil {
 		return 0
@@ -47,7 +47,7 @@ func getFree() uint64 {
 }
 
 func getTotal() uint64 {
-	output := getFreeCommandOutputAsArr()
+	output := util.GetFreeCommandOutputAsArr(1)
 	out, err := strconv.ParseUint(output[1], 10, 64)
 	if err != nil {
 		return 0
@@ -57,12 +57,8 @@ func getTotal() uint64 {
 
 func getPrecentage() string {
 	precentage := (float64(getFree()) / float64(getTotal()) * 100)
+	if math.IsNaN(precentage) {
+		return "0%"
+	}
 	return strconv.FormatFloat(precentage, 'f', 2, 64) + "%"
-}
-
-func getFreeCommandOutputAsArr() []string {
-	result := util.Execute("free", false, "-b")
-	resultSplit := strings.Split(result, "\n")
-	line := resultSplit[1]
-	return strings.Fields(line)
 }
