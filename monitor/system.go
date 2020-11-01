@@ -9,7 +9,7 @@ import (
 type System struct {
 	HostName      string
 	OS            string
-	Kernal        string
+	Kernel        string
 	UpTime        string
 	LastBootDate  string
 	NoOfCurrUsers string
@@ -21,7 +21,7 @@ func GetSystem() System {
 	return System{
 		HostName:      strings.TrimSpace(getHostName()),
 		OS:            strings.TrimSpace(getOS()),
-		Kernal:        strings.TrimSpace(getKernalVersion()),
+		Kernel:        strings.TrimSpace(getKernelVersion()),
 		UpTime:        strings.TrimSpace(getUpTime()),
 		LastBootDate:  strings.TrimSpace(getLastBootDate()),
 		NoOfCurrUsers: strings.TrimSpace(getNoOfCurrUsers()),
@@ -49,7 +49,7 @@ func getOS() string {
 	return out
 }
 
-func getKernalVersion() string {
+func getKernelVersion() string {
 	return util.Execute("uname", false, "-r")
 }
 
