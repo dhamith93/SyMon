@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"symon/config"
 	"symon/monitor"
+	"symon/server"
 )
 
 func main() {
@@ -23,4 +24,5 @@ func main() {
 
 	fmt.Printf("%+v\n", system)
 	fmt.Printf("%+v\n", memory)
+	server.Run()
 }
