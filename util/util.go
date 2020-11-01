@@ -34,6 +34,11 @@ func GetFreeCommandOutputAsArr(row int) []string {
 	return strings.Fields(line)
 }
 
+func GetDiskInfo() []string {
+	result := Execute("df", false, "-T", "-h", "--exclude-type=tmpfs", "--exclude-type=devtmpfs", "--exclude-type=udev")
+	return strings.Split(result, "\n")[1:]
+}
+
 func ByteToM(input uint64) uint64 {
 	if input == 0 {
 		return 0
