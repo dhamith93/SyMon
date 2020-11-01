@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"symon/monitor"
+	"symon/util"
 
 	"github.com/gorilla/mux"
 )
@@ -23,13 +24,21 @@ func Run(port string) {
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnSystem")
+	ip, err := util.GetIncomingIPAddr(r)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("Endpoint Hit: returnSystem -- " + ip)
 	system := monitor.GetSystem()
 	json.NewEncoder(w).Encode(system)
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnMemory")
+	ip, err := util.GetIncomingIPAddr(r)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("Endpoint Hit: returnMemory -- " + ip)
 	memory := monitor.GetMemory()
 	json.NewEncoder(w).Encode(memory)
 }
