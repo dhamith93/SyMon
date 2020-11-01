@@ -1,7 +1,11 @@
 package util
 
 import (
+	"fmt"
+	"net"
+	"net/http"
 	"os/exec"
+	"strings"
 )
 
 // Execute executes the given system command
@@ -13,14 +17,14 @@ func Execute(command string, isUsingPipes bool, params ...string) string {
 			return err.Error()
 		}
 		return string(stdout)
-	} else {
-		cmd := exec.Command(command, params...)
-		stdout, err := cmd.Output()
-		if err != nil {
-			return err.Error()
-		}
-		return string(stdout)
 	}
+
+	cmd := exec.Command(command, params...)
+	stdout, err := cmd.Output()
+	if err != nil {
+		return err.Error()
+	}
+	return string(stdout)
 }
 
 func ByteToM(input uint64) uint64 {
@@ -28,4 +32,29 @@ func ByteToM(input uint64) uint64 {
 		return 0
 	}
 	return input / (1024 * 1024)
+}
+
+func GetIncomingIPAddr(r *http.Request) (string, error) {
+	ip := r.Header.Get("X-REAL-IP")
+	netIP := net.ParseIP(ip)
+	if netIP != nil {
+		return ip, nil
+	}
+	ips := r.Header.Get("X-FORWARDED-FOR")
+	splitIps := strings.Split(ips, ",")
+	for _, ip := range splitIps {
+		netIP := net.ParseIP(ip)
+		if netIP != nil {
+			return ip, nil
+		}
+	}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return "", err
+	}
+	netIP = net.ParseIP(ip)
+	if netIP != nil {
+		return ip, nil
+	}
+	return "", fmt.Errorf("Could not find valid IP for request")
 }
