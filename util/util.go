@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -69,4 +70,21 @@ func GetIncomingIPAddr(r *http.Request) (string, error) {
 		return ip, nil
 	}
 	return "", fmt.Errorf("Could not find valid IP for request")
+}
+
+func GetLscpuCommandOutputValue(key string) string {
+	cpuInfo := Execute("lscpu", false)
+	cpuInfoArray := strings.Split(cpuInfo, "\n")
+	outputMap := make(map[string]string)
+
+	for i := range cpuInfoArray {
+		r := regexp.MustCompile(`(^.*:)(\w*)(\s*)(.*)`)
+		match := r.FindStringSubmatch(cpuInfoArray[i])
+		if len(match) == 0 {
+			continue
+		}
+		outputMap[strings.Replace(match[1], ":", "", -1)] = match[len(match)-1]
+	}
+
+	return outputMap[key]
 }
