@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"strconv"
+	"strings"
 	"symon/util"
 )
 
@@ -12,6 +13,7 @@ type Processor struct {
 	Freq      string
 	Cache     string
 	Temp      string
+	LoadAvg   []string
 }
 
 // GetProcessor returns an array of Processor structs
@@ -22,6 +24,7 @@ func GetProcessor() Processor {
 		Freq:      getFreq(),
 		Cache:     getCache(),
 		Temp:      getTemp(),
+		LoadAvg:   getLoadAvg(),
 	}
 }
 
@@ -55,4 +58,15 @@ func getTemp() string {
 		return strconv.FormatInt(int64(resultAsInt/1000), 10) + "c"
 	}
 	return result + "c"
+}
+
+func getLoadAvg() []string {
+	result := util.Execute("cat", false, "/proc/loadavg")
+	resultAsArr := strings.Fields(result)
+
+	if len(resultAsArr) == 0 {
+		return nil
+	}
+
+	return resultAsArr[:3]
 }
