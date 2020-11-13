@@ -19,6 +19,8 @@ func handleRequests(port string) {
 	router.HandleFunc("/disks", returnDisks)
 	router.HandleFunc("/proc", returnProc)
 	router.HandleFunc("/network", returnNetwork)
+	router.HandleFunc("/memusage", returnMemUsage)
+	router.HandleFunc("/cpuusage", returnCPUUsage)
 	log.Fatal(http.ListenAndServe(port, router))
 }
 
@@ -85,4 +87,23 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: returnNetwork -- " + ip)
 	network := monitor.GetNetwork()
 	json.NewEncoder(w).Encode(network)
+}
+
+func returnMemUsage(w http.ResponseWriter, r *http.Request) {
+	ip, err := util.GetIncomingIPAddr(r)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("Endpoint Hit: returnMemUsage -- " + ip)
+	memUsage := monitor.GetProcessesSortedByMem()
+	json.NewEncoder(w).Encode(memUsage)
+}
+func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
+	ip, err := util.GetIncomingIPAddr(r)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("Endpoint Hit: returnCPUUsage -- " + ip)
+	cpuUsage := monitor.GetProcessesSortedByCPU()
+	json.NewEncoder(w).Encode(cpuUsage)
 }

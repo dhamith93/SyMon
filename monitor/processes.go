@@ -1,0 +1,47 @@
+package monitor
+
+import (
+	"strings"
+	"symon/util"
+)
+
+// Process struct with process info
+type Process struct {
+	User        string
+	PID         string
+	CPUUsage    string
+	MemoryUsage string
+	Command     string
+}
+
+// GetProcessesSortedByCPU returns a Process struct
+func GetProcessesSortedByCPU() []Process {
+	return getProcesses("-pcpu", "11")
+}
+
+// GetProcessesSortedByMem returns a Process struct
+func GetProcessesSortedByMem() []Process {
+	return getProcesses("-pmem", "11")
+}
+
+func getProcesses(sort string, count string) []Process {
+	result := util.Execute("ps aux --sort="+sort+" | head -n "+count, true)
+	resultArray := strings.Split(result, "\n")[1:]
+	out := []Process{}
+
+	for _, process := range resultArray {
+		processArray := strings.Fields(process)
+		if len(processArray) == 0 {
+			continue
+		}
+		out = append(out, Process{
+			User:        processArray[0],
+			PID:         processArray[1],
+			CPUUsage:    processArray[2] + "%",
+			MemoryUsage: processArray[3] + "%",
+			Command:     processArray[10],
+		})
+	}
+
+	return out
+}
