@@ -16,7 +16,7 @@ type Processor struct {
 	LoadAvg   []string
 }
 
-// GetProcessor returns an array of Processor structs
+// GetProcessor returns a Processor struct
 func GetProcessor() Processor {
 	return Processor{
 		Model:     getModel(),

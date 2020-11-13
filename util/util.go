@@ -88,3 +88,13 @@ func GetLscpuCommandOutputValue(key string) string {
 
 	return outputMap[key]
 }
+
+func GetExecPath(cmd string) string {
+	result := Execute("whereis", false, cmd)
+	result = strings.TrimSpace(result)
+	resultArr := strings.Fields(result)
+	if len(resultArr) == 1 {
+		return ""
+	}
+	return resultArr[1]
+}

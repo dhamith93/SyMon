@@ -18,6 +18,7 @@ func handleRequests(port string) {
 	router.HandleFunc("/swap", returnSwap)
 	router.HandleFunc("/disks", returnDisks)
 	router.HandleFunc("/proc", returnProc)
+	router.HandleFunc("/network", returnNetwork)
 	log.Fatal(http.ListenAndServe(port, router))
 }
 
@@ -74,4 +75,14 @@ func returnProc(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: returnProc -- " + ip)
 	proc := monitor.GetProcessor()
 	json.NewEncoder(w).Encode(proc)
+}
+
+func returnNetwork(w http.ResponseWriter, r *http.Request) {
+	ip, err := util.GetIncomingIPAddr(r)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println("Endpoint Hit: returnNetwork -- " + ip)
+	network := monitor.GetNetwork()
+	json.NewEncoder(w).Encode(network)
 }
