@@ -13,7 +13,7 @@ type Processor struct {
 	Freq      string
 	Cache     string
 	Temp      string
-	LoadAvg   []string
+	LoadAvg   string
 }
 
 // GetProcessor returns a Processor struct
@@ -60,13 +60,7 @@ func getTemp() string {
 	return result + "c"
 }
 
-func getLoadAvg() []string {
-	result := util.Execute("cat", false, "/proc/loadavg")
-	resultAsArr := strings.Fields(result)
-
-	if len(resultAsArr) == 0 {
-		return nil
-	}
-
-	return resultAsArr[:3]
+func getLoadAvg() string {
+	result := util.Execute("awk -v a=\"$(awk '/cpu /{print $2+$4,$2+$4+$5}' /proc/stat; sleep 1)\" '/cpu /{split(a,b,\" \"); print 100*($2+$4-b[1])/($2+$4+$5-b[2])}'  /proc/stat", true)
+	return strings.TrimSpace(result) + "%"
 }
