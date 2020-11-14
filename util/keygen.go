@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 func GetKey() string {
@@ -17,7 +18,7 @@ func GetKey() string {
 			log.Println(err.Error())
 			panic(err)
 		}
-		return string(b)
+		return strings.TrimSpace(string(b))
 	}
 
 	key := keyGen()
