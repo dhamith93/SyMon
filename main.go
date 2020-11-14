@@ -1,14 +1,21 @@
 package main
 
 import (
-	// "encoding/json"
-	// "fmt"
-	// "symon/config"
-	// "symon/monitor"
+	"log"
+	"os"
 	"symon/server"
+	"symon/util"
 )
 
 func main() {
-	// conf := config.Config{MonitorInterval: 5, LogFileEnabled: true, LogFilePath: "/path/to", DBPath: "/path/to"}
-	server.Run(":5000")
+	if util.GetConfig().LogFileEnabled {
+		file, err := os.OpenFile(util.GetConfig().LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		log.SetOutput(file)
+	}
+
+	server.Run(":" + util.GetConfig().Port)
 }

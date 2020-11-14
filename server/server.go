@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"symon/monitor"
@@ -23,92 +22,62 @@ func handleRequests(port string) {
 	router.HandleFunc("/cpuusage", returnCPUUsage)
 
 	if util.GetConfig().SSLEnabled && util.GetConfig().SSLCertFilePath != "" && util.GetConfig().SSLKeyFilePath != "" {
+		util.Log("info", "[SSL] API started on port "+port)
 		log.Fatal(http.ListenAndServeTLS(port, util.GetConfig().SSLCertFilePath, util.GetConfig().SSLKeyFilePath, router))
 	} else {
+		util.Log("info", "API started on port "+port)
 		log.Fatal(http.ListenAndServe(port, router))
 	}
 }
 
 func Run(port string) {
-	fmt.Println("API running on..." + port)
 	handleRequests(port)
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnSystem -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	system := monitor.GetSystem()
 	json.NewEncoder(w).Encode(system)
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnMemory -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	memory := monitor.GetMemory()
 	json.NewEncoder(w).Encode(memory)
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnSwap -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	swap := monitor.GetSwap()
 	json.NewEncoder(w).Encode(swap)
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnDisks -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	disks := monitor.GetDisks()
 	json.NewEncoder(w).Encode(disks)
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnProc -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	proc := monitor.GetProcessor()
 	json.NewEncoder(w).Encode(proc)
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnNetwork -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	network := monitor.GetNetwork()
 	json.NewEncoder(w).Encode(network)
 }
 
 func returnMemUsage(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnMemUsage -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	memUsage := monitor.GetProcessesSortedByMem()
 	json.NewEncoder(w).Encode(memUsage)
 }
+
 func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
-	ip, err := util.GetIncomingIPAddr(r)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("Endpoint Hit: returnCPUUsage -- " + ip)
+	w.Header().Set("Content-Type", "application/json")
 	cpuUsage := monitor.GetProcessesSortedByCPU()
 	json.NewEncoder(w).Encode(cpuUsage)
 }
