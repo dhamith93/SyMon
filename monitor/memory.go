@@ -56,7 +56,7 @@ func getTotal() uint64 {
 }
 
 func getPrecentage() string {
-	precentage := (float64(getFree()) / float64(getTotal()) * 100)
+	precentage := (float64(getUsed()) / float64(getTotal()) * 100)
 	if math.IsNaN(precentage) {
 		return "0%"
 	}
