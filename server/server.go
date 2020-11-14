@@ -21,7 +21,12 @@ func handleRequests(port string) {
 	router.HandleFunc("/network", returnNetwork)
 	router.HandleFunc("/memusage", returnMemUsage)
 	router.HandleFunc("/cpuusage", returnCPUUsage)
-	log.Fatal(http.ListenAndServe(port, router))
+
+	if util.GetConfig().SSLEnabled && util.GetConfig().SSLCertFilePath != "" && util.GetConfig().SSLKeyFilePath != "" {
+		log.Fatal(http.ListenAndServeTLS(port, util.GetConfig().SSLCertFilePath, util.GetConfig().SSLKeyFilePath, router))
+	} else {
+		log.Fatal(http.ListenAndServe(port, router))
+	}
 }
 
 func Run(port string) {
