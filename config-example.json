@@ -1,0 +1,10 @@
+{
+    "SSLEnabled": false,
+    "SSLCertFilePath": "",
+    "SSLKeyFilePath": "",
+    "LogFileEnabled": false,
+    "LogFilePath": "",
+    "MonitoringInterval": 15,
+    "SQLiteDBLoggingEnabled": false,
+    "SQLiteDBPath": ""
+}
