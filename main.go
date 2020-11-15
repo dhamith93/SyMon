@@ -21,26 +21,24 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
 
 	displayEnablePtr := flag.Bool("display", false, "Show monitoring stats")
 	serverEnablePtr := flag.Bool("server", true, "Starts the server")
-	monitorPtr := flag.String("monitor", "", "Name of the server to monitor")
+	monitorPtr := flag.String("monitor", "self", "Name of the server to monitor")
 
 	flag.Parse()
 
 	if *serverEnablePtr {
+		wg.Add(1)
 		go func() {
 			server.Run(":" + util.GetConfig().Port)
 			wg.Done()
 		}()
 	}
 
-	if *displayEnablePtr && *monitorPtr != "" {
-		display.Show("self")
-	}
-
-	if *monitorPtr != "" {
+	if *displayEnablePtr || *monitorPtr != "self" {
 		display.Show(*monitorPtr)
 	}
+
+	wg.Wait()
 }

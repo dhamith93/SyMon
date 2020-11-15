@@ -1,10 +1,13 @@
 package display
 
 import (
+	"encoding/json"
 	"log"
 	"strconv"
 	"strings"
+	"symon/client"
 	"symon/monitor"
+	"symon/util"
 	"time"
 
 	ui "github.com/gizak/termui/v3"
@@ -25,13 +28,13 @@ func Show(server string) {
 
 	sysInfoList := widgets.NewList()
 	sysInfoList.Title = "SYSTEM"
-	sysInfoList.SetRect(0, 3, 60, 12)
+	// sysInfoList.SetRect(0, 3, 60, 12)
 	sysInfoList.TextStyle.Fg = ui.ColorGreen
 
 	cpuGauge := widgets.NewGauge()
 	cpuGauge.Title = "CPU"
 	cpuGauge.Percent = 50
-	cpuGauge.SetRect(0, 3, 50, 6)
+	// cpuGauge.SetRect(0, 3, 50, 6)
 	cpuGauge.BarColor = ui.ColorRed
 	cpuGauge.BorderStyle.Fg = ui.ColorWhite
 	cpuGauge.TitleStyle.Fg = ui.ColorCyan
@@ -39,33 +42,38 @@ func Show(server string) {
 	memGauge := widgets.NewGauge()
 	memGauge.Title = "Memory"
 	memGauge.Percent = 50
-	memGauge.SetRect(0, 3, 50, 6)
+	// memGauge.SetRect(0, 3, 50, 6)
 	memGauge.BarColor = ui.ColorRed
 	memGauge.BorderStyle.Fg = ui.ColorWhite
 	memGauge.TitleStyle.Fg = ui.ColorCyan
 
 	diskInfoList := widgets.NewList()
 	diskInfoList.Title = "DISKS"
-	diskInfoList.SetRect(0, 3, 60, 12)
-	diskInfoList.Rows = getDiskData()
+	// diskInfoList.SetRect(0, 3, 60, 12)
 	diskInfoList.TextStyle.Fg = ui.ColorGreen
 	diskInfoList.WrapText = true
 
 	networkInfoList := widgets.NewList()
 	networkInfoList.Title = "NETWORKS"
-	networkInfoList.SetRect(0, 3, 60, 12)
-	networkInfoList.Rows = getNetworkData()
+	// networkInfoList.SetRect(0, 3, 60, 12)
 	networkInfoList.TextStyle.Fg = ui.ColorGreen
 	networkInfoList.WrapText = true
 
 	procSort := "cpu"
 	procTable := widgets.NewTable()
 	procTable.Title = "Processes"
-	procTable.Rows = getProcesses(procSort)
 	// procTable.TextAlignment = ui.AlignCenter
 	procTable.FillRow = true
 	procTable.TextStyle = ui.NewStyle(ui.ColorWhite)
 	procTable.ColumnWidths = append(procTable.ColumnWidths, 10, 8, 7, 8, 70)
+
+	// Initial data load
+	cpuGauge.Percent = int(getCPUUsage(server))
+	memGauge.Percent = int(getMemUsage(server))
+	sysInfoList.Rows = getSystemData(server)
+	diskInfoList.Rows = getDiskData(server)
+	networkInfoList.Rows = getNetworkData(server)
+	procTable.Rows = getProcesses(procSort, server)
 
 	grid := ui.NewGrid()
 	// currently gird dimensions are manually added so commented out the below line
@@ -97,12 +105,14 @@ func Show(server string) {
 	ui.Render(grid)
 
 	draw := func(count int) {
-		cpuGauge.Percent = int(getCPUUsage())
-		memGauge.Percent = int(getMemUsage())
-		sysInfoList.Rows = getSystemData()
-		diskInfoList.Rows = getDiskData()
-		networkInfoList.Rows = getNetworkData()
-		procTable.Rows = getProcesses(procSort)
+		if count == util.GetConfig().MonitoringInterval {
+			cpuGauge.Percent = int(getCPUUsage(server))
+			memGauge.Percent = int(getMemUsage(server))
+			sysInfoList.Rows = getSystemData(server)
+			diskInfoList.Rows = getDiskData(server)
+			networkInfoList.Rows = getNetworkData(server)
+			procTable.Rows = getProcesses(procSort, server)
+		}
 		ui.Render(p, sysInfoList, cpuGauge, memGauge, diskInfoList, networkInfoList, procTable)
 	}
 
@@ -147,17 +157,29 @@ func Show(server string) {
 				} else {
 					procSort = "cpu"
 				}
-				procTable.Rows = getProcesses(procSort)
+				procTable.Rows = getProcesses(procSort, server)
 			}
 		case <-ticker:
 			draw(tickerCount)
-			tickerCount++
+			if tickerCount == util.GetConfig().MonitoringInterval {
+				tickerCount = 1
+			} else {
+				tickerCount++
+			}
 		}
 	}
 }
 
-func getSystemData() []string {
-	system := monitor.GetSystem()
+func getSystemData(server string) []string {
+	system := monitor.System{}
+	if server == "self" {
+		system = monitor.GetSystem()
+	} else {
+		jsonStr := client.Get(server, "system")
+		err := json.Unmarshal([]byte(jsonStr), &system)
+		handleError(err, jsonStr)
+	}
+
 	return []string{
 		"Hostname: " + system.HostName,
 		"OS: " + system.OS,
@@ -169,8 +191,16 @@ func getSystemData() []string {
 	}
 }
 
-func getCPUUsage() int64 {
-	proc := monitor.GetProcessor()
+func getCPUUsage(server string) int64 {
+	proc := monitor.Processor{}
+	if server == "self" {
+		proc = monitor.GetProcessor()
+	} else {
+		jsonStr := client.Get(server, "proc")
+		err := json.Unmarshal([]byte(jsonStr), &proc)
+		handleError(err, jsonStr)
+	}
+
 	cpuUsageStr := strings.Trim(proc.LoadAvg, "%")
 	usage, err := strconv.ParseFloat(cpuUsageStr, 10)
 	if err != nil {
@@ -184,8 +214,16 @@ func getCPUUsage() int64 {
 	return 0
 }
 
-func getMemUsage() int64 {
-	mem := monitor.GetMemory()
+func getMemUsage(server string) int64 {
+	mem := monitor.Memory{}
+	if server == "self" {
+		mem = monitor.GetMemory()
+	} else {
+		jsonStr := client.Get(server, "memory")
+		err := json.Unmarshal([]byte(jsonStr), &mem)
+		handleError(err, jsonStr)
+	}
+
 	memUsageStr := strings.Trim(mem.PrecentageUsed, "%")
 	usage, err := strconv.ParseFloat(memUsageStr, 10)
 	if err != nil {
@@ -199,8 +237,17 @@ func getMemUsage() int64 {
 	return 0
 }
 
-func getDiskData() []string {
-	disks := monitor.GetDisks()
+func getDiskData(server string) []string {
+	disks := []monitor.Disk{}
+
+	if server == "self" {
+		disks = monitor.GetDisks()
+	} else {
+		jsonStr := client.Get(server, "disks")
+		err := json.Unmarshal([]byte(jsonStr), &disks)
+		handleError(err, jsonStr)
+	}
+
 	out := []string{}
 
 	for i, disk := range disks {
@@ -216,8 +263,17 @@ func getDiskData() []string {
 	return out
 }
 
-func getNetworkData() []string {
-	networks := monitor.GetNetwork()
+func getNetworkData(server string) []string {
+	networks := []monitor.Network{}
+
+	if server == "self" {
+		networks = monitor.GetNetwork()
+	} else {
+		jsonStr := client.Get(server, "network")
+		err := json.Unmarshal([]byte(jsonStr), &networks)
+		handleError(err, jsonStr)
+	}
+
 	out := []string{}
 
 	for i, network := range networks {
@@ -233,12 +289,24 @@ func getNetworkData() []string {
 	return out
 }
 
-func getProcesses(sort string) [][]string {
+func getProcesses(sort string, server string) [][]string {
 	procs := []monitor.Process{}
-	if sort == "mem" {
-		procs = monitor.GetProcessesSortedByMem()
+
+	if server == "self" {
+		if sort == "mem" {
+			procs = monitor.GetProcessesSortedByMem()
+		} else {
+			procs = monitor.GetProcessesSortedByCPU()
+		}
 	} else {
-		procs = monitor.GetProcessesSortedByCPU()
+		jsonStr := ""
+		if sort == "mem" {
+			jsonStr = client.Get(server, "memusage")
+		} else {
+			jsonStr = client.Get(server, "cpuusage")
+		}
+		err := json.Unmarshal([]byte(jsonStr), &procs)
+		handleError(err, jsonStr)
 	}
 
 	out := [][]string{}
@@ -249,4 +317,11 @@ func getProcesses(sort string) [][]string {
 	}
 
 	return out
+}
+
+func handleError(err error, jsonStr string) {
+	if err != nil {
+		util.Log("Error: incoming JSON: ", jsonStr)
+		panic("Cannot parse incoming json")
+	}
 }
