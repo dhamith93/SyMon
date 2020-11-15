@@ -116,7 +116,7 @@ func Show(server string) {
 		ui.Render(p, sysInfoList, cpuGauge, memGauge, diskInfoList, networkInfoList, procTable)
 	}
 
-	tickerCount := 1
+	tickerCount := 0
 	draw(tickerCount)
 	tickerCount++
 	uiEvents := ui.PollEvents()
@@ -162,7 +162,7 @@ func Show(server string) {
 		case <-ticker:
 			draw(tickerCount)
 			if tickerCount == util.GetConfig().MonitoringInterval {
-				tickerCount = 1
+				tickerCount = 0
 			} else {
 				tickerCount++
 			}
