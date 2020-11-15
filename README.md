@@ -1,5 +1,5 @@
 # SyMon
-A simple system monitoring tool
+A simple system monitoring tool to monitor local and remote systems. 
 
 ## Screenshot
 ![](screenshots/output.gif)
