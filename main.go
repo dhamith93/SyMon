@@ -1,10 +1,13 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
+	"symon/display"
 	"symon/server"
 	"symon/util"
+	"sync"
 )
 
 func main() {
@@ -17,5 +20,27 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	server.Run(":" + util.GetConfig().Port)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	displayEnablePtr := flag.Bool("display", false, "Show monitoring stats")
+	serverEnablePtr := flag.Bool("server", true, "Starts the server")
+	monitorPtr := flag.String("monitor", "", "Name of the server to monitor")
+
+	flag.Parse()
+
+	if *serverEnablePtr {
+		go func() {
+			server.Run(":" + util.GetConfig().Port)
+			wg.Done()
+		}()
+	}
+
+	if *displayEnablePtr && *monitorPtr != "" {
+		display.Show("self")
+	}
+
+	if *monitorPtr != "" {
+		display.Show(*monitorPtr)
+	}
 }
