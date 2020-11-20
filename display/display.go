@@ -14,27 +14,20 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
+// Show displays the TUI
 func Show(server string) {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer ui.Close()
 
-	p := widgets.NewParagraph()
-	p.Text = "SyMon v1"
-	p.SetRect(0, 0, 50, 3)
-	p.TextStyle.Fg = ui.ColorWhite
-	p.BorderStyle.Fg = ui.ColorCyan
-
 	sysInfoList := widgets.NewList()
 	sysInfoList.Title = "SYSTEM"
-	// sysInfoList.SetRect(0, 3, 60, 12)
 	sysInfoList.TextStyle.Fg = ui.ColorGreen
 
 	cpuGauge := widgets.NewGauge()
 	cpuGauge.Title = "CPU"
 	cpuGauge.Percent = 50
-	// cpuGauge.SetRect(0, 3, 50, 6)
 	cpuGauge.BarColor = ui.ColorRed
 	cpuGauge.BorderStyle.Fg = ui.ColorWhite
 	cpuGauge.TitleStyle.Fg = ui.ColorCyan
@@ -42,27 +35,23 @@ func Show(server string) {
 	memGauge := widgets.NewGauge()
 	memGauge.Title = "Memory"
 	memGauge.Percent = 50
-	// memGauge.SetRect(0, 3, 50, 6)
 	memGauge.BarColor = ui.ColorRed
 	memGauge.BorderStyle.Fg = ui.ColorWhite
 	memGauge.TitleStyle.Fg = ui.ColorCyan
 
 	diskInfoList := widgets.NewList()
 	diskInfoList.Title = "DISKS"
-	// diskInfoList.SetRect(0, 3, 60, 12)
 	diskInfoList.TextStyle.Fg = ui.ColorGreen
 	diskInfoList.WrapText = true
 
 	networkInfoList := widgets.NewList()
 	networkInfoList.Title = "NETWORKS"
-	// networkInfoList.SetRect(0, 3, 60, 12)
 	networkInfoList.TextStyle.Fg = ui.ColorGreen
 	networkInfoList.WrapText = true
 
 	procSort := "cpu"
 	procTable := widgets.NewTable()
 	procTable.Title = "Processes"
-	// procTable.TextAlignment = ui.AlignCenter
 	procTable.FillRow = true
 	procTable.TextStyle = ui.NewStyle(ui.ColorWhite)
 	procTable.ColumnWidths = append(procTable.ColumnWidths, 10, 8, 7, 8, 70)
@@ -83,9 +72,6 @@ func Show(server string) {
 	grid.SetRect(0, 0, termWidth, termHeight)
 
 	grid.Set(
-		ui.NewRow(1.0/20,
-			ui.NewCol(1.0/2, p),
-		),
 		ui.NewRow(1.0/9,
 			ui.NewCol(1.0/2, sysInfoList),
 		),
@@ -113,7 +99,7 @@ func Show(server string) {
 			networkInfoList.Rows = getNetworkData(server)
 			procTable.Rows = getProcesses(procSort, server)
 		}
-		ui.Render(p, sysInfoList, cpuGauge, memGauge, diskInfoList, networkInfoList, procTable)
+		ui.Render(sysInfoList, cpuGauge, memGauge, diskInfoList, networkInfoList, procTable)
 	}
 
 	tickerCount := 0
