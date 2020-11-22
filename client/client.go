@@ -8,6 +8,7 @@ import (
 	"symon/util"
 )
 
+// Remote remote server info
 type Remote struct {
 	Name string
 	Url  string
@@ -15,6 +16,7 @@ type Remote struct {
 	Key  string
 }
 
+// Get gets info from remote server
 func Get(who string, what string) string {
 	remote := getRemote(who)
 

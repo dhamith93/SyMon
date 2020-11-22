@@ -20,6 +20,8 @@ func handleRequests(port string) {
 	router.HandleFunc("/network", returnNetwork)
 	router.HandleFunc("/memusage", returnMemUsage)
 	router.HandleFunc("/cpuusage", returnCPUUsage)
+	router.HandleFunc("/proc-historical", returnProcHistorical)
+	router.HandleFunc("/memory-historical", returnMemoryHistorical)
 
 	if util.GetConfig().SSLEnabled && util.GetConfig().SSLCertFilePath != "" && util.GetConfig().SSLKeyFilePath != "" {
 		util.Log("info", "[SSL] API started on port "+port)
@@ -156,4 +158,50 @@ func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 		_ = json.Unmarshal([]byte(data[0]), &cpuUsage)
 	}
 	json.NewEncoder(w).Encode(&cpuUsage)
+}
+
+func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
+	if !isAuthorized(w, r) {
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	procs := []monitor.ProcessorUsage{}
+	data := util.GetLogFromDB("processor", 100)
+
+	str := "["
+	for i, s := range data {
+		str += s
+
+		if i < (len(data) - 1) {
+			str += ","
+		}
+	}
+	str += "]"
+
+	_ = json.Unmarshal([]byte(str), &procs)
+	json.NewEncoder(w).Encode(&procs)
+}
+
+func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
+	if !isAuthorized(w, r) {
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	memories := []monitor.Memory{}
+	data := util.GetLogFromDB("memory", 100)
+
+	str := "["
+	for i, s := range data {
+		str += s
+
+		if i < (len(data) - 1) {
+			str += ","
+		}
+	}
+	str += "]"
+
+	_ = json.Unmarshal([]byte(str), &memories)
+	json.NewEncoder(w).Encode(&memories)
 }

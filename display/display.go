@@ -51,8 +51,8 @@ func Show(server string) {
 	diskInfoList.Rows = getDiskData(server)
 	networkInfoList.Rows = getNetworkData(server)
 	procTable.Rows = getProcesses(procSort, server)
-	usagePlot.Data[0] = getHistoricalData("processor")
-	usagePlot.Data[1] = getHistoricalData("memory")
+	usagePlot.Data[0] = getHistoricalData(server, "processor-usage")
+	usagePlot.Data[1] = getHistoricalData(server, "memory")
 
 	grid := ui.NewGrid()
 	// currently gird dimensions are manually added so commented out the below line
@@ -85,7 +85,8 @@ func Show(server string) {
 			diskInfoList.Rows = getDiskData(server)
 			networkInfoList.Rows = getNetworkData(server)
 			procTable.Rows = getProcesses(procSort, server)
-			usagePlot.Data[0] = getHistoricalData("processor")
+			usagePlot.Data[0] = getHistoricalData(server, "processor-usage")
+			usagePlot.Data[1] = getHistoricalData(server, "memory")
 		}
 		ui.Render(sysInfoList, diskInfoList, networkInfoList, procTable, usagePlot)
 	}
@@ -316,13 +317,26 @@ func loadData(logType string) string {
 	return data[0]
 }
 
-func loadHistoricalData(logType string) []string {
-	data := util.GetLogFromDB(logType, 100)
+func loadHistoricalData(logType string, server string) []string {
+	data := []string{}
+
+	if server == "self" {
+		data = util.GetLogFromDB(logType, 100)
+	} else {
+		jsonStr := client.Get(server, logType+"-historical")
+		procs := []monitor.ProcessorUsage{}
+		_ = json.Unmarshal([]byte(jsonStr), &procs)
+		for _, p := range procs {
+			b, _ := json.Marshal(p)
+			data = append(data, string(b))
+		}
+	}
+
 	return data
 }
 
-func getHistoricalData(logType string) []float64 {
-	logData := loadHistoricalData(logType)
+func getHistoricalData(server string, logType string) []float64 {
+	logData := loadHistoricalData(logType, server)
 	data := make([]float64, 100)
 
 	if len(logData) == 0 {
@@ -334,8 +348,8 @@ func getHistoricalData(logType string) []float64 {
 	for i := 0; i < len(logData); i++ {
 		usageStr := ""
 
-		if logType == "processor" {
-			proc := monitor.Processor{}
+		if logType == "processor-usage" {
+			proc := monitor.ProcessorUsage{}
 			jsonStr := string(logData[i])
 			err := json.Unmarshal([]byte(jsonStr), &proc)
 			handleError(err, jsonStr)

@@ -21,6 +21,7 @@ func saveData() {
 	swap.Time = unixTime
 	disks := GetDisks(unixTime)
 	proc := GetProcessor()
+	procUsage := GetProcessorUsage()
 	proc.Time = unixTime
 	network := GetNetwork(unixTime)
 	memUsage := GetProcessesSortedByMem(unixTime)
@@ -40,6 +41,9 @@ func saveData() {
 
 	procStr, _ := json.Marshal(&proc)
 	util.SaveLogToDB(unixTime, string(procStr), "processor")
+
+	procUsageStr, _ := json.Marshal(&procUsage)
+	util.SaveLogToDB(unixTime, string(procUsageStr), "processor-usage")
 
 	networkStr, _ := json.Marshal(&network)
 	util.SaveLogToDB(unixTime, string(networkStr), "network")
