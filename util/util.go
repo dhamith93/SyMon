@@ -28,6 +28,7 @@ func Execute(command string, isUsingPipes bool, params ...string) string {
 	return string(stdout)
 }
 
+// GetFreeCommandOutputAsArr return `free` output
 func GetFreeCommandOutputAsArr(row int) []string {
 	result := Execute("free", false, "-b")
 	resultSplit := strings.Split(result, "\n")
@@ -35,11 +36,13 @@ func GetFreeCommandOutputAsArr(row int) []string {
 	return strings.Fields(line)
 }
 
+// GetDiskInfo returns disk info
 func GetDiskInfo() []string {
 	result := Execute("df", false, "-T", "-h", "--exclude-type=tmpfs", "--exclude-type=devtmpfs", "--exclude-type=udev")
 	return strings.Split(result, "\n")[1:]
 }
 
+// ByteToM converts byte to megabyte
 func ByteToM(input uint64) uint64 {
 	if input == 0 {
 		return 0
@@ -47,6 +50,7 @@ func ByteToM(input uint64) uint64 {
 	return input / (1024 * 1024)
 }
 
+// GetIncomingIPAddr get the IP of the incoming request
 func GetIncomingIPAddr(r *http.Request) (string, error) {
 	ip := r.Header.Get("X-REAL-IP")
 	netIP := net.ParseIP(ip)
@@ -72,6 +76,7 @@ func GetIncomingIPAddr(r *http.Request) (string, error) {
 	return "", fmt.Errorf("Could not find valid IP for request")
 }
 
+// GetLscpuCommandOutputValue returns 'lscou' output
 func GetLscpuCommandOutputValue(key string) string {
 	cpuInfo := Execute("lscpu", false)
 	cpuInfoArray := strings.Split(cpuInfo, "\n")
@@ -89,6 +94,7 @@ func GetLscpuCommandOutputValue(key string) string {
 	return outputMap[key]
 }
 
+// GetExecPath returns exec path of the given command
 func GetExecPath(cmd string) string {
 	result := Execute("whereis", false, cmd)
 	result = strings.TrimSpace(result)

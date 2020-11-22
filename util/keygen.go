@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// GetKey returns key from file if exist or generate key
 func GetKey() string {
 	if _, err := os.Stat("key"); err == nil {
 		b, err := ioutil.ReadFile("key")

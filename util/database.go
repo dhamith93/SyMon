@@ -3,6 +3,7 @@ package util
 import (
 	"database/sql"
 
+	// importing go-sqlite3
 	_ "github.com/mattn/go-sqlite3"
 )
 
