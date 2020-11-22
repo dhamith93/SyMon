@@ -25,20 +25,6 @@ func Show(server string) {
 	sysInfoList.Title = "SYSTEM"
 	sysInfoList.TextStyle.Fg = ui.ColorGreen
 
-	cpuGauge := widgets.NewGauge()
-	cpuGauge.Title = "CPU"
-	cpuGauge.Percent = 50
-	cpuGauge.BarColor = ui.ColorRed
-	cpuGauge.BorderStyle.Fg = ui.ColorWhite
-	cpuGauge.TitleStyle.Fg = ui.ColorCyan
-
-	memGauge := widgets.NewGauge()
-	memGauge.Title = "Memory"
-	memGauge.Percent = 50
-	memGauge.BarColor = ui.ColorRed
-	memGauge.BorderStyle.Fg = ui.ColorWhite
-	memGauge.TitleStyle.Fg = ui.ColorCyan
-
 	diskInfoList := widgets.NewList()
 	diskInfoList.Title = "DISKS"
 	diskInfoList.TextStyle.Fg = ui.ColorGreen
@@ -56,13 +42,17 @@ func Show(server string) {
 	procTable.TextStyle = ui.NewStyle(ui.ColorWhite)
 	procTable.ColumnWidths = append(procTable.ColumnWidths, 10, 8, 7, 8, 70)
 
+	usagePlot := widgets.NewPlot()
+	usagePlot.Title = "Usage - CPU: RED | MEM: GREEN"
+	usagePlot.Data = make([][]float64, 2)
+
 	// Initial data load
-	cpuGauge.Percent = int(getCPUUsage(server))
-	memGauge.Percent = int(getMemUsage(server))
 	sysInfoList.Rows = getSystemData(server)
 	diskInfoList.Rows = getDiskData(server)
 	networkInfoList.Rows = getNetworkData(server)
 	procTable.Rows = getProcesses(procSort, server)
+	usagePlot.Data[0] = getHistoricalData("processor")
+	usagePlot.Data[1] = getHistoricalData("memory")
 
 	grid := ui.NewGrid()
 	// currently gird dimensions are manually added so commented out the below line
@@ -75,9 +65,8 @@ func Show(server string) {
 		ui.NewRow(1.0/9,
 			ui.NewCol(1.0/2, sysInfoList),
 		),
-		ui.NewRow(1.0/15,
-			ui.NewCol(1.0/4, cpuGauge),
-			ui.NewCol(1.0/4, memGauge),
+		ui.NewRow(1.0/5,
+			ui.NewCol(1.0/2, usagePlot),
 		),
 		ui.NewRow(1.0/8,
 			ui.NewCol(1.0/4, diskInfoList),
@@ -92,14 +81,13 @@ func Show(server string) {
 
 	draw := func(count int) {
 		if count == util.GetConfig().CLIMonitoringInterval {
-			cpuGauge.Percent = int(getCPUUsage(server))
-			memGauge.Percent = int(getMemUsage(server))
 			sysInfoList.Rows = getSystemData(server)
 			diskInfoList.Rows = getDiskData(server)
 			networkInfoList.Rows = getNetworkData(server)
 			procTable.Rows = getProcesses(procSort, server)
+			usagePlot.Data[0] = getHistoricalData("processor")
 		}
-		ui.Render(sysInfoList, cpuGauge, memGauge, diskInfoList, networkInfoList, procTable)
+		ui.Render(sysInfoList, diskInfoList, networkInfoList, procTable, usagePlot)
 	}
 
 	tickerCount := 0
@@ -326,6 +314,51 @@ func loadData(logType string) string {
 	}
 
 	return data[0]
+}
+
+func loadHistoricalData(logType string) []string {
+	data := util.GetLogFromDB(logType, 100)
+	return data
+}
+
+func getHistoricalData(logType string) []float64 {
+	logData := loadHistoricalData(logType)
+	data := make([]float64, 100)
+
+	if len(logData) == 0 {
+		return data
+	}
+
+	logData = util.Reverse(logData)
+
+	for i := 0; i < len(logData); i++ {
+		usageStr := ""
+
+		if logType == "processor" {
+			proc := monitor.Processor{}
+			jsonStr := string(logData[i])
+			err := json.Unmarshal([]byte(jsonStr), &proc)
+			handleError(err, jsonStr)
+			usageStr = proc.LoadAvg
+		} else {
+			mem := monitor.Memory{}
+			jsonStr := string(logData[i])
+			err := json.Unmarshal([]byte(jsonStr), &mem)
+			handleError(err, jsonStr)
+			usageStr = mem.PrecentageUsed
+		}
+
+		usageStr = strings.Trim(usageStr, "%")
+		usage, err := strconv.ParseFloat(usageStr, 10)
+
+		if err != nil {
+			return data
+		}
+
+		data[i] = usage
+	}
+
+	return data
 }
 
 func handleError(err error, jsonStr string) {

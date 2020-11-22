@@ -33,8 +33,16 @@ func SaveLogToDB(unixTime string, jsonStr string, logType string) {
 
 // GetLogFromDB returns log records of the given log type
 func GetLogFromDB(logType string, count int) []string {
-	database, _ := sql.Open("sqlite3", GetConfig().SQLiteDBPath)
-	rows, _ := database.Query("SELECT log_text FROM monitor_log WHERE log_type = ? ORDER BY save_time DESC LIMIT ?", logType, count)
+	database, err := sql.Open("sqlite3", GetConfig().SQLiteDBPath)
+	if err != nil {
+		handleError(err)
+	}
+
+	rows, err := database.Query("SELECT log_text FROM monitor_log WHERE log_type = ? ORDER BY save_time DESC LIMIT ?", logType, count)
+	if err != nil {
+		handleError(err)
+	}
+
 	out := []string{}
 
 	for rows.Next() {
