@@ -30,6 +30,7 @@ func handleRequests(port string) {
 	}
 }
 
+// Run starts the server in given port
 func Run(port string) {
 	handleRequests(port)
 }
@@ -51,8 +52,12 @@ func returnSystem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	system := monitor.GetSystem()
-	json.NewEncoder(w).Encode(system)
+	system := monitor.System{}
+	data := util.GetLogFromDB("system", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &system)
+	}
+	json.NewEncoder(w).Encode(&system)
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
@@ -61,8 +66,12 @@ func returnMemory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	memory := monitor.GetMemory()
-	json.NewEncoder(w).Encode(memory)
+	memory := monitor.Memory{}
+	data := util.GetLogFromDB("memory", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &memory)
+	}
+	json.NewEncoder(w).Encode(&memory)
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
@@ -71,8 +80,12 @@ func returnSwap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	swap := monitor.GetSwap()
-	json.NewEncoder(w).Encode(swap)
+	swap := monitor.Swap{}
+	data := util.GetLogFromDB("swap", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &swap)
+	}
+	json.NewEncoder(w).Encode(&swap)
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
@@ -81,8 +94,12 @@ func returnDisks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	disks := monitor.GetDisks()
-	json.NewEncoder(w).Encode(disks)
+	disks := []monitor.Disk{}
+	data := util.GetLogFromDB("disks", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &disks)
+	}
+	json.NewEncoder(w).Encode(&disks)
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
@@ -91,8 +108,12 @@ func returnProc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	proc := monitor.GetProcessor()
-	json.NewEncoder(w).Encode(proc)
+	proc := monitor.Processor{}
+	data := util.GetLogFromDB("processor", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &proc)
+	}
+	json.NewEncoder(w).Encode(&proc)
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
@@ -101,8 +122,12 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	network := monitor.GetNetwork()
-	json.NewEncoder(w).Encode(network)
+	network := []monitor.Network{}
+	data := util.GetLogFromDB("network", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &network)
+	}
+	json.NewEncoder(w).Encode(&network)
 }
 
 func returnMemUsage(w http.ResponseWriter, r *http.Request) {
@@ -111,8 +136,12 @@ func returnMemUsage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	memUsage := monitor.GetProcessesSortedByMem()
-	json.NewEncoder(w).Encode(memUsage)
+	memUsage := []monitor.Process{}
+	data := util.GetLogFromDB("memUsage", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &memUsage)
+	}
+	json.NewEncoder(w).Encode(&memUsage)
 }
 
 func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
@@ -121,6 +150,10 @@ func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	cpuUsage := monitor.GetProcessesSortedByCPU()
-	json.NewEncoder(w).Encode(cpuUsage)
+	cpuUsage := []monitor.Process{}
+	data := util.GetLogFromDB("cpuUsage", 1)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &cpuUsage)
+	}
+	json.NewEncoder(w).Encode(&cpuUsage)
 }

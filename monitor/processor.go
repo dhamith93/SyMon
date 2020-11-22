@@ -14,6 +14,7 @@ type Processor struct {
 	Cache     string
 	Temp      string
 	LoadAvg   string
+	Time      string
 }
 
 // GetProcessor returns a Processor struct

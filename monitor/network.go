@@ -12,10 +12,11 @@ type Network struct {
 	IP        string
 	Tx        string
 	Rx        string
+	Time      string
 }
 
 // GetNetwork returns a Network struct
-func GetNetwork() []Network {
+func GetNetwork(time string) []Network {
 	ipCommand := util.GetExecPath("ip")
 	if ipCommand == "" {
 		return nil
@@ -35,6 +36,7 @@ func GetNetwork() []Network {
 			IP:        ifaceArray[2],
 			Tx:        getTx(ifaceArray[0]),
 			Rx:        getRx(ifaceArray[0]),
+			Time:      time,
 		})
 	}
 

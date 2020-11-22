@@ -5,7 +5,7 @@
     "SSLKeyFilePath": "",
     "LogFileEnabled": false,
     "LogFilePath": "",
-    "MonitoringInterval": 15,
+    "CLIMonitoringInterval": 60,
     "SQLiteDBLoggingEnabled": false,
     "SQLiteDBPath": ""
 }

@@ -91,7 +91,7 @@ func Show(server string) {
 	ui.Render(grid)
 
 	draw := func(count int) {
-		if count == util.GetConfig().MonitoringInterval {
+		if count == util.GetConfig().CLIMonitoringInterval {
 			cpuGauge.Percent = int(getCPUUsage(server))
 			memGauge.Percent = int(getMemUsage(server))
 			sysInfoList.Rows = getSystemData(server)
@@ -147,7 +147,7 @@ func Show(server string) {
 			}
 		case <-ticker:
 			draw(tickerCount)
-			if tickerCount == util.GetConfig().MonitoringInterval {
+			if tickerCount == util.GetConfig().CLIMonitoringInterval {
 				tickerCount = 0
 			} else {
 				tickerCount++
@@ -157,14 +157,17 @@ func Show(server string) {
 }
 
 func getSystemData(server string) []string {
+	jsonStr := ""
 	system := monitor.System{}
+
 	if server == "self" {
-		system = monitor.GetSystem()
+		jsonStr = loadData("system")
 	} else {
-		jsonStr := client.Get(server, "system")
-		err := json.Unmarshal([]byte(jsonStr), &system)
-		handleError(err, jsonStr)
+		jsonStr = client.Get(server, "system")
 	}
+
+	err := json.Unmarshal([]byte(jsonStr), &system)
+	handleError(err, jsonStr)
 
 	return []string{
 		"Hostname: " + system.HostName,
@@ -178,14 +181,17 @@ func getSystemData(server string) []string {
 }
 
 func getCPUUsage(server string) int64 {
+	jsonStr := ""
 	proc := monitor.Processor{}
+
 	if server == "self" {
-		proc = monitor.GetProcessor()
+		jsonStr = loadData("processor")
 	} else {
-		jsonStr := client.Get(server, "proc")
-		err := json.Unmarshal([]byte(jsonStr), &proc)
-		handleError(err, jsonStr)
+		jsonStr = client.Get(server, "proc")
 	}
+
+	err := json.Unmarshal([]byte(jsonStr), &proc)
+	handleError(err, jsonStr)
 
 	cpuUsageStr := strings.Trim(proc.LoadAvg, "%")
 	usage, err := strconv.ParseFloat(cpuUsageStr, 10)
@@ -201,14 +207,17 @@ func getCPUUsage(server string) int64 {
 }
 
 func getMemUsage(server string) int64 {
+	jsonStr := ""
 	mem := monitor.Memory{}
+
 	if server == "self" {
-		mem = monitor.GetMemory()
+		jsonStr = loadData("memory")
 	} else {
-		jsonStr := client.Get(server, "memory")
-		err := json.Unmarshal([]byte(jsonStr), &mem)
-		handleError(err, jsonStr)
+		jsonStr = client.Get(server, "memory")
 	}
+
+	err := json.Unmarshal([]byte(jsonStr), &mem)
+	handleError(err, jsonStr)
 
 	memUsageStr := strings.Trim(mem.PrecentageUsed, "%")
 	usage, err := strconv.ParseFloat(memUsageStr, 10)
@@ -224,15 +233,17 @@ func getMemUsage(server string) int64 {
 }
 
 func getDiskData(server string) []string {
+	jsonStr := ""
 	disks := []monitor.Disk{}
 
 	if server == "self" {
-		disks = monitor.GetDisks()
+		jsonStr = loadData("disks")
 	} else {
-		jsonStr := client.Get(server, "disks")
-		err := json.Unmarshal([]byte(jsonStr), &disks)
-		handleError(err, jsonStr)
+		jsonStr = client.Get(server, "disks")
 	}
+
+	err := json.Unmarshal([]byte(jsonStr), &disks)
+	handleError(err, jsonStr)
 
 	out := []string{}
 
@@ -250,15 +261,17 @@ func getDiskData(server string) []string {
 }
 
 func getNetworkData(server string) []string {
+	jsonStr := ""
 	networks := []monitor.Network{}
 
 	if server == "self" {
-		networks = monitor.GetNetwork()
+		jsonStr = loadData("network")
 	} else {
-		jsonStr := client.Get(server, "network")
-		err := json.Unmarshal([]byte(jsonStr), &networks)
-		handleError(err, jsonStr)
+		jsonStr = client.Get(server, "network")
 	}
+
+	err := json.Unmarshal([]byte(jsonStr), &networks)
+	handleError(err, jsonStr)
 
 	out := []string{}
 
@@ -276,24 +289,25 @@ func getNetworkData(server string) []string {
 }
 
 func getProcesses(sort string, server string) [][]string {
+	jsonStr := ""
 	procs := []monitor.Process{}
 
 	if server == "self" {
 		if sort == "mem" {
-			procs = monitor.GetProcessesSortedByMem()
+			jsonStr = loadData("memUsage")
 		} else {
-			procs = monitor.GetProcessesSortedByCPU()
+			jsonStr = loadData("cpuUsage")
 		}
 	} else {
-		jsonStr := ""
 		if sort == "mem" {
 			jsonStr = client.Get(server, "memusage")
 		} else {
 			jsonStr = client.Get(server, "cpuusage")
 		}
-		err := json.Unmarshal([]byte(jsonStr), &procs)
-		handleError(err, jsonStr)
 	}
+
+	err := json.Unmarshal([]byte(jsonStr), &procs)
+	handleError(err, jsonStr)
 
 	out := [][]string{}
 	out = append(out, []string{"User", "PID", "CPU %", "Memory %", "CMD"})
@@ -303,6 +317,15 @@ func getProcesses(sort string, server string) [][]string {
 	}
 
 	return out
+}
+
+func loadData(logType string) string {
+	data := util.GetLogFromDB(logType, 1)
+	if len(data) == 0 {
+		return ""
+	}
+
+	return data[0]
 }
 
 func handleError(err error, jsonStr string) {

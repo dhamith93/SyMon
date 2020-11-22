@@ -12,19 +12,20 @@ type Process struct {
 	CPUUsage    string
 	MemoryUsage string
 	Command     string
+	Time        string
 }
 
 // GetProcessesSortedByCPU returns a Process struct
-func GetProcessesSortedByCPU() []Process {
-	return getProcesses("-pcpu", "11")
+func GetProcessesSortedByCPU(time string) []Process {
+	return getProcesses("-pcpu", "11", time)
 }
 
 // GetProcessesSortedByMem returns a Process struct
-func GetProcessesSortedByMem() []Process {
-	return getProcesses("-pmem", "11")
+func GetProcessesSortedByMem(time string) []Process {
+	return getProcesses("-pmem", "11", time)
 }
 
-func getProcesses(sort string, count string) []Process {
+func getProcesses(sort string, count string, time string) []Process {
 	result := util.Execute("ps aux --sort="+sort+" | head -n "+count, true)
 	resultArray := strings.Split(result, "\n")[1:]
 	out := []Process{}
@@ -40,6 +41,7 @@ func getProcesses(sort string, count string) []Process {
 			CPUUsage:    processArray[2] + "%",
 			MemoryUsage: processArray[3] + "%",
 			Command:     processArray[10],
+			Time:        time,
 		})
 	}
 

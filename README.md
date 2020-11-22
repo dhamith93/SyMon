@@ -8,12 +8,21 @@ A simple system monitoring tool to monitor local and remote systems.
 
 Before use, rename or copy `config-example.json` as `config.json` and modify required options
 
+Then add the exec path with `-collect` parameter to crontab with required monitoring interval.
+
+Ex:
+
+```sh
+# Collect monitoring data every minute
+*/1 * * * * cd /root/source/SyMon && ./symon -collect > /dev/null 2>&1
+```
+
 If you are connecting to remote servers, rename or copy `remote-example.json` as `remote.json` and enter relevent server info. Multiple servers can be set up in the `remote.json`.
 
 `key` file will be generated upon the first run. It will contain the API key to connect to the server.
 
 ### Execution
-* `-server=false` Disables the server. Default `true`
+* `-server` Start the server. Default `false`
 * `-display` Shows the TUI with stats for local machine. Default `false`
 * `-monitor=name` Shows the TUI with stats for selected remote server. Requires a valid `remote.json` file
 

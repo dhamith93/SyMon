@@ -14,10 +14,11 @@ type Disk struct {
 	Free           string
 	PrecentageUsed string
 	MountPoint     string
+	Time           string
 }
 
 // GetDisks returns an array of Disk structs
-func GetDisks() []Disk {
+func GetDisks(time string) []Disk {
 	disks := util.GetDiskInfo()
 	out := []Disk{}
 
@@ -34,6 +35,7 @@ func GetDisks() []Disk {
 			Free:           diskInfo[4],
 			PrecentageUsed: diskInfo[5],
 			MountPoint:     diskInfo[6],
+			Time:           time,
 		})
 	}
 

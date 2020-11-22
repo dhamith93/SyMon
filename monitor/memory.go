@@ -12,6 +12,7 @@ type Memory struct {
 	Free           string
 	Total          string
 	PrecentageUsed string
+	Time           string
 }
 
 // GetMemory returns Memory struct

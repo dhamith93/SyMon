@@ -14,6 +14,7 @@ type System struct {
 	LastBootDate  string
 	NoOfCurrUsers string
 	DateTime      string
+	Time          string
 }
 
 // GetSystem returns System struct

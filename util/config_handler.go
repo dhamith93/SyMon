@@ -13,7 +13,7 @@ type Config struct {
 	SSLKeyFilePath         string
 	LogFileEnabled         bool
 	LogFilePath            string
-	MonitoringInterval     int
+	CLIMonitoringInterval  int
 	SQLiteDBLoggingEnabled bool
 	SQLiteDBPath           string
 }

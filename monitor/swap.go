@@ -12,6 +12,7 @@ type Swap struct {
 	Free           string
 	Total          string
 	PrecentageUsed string
+	Time           string
 }
 
 // GetSwap returns Swap struct
