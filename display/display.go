@@ -324,11 +324,21 @@ func loadHistoricalData(logType string, server string) []string {
 		data = util.GetLogFromDB(logType, 100)
 	} else {
 		jsonStr := client.Get(server, logType+"-historical")
-		procs := []monitor.ProcessorUsage{}
-		_ = json.Unmarshal([]byte(jsonStr), &procs)
-		for _, p := range procs {
-			b, _ := json.Marshal(p)
-			data = append(data, string(b))
+
+		if logType == "processor" {
+			procs := []monitor.ProcessorUsage{}
+			_ = json.Unmarshal([]byte(jsonStr), &procs)
+			for _, p := range procs {
+				b, _ := json.Marshal(p)
+				data = append(data, string(b))
+			}
+		} else {
+			mem := []monitor.Memory{}
+			_ = json.Unmarshal([]byte(jsonStr), &mem)
+			for _, m := range mem {
+				b, _ := json.Marshal(m)
+				data = append(data, string(b))
+			}
 		}
 	}
 

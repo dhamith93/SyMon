@@ -20,7 +20,7 @@ func handleRequests(port string) {
 	router.HandleFunc("/network", returnNetwork)
 	router.HandleFunc("/memusage", returnMemUsage)
 	router.HandleFunc("/cpuusage", returnCPUUsage)
-	router.HandleFunc("/proc-historical", returnProcHistorical)
+	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
 	router.HandleFunc("/memory-historical", returnMemoryHistorical)
 
 	if util.GetConfig().SSLEnabled && util.GetConfig().SSLCertFilePath != "" && util.GetConfig().SSLKeyFilePath != "" {
