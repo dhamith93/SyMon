@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"symon/monitor"
 	"symon/util"
 
@@ -23,12 +24,17 @@ func handleRequests(port string) {
 	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
 	router.HandleFunc("/memory-historical", returnMemoryHistorical)
 
+	server := http.Server{}
+	server.Addr = port
+	server.Handler = router
+	server.SetKeepAlivesEnabled(false)
+
 	if util.GetConfig().SSLEnabled && util.GetConfig().SSLCertFilePath != "" && util.GetConfig().SSLKeyFilePath != "" {
 		util.Log("info", "[SSL] API started on port "+port)
-		log.Fatal(http.ListenAndServeTLS(port, util.GetConfig().SSLCertFilePath, util.GetConfig().SSLKeyFilePath, router))
+		log.Fatal(server.ListenAndServeTLS(util.GetConfig().SSLCertFilePath, util.GetConfig().SSLKeyFilePath))
 	} else {
 		util.Log("info", "API started on port "+port)
-		log.Fatal(http.ListenAndServe(port, router))
+		log.Fatal(server.ListenAndServe())
 	}
 }
 
@@ -169,17 +175,20 @@ func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
 	procs := []monitor.ProcessorUsage{}
 	data := util.GetLogFromDB("processor", 100)
 
-	str := "["
+	var sb strings.Builder
+	sb.WriteString("[")
+
 	for i, s := range data {
-		str += s
+		sb.WriteString(s)
 
 		if i < (len(data) - 1) {
-			str += ","
+			sb.WriteString(",")
 		}
 	}
-	str += "]"
 
-	_ = json.Unmarshal([]byte(str), &procs)
+	sb.WriteString("]")
+
+	_ = json.Unmarshal([]byte(sb.String()), &procs)
 	json.NewEncoder(w).Encode(&procs)
 }
 
@@ -192,16 +201,19 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 	memories := []monitor.Memory{}
 	data := util.GetLogFromDB("memory", 100)
 
-	str := "["
+	var sb strings.Builder
+	sb.WriteString("[")
+
 	for i, s := range data {
-		str += s
+		sb.WriteString(s)
 
 		if i < (len(data) - 1) {
-			str += ","
+			sb.WriteString(",")
 		}
 	}
-	str += "]"
 
-	_ = json.Unmarshal([]byte(str), &memories)
+	sb.WriteString("]")
+
+	_ = json.Unmarshal([]byte(sb.String()), &memories)
 	json.NewEncoder(w).Encode(&memories)
 }

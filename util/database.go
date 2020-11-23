@@ -51,6 +51,8 @@ func GetLogFromDB(logType string, count int) []string {
 		out = append(out, logText)
 	}
 
+	defer database.Close()
+
 	return out
 }
 
