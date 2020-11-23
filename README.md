@@ -1,9 +1,6 @@
 # SyMon
 A simple system monitoring tool to monitor local and remote systems. 
 
-## Screenshot
-![](screenshots/output.gif)
-
 ## Usage
 
 Before use, rename or copy `config-example.json` as `config.json` and modify required options
@@ -35,6 +32,8 @@ If you are connecting to remote servers, rename or copy `remote-example.json` as
 * `q` Quit TUI
 
 ### API
+In request header add `Key => {API_KEY}`
+
 * `.../system` Returns system info
 * `.../memory` Returns memory info
 * `.../swap` Returns swap info
@@ -43,3 +42,8 @@ If you are connecting to remote servers, rename or copy `remote-example.json` as
 * `.../network` Return json array of network interface info
 * `.../memusage` Return json array of 10 processes using most memory
 * `.../cpuusage` Return json array of 10 processes using most CPU
+* `.../processor-usage-historical` Return json array of ~100 historical CPU usage data points
+* `.../memory-historical` Return json array of ~100 historical memory usage data points
+
+## Screenshot
+![](screenshots/screenshot_01.png)
