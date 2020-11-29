@@ -21,7 +21,7 @@ If you are connecting to remote servers, rename or copy `remote-example.json` as
 ### Email notifications
 Make sure all the configurations are properly set in the config.json. 
 Also make sure the connectivity to the SMTP server is allowed from system and network level.
-Set the SMTP password as an Env Var (SYMON_EMAIL_CRED)
+Rename `.env-example` as `.env` with email creds. 
 
 ### Execution
 * `-server` Start the server. Default `false`
