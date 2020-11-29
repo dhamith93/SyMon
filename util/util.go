@@ -133,16 +133,30 @@ func WriteFile(path string, input string) {
 	}
 }
 
-// GetOpeningEmailTemplate return opening email template
-func GetOpeningEmailTemplate(usageType string, usage string, timeDiff string, hostName string, serverTime string) string {
-	template := "<pre>{usageType} usage is >= {usage}% on {hostName} for {timeDiff} minutes. <br>Your attention maybe needed to resolve it <br>Server time: {serverTime} <br><br> -- SyMon</pre>"
+// GetOpeningEmail return opening email
+func GetOpeningEmail(usageType string, usage string, timeDiff string, hostName string, serverTime string) string {
+	template := "<p>{usageType} usage is >= {usage}% on {hostName} for {timeDiff} minutes.</p> <br><p>Your attention maybe needed to resolve it</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p>"
 	var replacer = strings.NewReplacer("{usageType}", usageType, "{usage}", usage, "{hostName}", hostName, "{timeDiff}", timeDiff, "{serverTime}", serverTime)
 	return replacer.Replace(template)
 }
 
-// GetClosingEmailTemplate return closing email template
-func GetClosingEmailTemplate(usageType string, timeDiff string, hostName string, serverTime string) string {
-	template := "<pre>{usageType} usage is now back to normal on {hostName} for {timeDiff} minutes. <br>Server time: {serverTime} <br><br> -- SyMon</pre>"
+// GetClosingEmail return closing email
+func GetClosingEmail(usageType string, timeDiff string, hostName string, serverTime string) string {
+	template := "<p>{usageType} usage is now back to normal on {hostName} for {timeDiff} minutes.</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p>"
 	var replacer = strings.NewReplacer("{usageType}", usageType, "{hostName}", hostName, "{timeDiff}", timeDiff, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}
+
+// GetDiskUsageOpeningEmail return opening email for disk usage
+func GetDiskUsageOpeningEmail(disk string, usage string, serverTime string) string {
+	template := "<p>Usage of {disk} is >= {usage}% <br><p>Your attention maybe needed to resolve it</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p></p>"
+	var replacer = strings.NewReplacer("{disk}", disk, "{usage}", usage, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}
+
+// GetDiskUsageClosingEmail return closing email for disk usage
+func GetDiskUsageClosingEmail(disk string, serverTime string) string {
+	template := "<p>Usage of {disk} is went back to normal</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p></p>"
+	var replacer = strings.NewReplacer("{disk}", disk, "{serverTime}", serverTime)
 	return replacer.Replace(template)
 }

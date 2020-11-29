@@ -16,5 +16,7 @@
     "EmailTo": "test@test.com,test2@test.com",
     "CPUThreshold": 90,
     "MemoryThreshold": 90,
+    "DiskUsageThreshold": 80,
+    "DisksToIgnore": "/dev/loop0,/dev/loop1,/dev/loop2,/dev/loop3",
     "WarnAfterSecs": 900
 }

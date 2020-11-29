@@ -74,9 +74,13 @@ func saveData() {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
 	go func() {
 		checkForWarn(cpuUsageVal, unixTime, UsageTypeCPU, system.HostName, system.DateTime)
+		wg.Done()
+	}()
+	go func() {
+		checkDiskUsage(disks, system.DateTime)
 		wg.Done()
 	}()
 	checkForWarn(memoryUsageVal, unixTime, UsageTypeMemory, system.HostName, system.DateTime)
@@ -168,7 +172,7 @@ func handleUnderThreshold(usageType string, timeDiff int, hostName string, serve
 		util.WriteFile(CPUWarnClosePath, "")
 	}
 
-	err := util.SendEmail("Server usage alert: "+strings.ToUpper(usageType)+" CLOSE", util.GetClosingEmailTemplate(
+	err := util.SendEmail("Server usage alert: "+strings.ToUpper(usageType)+" CLOSE", util.GetClosingEmail(
 		usageType,
 		strconv.FormatInt(int64(timeDiff/60), 10),
 		hostName,
@@ -188,7 +192,7 @@ func handleOverThreshold(usageType string, usageVal int, timeDiff int, hostName 
 		util.WriteFile(CPUWarnStatusPath, "open")
 		util.WriteFile(CPUWarnClosePath, "")
 	}
-	err := util.SendEmail("Server usage alert: "+strings.ToUpper(usageType)+" OPEN", util.GetOpeningEmailTemplate(
+	err := util.SendEmail("Server usage alert: "+strings.ToUpper(usageType)+" OPEN", util.GetOpeningEmail(
 		usageType,
 		strconv.FormatInt(int64(usageVal), 10),
 		strconv.FormatInt(int64(timeDiff/60), 10),
@@ -198,5 +202,57 @@ func handleOverThreshold(usageType string, usageVal int, timeDiff int, hostName 
 
 	if err != nil {
 		util.Log("Error", err.Error())
+	}
+}
+
+func checkDiskUsage(disks []Disk, serverTime string) {
+	disksTOIgnore := strings.Split(util.GetConfig().DisksToIgnore, ",")
+	for i, disk := range disks {
+		ignore := false
+		for _, d := range disksTOIgnore {
+			if strings.TrimSpace(d) == strings.TrimSpace(disk.FileSystem) {
+				ignore = true
+			}
+		}
+
+		if ignore {
+			continue
+		}
+
+		usage, err := strconv.ParseFloat(strings.Trim(disk.PrecentageUsed, "%"), 10)
+		if err != nil {
+			util.Log("Error", err.Error())
+			continue
+		}
+
+		pathForDiskFile := "/tmp/disk_" + strconv.FormatInt(int64(i), 10) + "_usage"
+
+		if int(usage) >= util.GetConfig().DiskUsageThreshold {
+			if util.ReadFile(pathForDiskFile) == "" {
+				util.WriteFile(pathForDiskFile, strconv.FormatInt(int64(usage), 10))
+				err := util.SendEmail(
+					"Server usage alert: Disk "+disk.FileSystem+" OPEN",
+					util.GetDiskUsageOpeningEmail(disk.FileSystem, strconv.FormatInt(int64(usage), 10), serverTime),
+				)
+
+				if err != nil {
+					util.Log("Error", err.Error())
+				}
+			}
+		} else {
+			if util.ReadFile(pathForDiskFile) != "" {
+				util.WriteFile(pathForDiskFile, "")
+				err := util.SendEmail(
+					"Server usage alert: Disk "+disk.FileSystem+" CLOSE",
+					util.GetDiskUsageClosingEmail(disk.FileSystem, serverTime),
+				)
+
+				if err != nil {
+					util.Log("Error", err.Error())
+				}
+			}
+
+		}
+
 	}
 }

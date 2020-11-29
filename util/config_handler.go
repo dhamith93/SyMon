@@ -23,6 +23,8 @@ type Config struct {
 	EmailTo                  string
 	CPUThreshold             int
 	MemoryThreshold          int
+	DiskUsageThreshold       int
+	DisksToIgnore            string
 	WarnAfterSecs            int
 }
 
