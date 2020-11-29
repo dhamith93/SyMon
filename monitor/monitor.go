@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"symon/util"
+	"sync"
 	"time"
 )
 
@@ -72,11 +73,76 @@ func saveData() {
 		util.Log("Error", "Cannot parse Usage strings")
 	}
 
-	checkForWarn(cpuUsageVal, unixTime, UsageTypeCPU, system.HostName, system.DateTime)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		checkForWarn(cpuUsageVal, unixTime, UsageTypeCPU, system.HostName, system.DateTime)
+		wg.Done()
+	}()
 	checkForWarn(memoryUsageVal, unixTime, UsageTypeMemory, system.HostName, system.DateTime)
+	wg.Wait()
 }
 
 func checkForWarn(usageVal float64, unixTime string, usageType string, hostName string, serverTime string) {
+	symonWarn, symonWarnStatus, symonWarnClosed, threshold := loadWarnVars(usageType)
+
+	if int(usageVal) >= threshold {
+		if symonWarn == "" {
+			wrnString := usageType + "_" + strconv.FormatFloat(usageVal, 'f', 2, 64) + "_" + unixTime
+			if usageType == UsageTypeMemory {
+				util.WriteFile(MemWarnPath, wrnString)
+			} else {
+				util.WriteFile(CPUWarnPath, wrnString)
+			}
+		} else {
+			checkIfWentOverThreshold(symonWarn, unixTime, symonWarnStatus, usageType, threshold, hostName, serverTime)
+		}
+	} else {
+		if symonWarnStatus == "open" {
+			if symonWarnClosed == "" {
+				if usageType == UsageTypeMemory {
+					util.WriteFile(MemWarnClosePath, unixTime)
+				} else {
+					util.WriteFile(CPUWarnClosePath, unixTime)
+				}
+			} else {
+				checkIfOkayToClose(symonWarnClosed, unixTime, usageType, hostName, serverTime)
+			}
+		} else {
+			if usageType == UsageTypeMemory {
+				util.WriteFile(MemWarnPath, "")
+			} else {
+				util.WriteFile(CPUWarnPath, "")
+			}
+		}
+	}
+}
+
+func checkIfOkayToClose(symonWarnClosed string, unixTime string, usageType string, hostName string, serverTime string) {
+	firstTime, err1 := strconv.ParseInt(symonWarnClosed, 10, 64)
+	currTime, err2 := strconv.ParseInt(unixTime, 10, 64)
+	if err1 != nil || err2 != nil {
+		util.Log("Error", "Cannot parse Usage strings")
+	}
+	timeDiff := int(currTime - firstTime)
+	if timeDiff >= util.GetConfig().WarnAfterSecs {
+		handleUnderThreshold(usageType, timeDiff, hostName, serverTime)
+	}
+}
+
+func checkIfWentOverThreshold(symonWarn string, unixTime string, symonWarnStatus string, usageType string, threshold int, hostName string, serverTime string) {
+	firstTime, err1 := strconv.ParseInt(strings.Split(symonWarn, "_")[2], 10, 64)
+	currTime, err2 := strconv.ParseInt(unixTime, 10, 64)
+	if err1 != nil || err2 != nil {
+		util.Log("Error", "Cannot parse Usage strings")
+	}
+	timeDiff := int(currTime - firstTime)
+	if timeDiff >= util.GetConfig().WarnAfterSecs && symonWarnStatus != "open" {
+		handleOverThreshold(usageType, threshold, timeDiff, hostName, serverTime)
+	}
+}
+
+func loadWarnVars(usageType string) (string, string, string, int) {
 	symonWarn := util.ReadFile(CPUWarnPath)
 	symonWarnStatus := util.ReadFile(CPUWarnStatusPath)
 	symonWarnClosed := util.ReadFile(CPUWarnClosePath)
@@ -88,53 +154,7 @@ func checkForWarn(usageVal float64, unixTime string, usageType string, hostName 
 		symonWarnClosed = util.ReadFile(MemWarnClosePath)
 		threshold = util.GetConfig().MemoryThreshold
 	}
-
-	if int(usageVal) >= threshold {
-		if symonWarn == "" {
-			wrnString := usageType + "_" + strconv.FormatFloat(usageVal, 'f', 2, 64) + "_" + unixTime
-			if usageType == UsageTypeMemory {
-				util.WriteFile(MemWarnPath, wrnString)
-			} else {
-				util.WriteFile(CPUWarnPath, wrnString)
-			}
-		} else {
-			firstTime, err1 := strconv.ParseInt(strings.Split(symonWarn, "_")[2], 10, 64)
-			currTime, err2 := strconv.ParseInt(unixTime, 10, 64)
-			if err1 != nil || err2 != nil {
-				util.Log("Error", "Cannot parse Usage strings")
-			}
-			timeDiff := int(currTime - firstTime)
-			if timeDiff >= util.GetConfig().WarnAfterSecs && symonWarnStatus != "open" { // usage is over threshold
-				handleOverThreshold(usageType, threshold, timeDiff, hostName, serverTime)
-			}
-		}
-	} else {
-		if symonWarnStatus == "open" {
-			if symonWarnClosed == "" {
-				if usageType == UsageTypeMemory {
-					util.WriteFile(MemWarnClosePath, unixTime)
-				} else {
-					util.WriteFile(CPUWarnClosePath, unixTime)
-				}
-			} else {
-				firstTime, err1 := strconv.ParseInt(symonWarnClosed, 10, 64)
-				currTime, err2 := strconv.ParseInt(unixTime, 10, 64)
-				if err1 != nil || err2 != nil {
-					util.Log("Error", "Cannot parse Usage strings")
-				}
-				timeDiff := int(currTime - firstTime)
-				if timeDiff >= util.GetConfig().WarnAfterSecs { // usage is back to normal for >= warn after secs
-					handleUnderThreshold(usageType, timeDiff, hostName, serverTime)
-				}
-			}
-		} else {
-			if usageType == UsageTypeMemory {
-				util.WriteFile(MemWarnPath, "")
-			} else {
-				util.WriteFile(CPUWarnPath, "")
-			}
-		}
-	}
+	return symonWarn, symonWarnStatus, symonWarnClosed, threshold
 }
 
 func handleUnderThreshold(usageType string, timeDiff int, hostName string, serverTime string) {
