@@ -7,15 +7,23 @@ import (
 
 // Config struct with config
 type Config struct {
-	Port                   string
-	SSLEnabled             bool
-	SSLCertFilePath        string
-	SSLKeyFilePath         string
-	LogFileEnabled         bool
-	LogFilePath            string
-	CLIMonitoringInterval  int
-	SQLiteDBLoggingEnabled bool
-	SQLiteDBPath           string
+	Port                     string
+	SSLEnabled               bool
+	SSLCertFilePath          string
+	SSLKeyFilePath           string
+	LogFileEnabled           bool
+	LogFilePath              string
+	CLIMonitoringInterval    int
+	SQLiteDBLoggingEnabled   bool
+	SQLiteDBPath             string
+	EmailNotificationEnabled bool
+	EmailHost                string
+	EmailPort                string
+	EmailFrom                string
+	EmailTo                  string
+	CPUThreshold             int
+	MemoryThreshold          int
+	WarnAfterSecs            int
 }
 
 // GetConfig return config struct

@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os/exec"
@@ -105,10 +106,43 @@ func GetExecPath(cmd string) string {
 	return resultArr[1]
 }
 
+// Reverse reverses string array
 func Reverse(s []string) []string {
 	for i := 0; i < len(s)/2; i++ {
 		j := len(s) - i - 1
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
+}
+
+// ReadFile read from given file
+func ReadFile(path string) string {
+	s, err := ioutil.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return string(s)
+}
+
+// WriteFile write to given file
+func WriteFile(path string, input string) {
+	s := []byte(input)
+	err := ioutil.WriteFile(path, s, 0644)
+	if err != nil {
+		Log("Error", err.Error())
+	}
+}
+
+// GetOpeningEmailTemplate return opening email template
+func GetOpeningEmailTemplate(usageType string, usage string, timeDiff string, hostName string, serverTime string) string {
+	template := "<pre>{usageType} usage is >= {usage}% on {hostName} for {timeDiff} minutes. <br>Your attention maybe needed to resolve it <br>Server time: {serverTime} <br><br> -- SyMon</pre>"
+	var replacer = strings.NewReplacer("{usageType}", usageType, "{usage}", usage, "{hostName}", hostName, "{timeDiff}", timeDiff, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}
+
+// GetClosingEmailTemplate return closing email template
+func GetClosingEmailTemplate(usageType string, timeDiff string, hostName string, serverTime string) string {
+	template := "<pre>{usageType} usage is now back to normal on {hostName} for {timeDiff} minutes. <br>Server time: {serverTime} <br><br> -- SyMon</pre>"
+	var replacer = strings.NewReplacer("{usageType}", usageType, "{hostName}", hostName, "{timeDiff}", timeDiff, "{serverTime}", serverTime)
+	return replacer.Replace(template)
 }

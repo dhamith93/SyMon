@@ -7,5 +7,14 @@
     "LogFilePath": "",
     "CLIMonitoringInterval": 60,
     "SQLiteDBLoggingEnabled": false,
-    "SQLiteDBPath": ""
+    "SQLiteDBPath": "",
+    "EmailNotificationEnabled": false,
+    "EmailHost": "",
+    "EmailPort": "",
+    "EmailFrom": "",
+    "EmailUser": "",
+    "EmailTo": "test@test.com,test2@test.com",
+    "CPUThreshold": 90,
+    "MemoryThreshold": 90,
+    "WarnAfterSecs": 900
 }
