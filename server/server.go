@@ -40,6 +40,7 @@ func handleRequests(port string) {
 
 // Run starts the server in given port
 func Run(port string) {
+	util.GetKey()
 	handleRequests(port)
 }
 
