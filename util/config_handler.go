@@ -26,6 +26,13 @@ type Config struct {
 	DiskUsageThreshold       int
 	DisksToIgnore            string
 	WarnAfterSecs            int
+	Services                 []ServiceToMonitor
+}
+
+// ServiceToMonitor holds service info from config.json
+type ServiceToMonitor struct {
+	Name        string
+	ServiceName string
 }
 
 // GetConfig return config struct

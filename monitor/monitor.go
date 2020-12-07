@@ -74,7 +74,7 @@ func saveData() {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		checkForWarn(cpuUsageVal, unixTime, UsageTypeCPU, system.HostName, system.DateTime)
 		wg.Done()
@@ -83,7 +83,11 @@ func saveData() {
 		checkDiskUsage(disks, system.DateTime)
 		wg.Done()
 	}()
-	checkForWarn(memoryUsageVal, unixTime, UsageTypeMemory, system.HostName, system.DateTime)
+	go func() {
+		checkForWarn(memoryUsageVal, unixTime, UsageTypeMemory, system.HostName, system.DateTime)
+		wg.Done()
+	}()
+	checkServices(unixTime)
 	wg.Wait()
 }
 
@@ -254,5 +258,20 @@ func checkDiskUsage(disks []Disk, serverTime string) {
 
 		}
 
+	}
+}
+
+func checkServices(unixTime string) {
+	servicesToCheck := util.GetConfig().Services
+
+	for _, serviceToCheck := range servicesToCheck {
+		service := Service{
+			Name:    serviceToCheck.Name,
+			Running: util.IsServiceUp(serviceToCheck.ServiceName),
+			Time:    unixTime,
+		}
+
+		serviceStr, _ := json.Marshal(&service)
+		util.SaveLogToDB(unixTime, string(serviceStr), "services")
 	}
 }

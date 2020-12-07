@@ -133,6 +133,28 @@ func WriteFile(path string, input string) {
 	}
 }
 
+// StringArrToJSONArr returns json arr of given string arr
+func StringArrToJSONArr(data []string) string {
+	var sb strings.Builder
+	sb.WriteString("[")
+
+	for i, s := range data {
+		sb.WriteString(s)
+
+		if i < (len(data) - 1) {
+			sb.WriteString(",")
+		}
+	}
+
+	sb.WriteString("]")
+	return sb.String()
+}
+
+// IsServiceUp returns true if service is running
+func IsServiceUp(serviceName string) bool {
+	return strings.TrimSpace(Execute("systemctl is-active "+serviceName, true)) == "active"
+}
+
 // GetOpeningEmail return opening email
 func GetOpeningEmail(usageType string, usage string, timeDiff string, hostName string, serverTime string) string {
 	template := "<p>{usageType} usage is >= {usage}% on {hostName} for {timeDiff} minutes.</p> <br><p>Your attention maybe needed to resolve it</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p>"
