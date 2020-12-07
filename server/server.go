@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 	"symon/monitor"
 	"symon/util"
 
@@ -23,6 +22,7 @@ func handleRequests(port string) {
 	router.HandleFunc("/cpuusage", returnCPUUsage)
 	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
 	router.HandleFunc("/memory-historical", returnMemoryHistorical)
+	router.HandleFunc("/services", returnServices)
 
 	server := http.Server{}
 	server.Addr = port
@@ -176,20 +176,9 @@ func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
 	procs := []monitor.ProcessorUsage{}
 	data := util.GetLogFromDB("processor", 100)
 
-	var sb strings.Builder
-	sb.WriteString("[")
+	dataString := util.StringArrToJSONArr(data)
 
-	for i, s := range data {
-		sb.WriteString(s)
-
-		if i < (len(data) - 1) {
-			sb.WriteString(",")
-		}
-	}
-
-	sb.WriteString("]")
-
-	_ = json.Unmarshal([]byte(sb.String()), &procs)
+	_ = json.Unmarshal([]byte(dataString), &procs)
 	json.NewEncoder(w).Encode(&procs)
 }
 
@@ -202,19 +191,23 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 	memories := []monitor.Memory{}
 	data := util.GetLogFromDB("memory", 100)
 
-	var sb strings.Builder
-	sb.WriteString("[")
+	dataString := util.StringArrToJSONArr(data)
 
-	for i, s := range data {
-		sb.WriteString(s)
+	_ = json.Unmarshal([]byte(dataString), &memories)
+	json.NewEncoder(w).Encode(&memories)
+}
 
-		if i < (len(data) - 1) {
-			sb.WriteString(",")
-		}
+func returnServices(w http.ResponseWriter, r *http.Request) {
+	if !isAuthorized(w, r) {
+		return
 	}
 
-	sb.WriteString("]")
+	w.Header().Set("Content-Type", "application/json")
+	services := []monitor.Service{}
+	data := util.GetLogFromDB("services", len(util.GetConfig().Services))
 
-	_ = json.Unmarshal([]byte(sb.String()), &memories)
-	json.NewEncoder(w).Encode(&memories)
+	dataString := util.StringArrToJSONArr(data)
+
+	_ = json.Unmarshal([]byte(dataString), &services)
+	json.NewEncoder(w).Encode(&services)
 }
