@@ -73,7 +73,7 @@ func getTemp() string {
 		}
 		return strconv.FormatInt(int64(resultAsInt/1000), 10) + "c"
 	}
-	return result + "c"
+	return strings.TrimSpace(result) + "c"
 }
 
 func getLoadAvg() string {
