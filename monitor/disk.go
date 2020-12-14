@@ -29,10 +29,16 @@ func GetDisks(time string) []Disk {
 			continue
 		}
 
+		ignore := false
+
 		for _, d := range disksTOIgnore {
 			if strings.TrimSpace(d) == strings.TrimSpace(diskInfo[0]) {
-				continue
+				ignore = true
 			}
+		}
+
+		if ignore {
+			continue
 		}
 
 		out = append(out, Disk{
