@@ -53,7 +53,7 @@ func getTotalSwap() uint64 {
 }
 
 func getSwapPrecentage() string {
-	precentage := (float64(getFreeSwap()) / float64(getTotalSwap()) * 100)
+	precentage := (float64(getUsedSwap()) / float64(getTotalSwap()) * 100)
 	if math.IsNaN(precentage) {
 		return "0%"
 	}
