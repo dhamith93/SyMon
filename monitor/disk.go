@@ -21,12 +21,20 @@ type Disk struct {
 func GetDisks(time string) []Disk {
 	disks := util.GetDiskInfo()
 	out := []Disk{}
+	disksTOIgnore := strings.Split(util.GetConfig().DisksToIgnore, ",")
 
 	for _, disk := range disks {
 		diskInfo := strings.Fields(disk)
 		if len(diskInfo) == 0 {
 			continue
 		}
+
+		for _, d := range disksTOIgnore {
+			if strings.TrimSpace(d) == strings.TrimSpace(diskInfo[0]) {
+				continue
+			}
+		}
+
 		out = append(out, Disk{
 			FileSystem:     diskInfo[0],
 			Type:           diskInfo[1],
