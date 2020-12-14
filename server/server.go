@@ -174,7 +174,7 @@ func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	procs := []monitor.ProcessorUsage{}
-	data := util.GetLogFromDB("processor", 100)
+	data := util.GetLogFromDB("processor", 60)
 
 	dataString := util.StringArrToJSONArr(data)
 
@@ -189,7 +189,7 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	memories := []monitor.Memory{}
-	data := util.GetLogFromDB("memory", 100)
+	data := util.GetLogFromDB("memory", 60)
 
 	dataString := util.StringArrToJSONArr(data)
 
