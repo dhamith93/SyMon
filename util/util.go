@@ -43,6 +43,12 @@ func GetDiskInfo() []string {
 	return strings.Split(result, "\n")[1:]
 }
 
+// GetDiskInodeInfo returns disk inode info
+func GetDiskInodeInfo() []string {
+	result := Execute("df", false, "-T", "-h", "-i", "--exclude-type=tmpfs", "--exclude-type=devtmpfs", "--exclude-type=udev")
+	return strings.Split(result, "\n")[1:]
+}
+
 // ByteToM converts byte to megabyte
 func ByteToM(input uint64) uint64 {
 	if input == 0 {
