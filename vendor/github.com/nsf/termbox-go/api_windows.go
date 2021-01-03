@@ -2,6 +2,8 @@ package termbox
 
 import (
 	"syscall"
+
+	"github.com/mattn/go-runewidth"
 )
 
 // public API
@@ -114,13 +116,23 @@ func Flush() error {
 	update_size_maybe()
 	prepare_diff_messages()
 	for _, diff := range diffbuf {
+		chars := []char_info{}
+		for _, char := range diff.chars {
+			chars = append(chars, char)
+			if runewidth.RuneWidth(rune(char.char)) > 1 {
+				chars = append(chars, char_info{
+					char: ' ',
+					attr: char.attr,
+				})
+			}
+		}
 		r := small_rect{
 			left:   0,
 			top:    diff.pos,
 			right:  term_size.x - 1,
 			bottom: diff.pos + diff.lines - 1,
 		}
-		write_console_output(out, diff.chars, r)
+		write_console_output(out, chars, r)
 	}
 	if !is_cursor_hidden(cursor_x, cursor_y) {
 		move_cursor(cursor_x, cursor_y)
@@ -160,6 +172,50 @@ func SetCell(x, y int, ch rune, fg, bg Attribute) {
 	}
 
 	back_buffer.cells[y*back_buffer.width+x] = Cell{ch, fg, bg}
+}
+
+// Returns the specified cell from the internal back buffer.
+func GetCell(x, y int) Cell {
+	return back_buffer.cells[y*back_buffer.width+x]
+}
+
+// Changes cell's character (rune) in the internal back buffer at the
+// specified position.
+func SetChar(x, y int, ch rune) {
+	if x < 0 || x >= back_buffer.width {
+		return
+	}
+	if y < 0 || y >= back_buffer.height {
+		return
+	}
+
+	back_buffer.cells[y*back_buffer.width+x].Ch = ch
+}
+
+// Changes cell's foreground attributes in the internal back buffer at
+// the specified position.
+func SetFg(x, y int, fg Attribute) {
+	if x < 0 || x >= back_buffer.width {
+		return
+	}
+	if y < 0 || y >= back_buffer.height {
+		return
+	}
+
+	back_buffer.cells[y*back_buffer.width+x].Fg = fg
+}
+
+// Changes cell's background attributes in the internal back buffer at
+// the specified position.
+func SetBg(x, y int, bg Attribute) {
+	if x < 0 || x >= back_buffer.width {
+		return
+	}
+	if y < 0 || y >= back_buffer.height {
+		return
+	}
+
+	back_buffer.cells[y*back_buffer.width+x].Bg = bg
 }
 
 // Returns a slice into the termbox's back buffer. You can get its dimensions
