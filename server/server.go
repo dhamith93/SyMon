@@ -2,27 +2,56 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"symon/monitor"
 	"symon/util"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
+func checkAuth(endpoint func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header["Token"] != nil {
+			token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("Error with method")
+				}
+				return []byte(util.GetKey()), nil
+			})
+
+			if err != nil {
+				util.Log("Error", err.Error())
+			}
+
+			if token.Valid {
+				endpoint(w, r)
+			}
+
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode("Unauthorized")
+			ip, _ := util.GetIncomingIPAddr(r)
+			util.Log("warn", "Unauthorized request from "+ip)
+		}
+	})
+}
+
 func handleRequests(port string) {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/system", returnSystem)
-	router.HandleFunc("/memory", returnMemory)
-	router.HandleFunc("/swap", returnSwap)
-	router.HandleFunc("/disks", returnDisks)
-	router.HandleFunc("/proc", returnProc)
-	router.HandleFunc("/network", returnNetwork)
-	router.HandleFunc("/memusage", returnMemUsage)
-	router.HandleFunc("/cpuusage", returnCPUUsage)
-	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
-	router.HandleFunc("/memory-historical", returnMemoryHistorical)
-	router.HandleFunc("/services", returnServices)
+	router.Handle("/system", checkAuth(returnSystem))
+	router.Handle("/memory", checkAuth(returnMemory))
+	router.Handle("/swap", checkAuth(returnSwap))
+	router.Handle("/disks", checkAuth(returnDisks))
+	router.Handle("/proc", checkAuth(returnProc))
+	router.Handle("/network", checkAuth(returnNetwork))
+	router.Handle("/memusage", checkAuth(returnMemUsage))
+	router.Handle("/cpuusage", checkAuth(returnCPUUsage))
+	router.Handle("/processor-usage-historical", checkAuth(returnProcHistorical))
+	router.Handle("/memory-historical", checkAuth(returnMemoryHistorical))
+	router.Handle("/services", checkAuth(returnServices))
 
 	server := http.Server{}
 	server.Addr = port
@@ -44,22 +73,7 @@ func Run(port string) {
 	handleRequests(port)
 }
 
-func isAuthorized(w http.ResponseWriter, r *http.Request) bool {
-	if len(r.Header["Key"]) != 0 && r.Header["Key"][0] == util.GetKey() {
-		return true
-	}
-	w.WriteHeader(http.StatusUnauthorized)
-	json.NewEncoder(w).Encode("")
-	ip, _ := util.GetIncomingIPAddr(r)
-	util.Log("warn", "Unauthorized request from "+ip)
-	return false
-}
-
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	system := monitor.System{}
 	data := util.GetLogFromDB("system", 1)
@@ -70,10 +84,6 @@ func returnSystem(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	memory := monitor.Memory{}
 	data := util.GetLogFromDB("memory", 1)
@@ -84,10 +94,6 @@ func returnMemory(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	swap := monitor.Swap{}
 	data := util.GetLogFromDB("swap", 1)
@@ -98,10 +104,6 @@ func returnSwap(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	disks := []monitor.Disk{}
 	data := util.GetLogFromDB("disks", 1)
@@ -112,10 +114,6 @@ func returnDisks(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	proc := monitor.Processor{}
 	data := util.GetLogFromDB("processor", 1)
@@ -126,10 +124,6 @@ func returnProc(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	network := []monitor.Network{}
 	data := util.GetLogFromDB("network", 1)
@@ -140,10 +134,6 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnMemUsage(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	memUsage := []monitor.Process{}
 	data := util.GetLogFromDB("memUsage", 1)
@@ -154,10 +144,6 @@ func returnMemUsage(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	cpuUsage := []monitor.Process{}
 	data := util.GetLogFromDB("cpuUsage", 1)
@@ -168,10 +154,6 @@ func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	procs := []monitor.ProcessorUsage{}
 	data := util.GetLogFromDB("processor", 60)
@@ -183,10 +165,6 @@ func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	memories := []monitor.Memory{}
 	data := util.GetLogFromDB("memory", 60)
@@ -198,10 +176,6 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnServices(w http.ResponseWriter, r *http.Request) {
-	if !isAuthorized(w, r) {
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	services := []monitor.Service{}
 	data := util.GetLogFromDB("services", len(util.GetConfig().Services))
