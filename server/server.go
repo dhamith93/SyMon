@@ -23,18 +23,19 @@ func checkAuth(endpoint func(w http.ResponseWriter, r *http.Request)) http.Handl
 			})
 
 			if err != nil {
-				util.Log("Error", err.Error())
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode("Unauthorized")
+				util.Log("Auth Error", err.Error())
 			}
 
 			if token.Valid {
 				endpoint(w, r)
 			}
-
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode("Unauthorized")
 			ip, _ := util.GetIncomingIPAddr(r)
-			util.Log("warn", "Unauthorized request from "+ip)
+			util.Log("Auth Error", "Unauthorized request from "+ip)
 		}
 	})
 }
