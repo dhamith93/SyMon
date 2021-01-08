@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"symon/display"
 	"symon/monitor"
 	"symon/server"
 	"symon/util"
@@ -22,9 +21,7 @@ func main() {
 	}
 
 	collectDataPtr := flag.Bool("collect", false, "Collects and saves data to the sqlite DB")
-	displayEnablePtr := flag.Bool("display", false, "Show monitoring stats")
 	serverEnablePtr := flag.Bool("server", false, "Starts the server")
-	monitorPtr := flag.String("monitor", "self", "Name of the server to monitor")
 
 	flag.Parse()
 
@@ -38,10 +35,6 @@ func main() {
 				server.Run(":" + util.GetConfig().Port)
 				wg.Done()
 			}()
-		}
-
-		if *displayEnablePtr || *monitorPtr != "self" {
-			display.Show(*monitorPtr)
 		}
 
 		wg.Wait()

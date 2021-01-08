@@ -1,25 +1,12 @@
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 ## explicit
 github.com/dgrijalva/jwt-go
-# github.com/gizak/termui/v3 v3.1.0
-## explicit
-github.com/gizak/termui/v3
-github.com/gizak/termui/v3/drawille
-github.com/gizak/termui/v3/widgets
 # github.com/gorilla/mux v1.8.0
 ## explicit
 github.com/gorilla/mux
 # github.com/joho/godotenv v1.3.0
 ## explicit
 github.com/joho/godotenv
-# github.com/mattn/go-runewidth v0.0.9
-github.com/mattn/go-runewidth
 # github.com/mattn/go-sqlite3 v1.14.6
 ## explicit
 github.com/mattn/go-sqlite3
-# github.com/mitchellh/go-wordwrap v1.0.1
-## explicit
-github.com/mitchellh/go-wordwrap
-# github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
-## explicit
-github.com/nsf/termbox-go

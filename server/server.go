@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"symon/monitor"
 	"symon/util"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -42,6 +44,7 @@ func checkAuth(endpoint func(w http.ResponseWriter, r *http.Request)) http.Handl
 
 func handleRequests(port string) {
 	router := mux.NewRouter().StrictSlash(true)
+	router.Handle("/isup", checkAuth(returnIsUp))
 	router.Handle("/system", checkAuth(returnSystem))
 	router.Handle("/memory", checkAuth(returnMemory))
 	router.Handle("/swap", checkAuth(returnSwap))
@@ -74,10 +77,19 @@ func Run(port string) {
 	handleRequests(port)
 }
 
+func returnIsUp(w http.ResponseWriter, r *http.Request) {
+	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
+	data := map[string]string{
+		"time": unixTime,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
 func returnSystem(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	system := monitor.System{}
-	data := util.GetLogFromDB("system", 1)
+	data := util.GetLogFromDBCount("system", 1)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &system)
 	}
@@ -87,7 +99,9 @@ func returnSystem(w http.ResponseWriter, r *http.Request) {
 func returnMemory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	memory := monitor.Memory{}
-	data := util.GetLogFromDB("memory", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("memory", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &memory)
 	}
@@ -97,7 +111,9 @@ func returnMemory(w http.ResponseWriter, r *http.Request) {
 func returnSwap(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	swap := monitor.Swap{}
-	data := util.GetLogFromDB("swap", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("swap", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &swap)
 	}
@@ -107,7 +123,9 @@ func returnSwap(w http.ResponseWriter, r *http.Request) {
 func returnDisks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	disks := []monitor.Disk{}
-	data := util.GetLogFromDB("disks", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("disks", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &disks)
 	}
@@ -117,7 +135,9 @@ func returnDisks(w http.ResponseWriter, r *http.Request) {
 func returnProc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	proc := monitor.Processor{}
-	data := util.GetLogFromDB("processor", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("processor", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &proc)
 	}
@@ -127,7 +147,9 @@ func returnProc(w http.ResponseWriter, r *http.Request) {
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	network := []monitor.Network{}
-	data := util.GetLogFromDB("network", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("network", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &network)
 	}
@@ -137,7 +159,9 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 func returnMemUsage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	memUsage := []monitor.Process{}
-	data := util.GetLogFromDB("memUsage", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("memUsage", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &memUsage)
 	}
@@ -147,7 +171,9 @@ func returnMemUsage(w http.ResponseWriter, r *http.Request) {
 func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	cpuUsage := []monitor.Process{}
-	data := util.GetLogFromDB("cpuUsage", 1)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("cpuUsage", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &cpuUsage)
 	}
@@ -157,7 +183,9 @@ func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	procs := []monitor.ProcessorUsage{}
-	data := util.GetLogFromDB("processor", 60)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := util.GetLogFromDB("processor", from, to, time)
 
 	dataString := util.StringArrToJSONArr(data)
 
@@ -168,7 +196,10 @@ func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
 func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	memories := []monitor.Memory{}
-	data := util.GetLogFromDB("memory", 60)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+
+	data := util.GetLogFromDB("memory", from, to, time)
 
 	dataString := util.StringArrToJSONArr(data)
 
@@ -179,10 +210,52 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 func returnServices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	services := []monitor.Service{}
-	data := util.GetLogFromDB("services", len(util.GetConfig().Services))
+	data := []string{}
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+
+	if (from != 0 && to != 0) || time != 0 {
+		data = util.GetLogFromDB("services", from, to, time)
+	} else {
+		data = util.GetLogFromDBCount("services", len(util.GetConfig().Services))
+	}
 
 	dataString := util.StringArrToJSONArr(data)
 
 	_ = json.Unmarshal([]byte(dataString), &services)
 	json.NewEncoder(w).Encode(&services)
+}
+
+func parseGETForTime(r *http.Request) (int64, error) {
+	timeArr, ok := r.URL.Query()["time"]
+
+	if !ok {
+		return 0, fmt.Errorf("Error parsing GET vars")
+	}
+
+	timeInt, err := strconv.ParseInt(timeArr[0], 10, 64)
+
+	if err != nil {
+		return 0, fmt.Errorf("Error parsing GET vars")
+	}
+
+	return timeInt, nil
+}
+
+func parseGETForDates(r *http.Request) (int64, int64, error) {
+	from, okFrom := r.URL.Query()["from"]
+	to, okTo := r.URL.Query()["to"]
+
+	if !okFrom || !okTo {
+		return 0, 0, fmt.Errorf("Error parsing GET vars")
+	}
+
+	fromTime, err1 := strconv.ParseInt(from[0], 10, 64)
+	toTime, err2 := strconv.ParseInt(to[0], 10, 64)
+
+	if err1 != nil || err2 != nil {
+		return 0, 0, fmt.Errorf("Error parsing GET vars")
+	}
+
+	return fromTime, toTime, nil
 }
