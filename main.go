@@ -8,6 +8,8 @@ import (
 	"symon/server"
 	"symon/util"
 	"sync"
+	"os/signal"
+	//"syscall"
 )
 
 func main() {
@@ -24,6 +26,20 @@ func main() {
 	serverEnablePtr := flag.Bool("server", false, "Starts the server")
 
 	flag.Parse()
+
+	// setup signal catching
+	sigs := make(chan os.Signal, 1)
+
+	// catch all signals since not explicitly listing
+	signal.Notify(sigs)
+	//signal.Notify(sigs,syscall.SIGQUIT)
+
+	// method invoked upon seeing signal
+	go func() {
+	  s := <-sigs
+	  log.Printf("RECEIVED SIGNAL: %s",s)
+	  os.Exit(1)
+	}()
 
 	if *collectDataPtr {
 		monitor.Monitor()

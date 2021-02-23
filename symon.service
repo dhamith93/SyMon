@@ -1,0 +1,26 @@
+[Unit]
+Description=SyMon service
+ConditionPathExists=/home/dhamith93/dev/SyMon/symon
+After=network.target
+ 
+[Service]
+Type=simple
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+startLimitIntervalSec=60
+
+WorkingDirectory=/
+ExecStart=/home/dhamith93/dev/SyMon/symon -server
+
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/symon
+# ExecStartPre=/bin/chown syslog:adm /var/log/symon
+ExecStartPre=/bin/chmod 755 /var/log/symon
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=symonservice
+ 
+[Install]
+WantedBy=multi-user.target
