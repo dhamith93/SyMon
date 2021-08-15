@@ -2,15 +2,20 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 
 	// importing go-sqlite3
+	"github.com/dhamith93/SyMon/internal/fileops"
 	"github.com/dhamith93/SyMon/internal/logger"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // OpenDB opens a SQLite DB file
 func OpenDB(db *sql.DB, path string) (*sql.DB, error) {
+	if !fileops.IsFile(path) {
+		return db, fmt.Errorf("cannot find db for agent")
+	}
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return db, err

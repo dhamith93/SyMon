@@ -2,6 +2,7 @@ package fileops
 
 import (
 	"io/ioutil"
+	"os"
 
 	"github.com/dhamith93/SyMon/internal/logger"
 )
@@ -22,4 +23,10 @@ func WriteFile(path string, input string) {
 	if err != nil {
 		logger.Log("Error", err.Error())
 	}
+}
+
+// IsFile check if file exists
+func IsFile(path string) bool {
+	_, err := os.Open(path)
+	return err == nil
 }
