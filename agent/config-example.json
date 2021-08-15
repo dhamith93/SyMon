@@ -1,0 +1,18 @@
+{
+    "MonitorEndpoint": "http://localhost:9900/collect",
+    "LogFileEnabled": false,
+    "LogFilePath": "",
+    "SQLiteDBLoggingEnabled": false,
+    "SQLiteDBPath": "",
+    "DisksToIgnore": "/dev/loop0,/dev/loop1,/dev/loop2,/dev/loop3",
+    "Services": [
+        {
+            "Name": "Apache",
+            "ServiceName": "apache2"
+        },
+        {
+            "Name": "MySQL",
+            "ServiceName": "mysql"
+        }
+    ]
+}

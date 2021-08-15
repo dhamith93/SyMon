@@ -1,0 +1,69 @@
+package email
+
+import "strings"
+
+// import (
+// "fmt"
+// "net/smtp"
+// "os"
+// "strings"
+// "time"
+
+// "github.com/dhamith93/SyMon/internal/config"
+// "github.com/dhamith93/SyMon/internal/logger"
+// )
+
+// Need to rewrite this to fit the new arch.
+// func SendEmail(subject string, emailBody string) error {
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		logger.Log("Error", "Error loading .env file")
+// 		return err
+// 	}
+// 	emailUser := os.Getenv("EMAIL_USER")
+// 	emailPassword := os.Getenv("EMAIL_PASSWORD")
+// 	emailAuth := smtp.PlainAuth("", emailUser, emailPassword, config.GetConfig().EmailHost)
+
+// 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+// 	header := "From: " + config.GetConfig().EmailFrom + "\r\n" +
+// 		"To: " + config.GetConfig().EmailTo + "\r\n" +
+// 		"Date: " + time.Now().UTC().Format("Mon Jan 02 15:04:05 -0700 2006") + "\r\n" +
+// 		"Subject: " + subject + "\r\n" +
+// 		mime + "\r\n"
+// 	msg := []byte(header + "\n" + emailBody)
+// 	addr := fmt.Sprintf("%s:%s", config.GetConfig().EmailHost, config.GetConfig().EmailPort)
+// 	to := strings.Split(config.GetConfig().EmailTo, ",")
+
+// 	if err := smtp.SendMail(addr, emailAuth, config.GetConfig().EmailFrom, to, msg); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
+// GetOpeningEmail return opening email
+func GetOpeningEmail(usageType string, usage string, timeDiff string, hostName string, serverTime string) string {
+	template := "<p>{usageType} usage is >= {usage}% on {hostName} for {timeDiff} minutes.</p> <br><p>Your attention maybe needed to resolve it</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p>"
+	var replacer = strings.NewReplacer("{usageType}", usageType, "{usage}", usage, "{hostName}", hostName, "{timeDiff}", timeDiff, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}
+
+// GetClosingEmail return closing email
+func GetClosingEmail(usageType string, timeDiff string, hostName string, serverTime string) string {
+	template := "<p>{usageType} usage is now back to normal on {hostName} for {timeDiff} minutes.</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p>"
+	var replacer = strings.NewReplacer("{usageType}", usageType, "{hostName}", hostName, "{timeDiff}", timeDiff, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}
+
+// GetDiskUsageOpeningEmail return opening email for disk usage
+func GetDiskUsageOpeningEmail(disk string, usage string, serverTime string) string {
+	template := "<p>Usage of {disk} is >= {usage}% <br><p>Your attention maybe needed to resolve it</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p></p>"
+	var replacer = strings.NewReplacer("{disk}", disk, "{usage}", usage, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}
+
+// GetDiskUsageClosingEmail return closing email for disk usage
+func GetDiskUsageClosingEmail(disk string, serverTime string) string {
+	template := "<p>Usage of {disk} is went back to normal</p> <br><p>Server time: {serverTime}</p> <br><br> <p>-- SyMon</p></p>"
+	var replacer = strings.NewReplacer("{disk}", disk, "{serverTime}", serverTime)
+	return replacer.Replace(template)
+}

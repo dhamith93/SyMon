@@ -1,0 +1,6 @@
+{
+    "Port": "9900",
+    "SSLEnabled": false,
+    "LogFileEnabled": false,
+    "LogFilePath": ""
+}
