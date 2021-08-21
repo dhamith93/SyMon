@@ -14,3 +14,17 @@
 .spacer {
     width: 4em;
 }
+
+#disks {
+    display: inline-flex;
+    white-space: nowrap;
+}
+
+.strong-td {
+    font-weight: bold;
+    padding-right: 20px;
+}
+
+canvas {
+    margin: auto;
+}

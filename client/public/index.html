@@ -7,13 +7,13 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link rel="stylesheet" href="/css/main.css">
-    <title>SysInfo</title>
+    <title>SyMon</title>
 </head>
 <body>
     <div class="main">
         <div class="row">
             <div class="col s12">
-                <h4>SysInfo</h4>
+                <h4>SyMon</h4>
                 <p>Current system usage info</p>
             </div>
         </div>
@@ -62,7 +62,7 @@
                 <div class="spacer"></div>
                 <div class="switch">
                     <label>
-                        <input type="checkbox" id="disks" class="metric-check-boxes" checked>
+                        <input type="checkbox" id="disk" class="metric-check-boxes" checked>
                         <span class="lever"></span>
                         Disks
                     </label>
@@ -110,9 +110,7 @@
             </div>
         </div>
 
-        <hr>
-
-        <div class="row" id="usage-div">
+        <div class="row" id="usage-graph-div">
             <div class="col s6" id="cpu-usage-div">
                 <h5>CPU Usage</h5>
                 <canvas id="cpu-usage"></canvas>
@@ -135,7 +133,14 @@
             </div>
         </div>
 
-        <hr>
+        <div class="row" id="disk-div">
+            <div class="col s3">
+                <h5>Disks</h5>
+                <div id="disks">                    
+                </div>
+            </div>
+        </div>
+
 
         <div class="row">
             <div class="col s12" id="proc-cpu-div">
@@ -143,8 +148,6 @@
                 <table id="cpu-usage-table"></table>
             </div>
         </div>
-
-        <hr>
 
         <div class="row">
             <div class="col s12" id="proc-mem-div">
@@ -158,6 +161,7 @@
     <script src="/scripts/assets/axios.min.js"></script>
     <script src="/scripts/assets/moment.min.js"></script>
     <script src="/scripts/assets/Chart.min.js"></script>
+    <script src="/scripts/util.js"></script>
     <script src="/scripts/main.js"></script>
 </body>
 </html>

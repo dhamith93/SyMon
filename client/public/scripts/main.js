@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let usageGraphEnabled = true;
     let memoryEnabled = true;
     let swapEnabled = true;
+    let disksEnabled = true;
     let procCpuEnabled = true;
     let procMemEnabled = true;
     let isCPUFirstTime = true;
@@ -276,6 +277,97 @@ document.addEventListener('DOMContentLoaded', ()=> {
         chart.update();
     }
 
+    let handleDisks = (data) => {
+        let parentDiv = document.getElementById('disks');
+    
+        clearElement(parentDiv).then(() => {
+            data.forEach(disk => {
+                let cardDiv = document.createElement('div');
+                cardDiv.style.margin = '20px';
+                let cardContentDiv = document.createElement('div');
+                let table = document.createElement('table');
+                cardDiv.classList.add('card');
+        
+                let canvas = document.createElement('canvas');
+                cardDiv.appendChild(canvas);
+        
+                let tbody = document.createElement('tbody');
+                let processedDisk = {
+                    'File system' : disk['FileSystem'],
+                    'Mount point' : disk['MountPoint'],
+                    'Type' : disk['Type'],
+                    'Size' : disk['Size'],
+                    'Free' : disk['Free'],
+                    'Used' : disk['Used'],
+                    'Used %' : disk['PercentageUsed'],
+                    'Inodes' : disk['Inodes'],
+                    'Inodes free' : disk['IFree'],
+                    'Inodes used' : disk['IUsed'],
+                    'Inodes used %' : disk['IPercentageUsed'],
+                }
+        
+                for (let key in processedDisk) {
+                    let tr = document.createElement('tr');
+                    let td1 = document.createElement('td');
+                    td1.appendChild(document.createTextNode(key));
+                    td1.classList.add('strong-td');
+                    let td2 = document.createElement('td');
+                    td2.appendChild(document.createTextNode(processedDisk[key]));
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tbody.appendChild(tr);
+                }
+        
+                table.appendChild(tbody);
+                cardContentDiv.appendChild(table)
+                cardDiv.appendChild(cardContentDiv);
+        
+                let diskData = convertToSame(disk['Free'], disk['Used']);
+                let units = getUnits(disk['Free'], disk['Used']);
+        
+                let diskUsageChart = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: diskData,
+                            backgroundColor: ['#0074D9', '#FF4136']
+                        }],
+                        labels: [
+                            'Free',
+                            'Used'
+                        ]
+                    },
+                    options : {
+                        tooltips: {
+                            callbacks: {
+                                label: function(tooltipItem, data) {
+                                    let index = tooltipItem.index;
+                                    return data.datasets[tooltipItem.datasetIndex].data[index] + units[0];
+                              },
+                              title: function(tooltipItem, data) {
+                                return data.datasets[tooltipItem[0].datasetIndex].label;
+                              }
+                            }
+                        },
+                        responsive:false
+                    }
+                });
+                
+                parentDiv.appendChild(cardDiv);
+            });
+        });
+    
+        
+    }
+
+    let loadDisks = () => {
+        axios.get('/disks?serverId='+serverId).then((response) => {
+            handleDisks(response.data.Data, cpuUsageTable)
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
     let loadCPUUsage = () => {
         let url = '/processor-usage-historical?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
         if (!isCPUFirstTime) {
@@ -316,15 +408,15 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let clearTable = async(table) => {
-        while (table.firstChild) {
-            table.removeChild(table.lastChild);
+    let clearElement = async(element) => {
+        while (element.firstChild) {
+            element.removeChild(element.lastChild);
         }
     }
 
     let populateTable = (table, data) => {
         if (data) {
-            clearTable(table).then(() => {
+            clearElement(table).then(() => {
                 for (let key in data) {
                     if (data.hasOwnProperty(key) && key !== 'Time') {
                         let row = table.insertRow(-1);
@@ -340,7 +432,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     let handleUsage = (usage, table) => {
         if (usage) {
-            clearTable(table).then(() => {
+            clearElement(table).then(() => {
                 table.createTHead();
                 let tr = document.createElement('tr');
                 procHeaders.forEach(element => {
@@ -381,6 +473,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (swapEnabled)
             loadSwap();
+
+        if (disksEnabled)
+            loadDisks();
         
         if (procCpuEnabled)
             loadProcessCPUUsage();
