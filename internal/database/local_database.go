@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 
 	// importing go-sqlite3
 	"github.com/dhamith93/SyMon/internal/fileops"
@@ -62,6 +63,56 @@ func SaveLogToDB(database *sql.DB, unixTime string, jsonStr string, logType stri
 	return nil
 }
 
+// AddAgent adds the agent to the given DB
+func AddAgent(database *sql.DB, agentId string, path string) error {
+	stmt, err := database.Prepare("CREATE TABLE IF NOT EXISTS agent (agent_id TEXT, db_path TEXT)")
+
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+	defer stmt.Close()
+	stmt.Exec()
+
+	stmt, err = database.Prepare("INSERT INTO agent (agent_id, db_path) VALUES (?, ?)")
+
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	_, err = stmt.Exec(agentId, path)
+
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// AgenIDExists checks if agent is added to the db
+func AgentIDExists(database *sql.DB, agentId string) bool {
+	countStr := dbSelect(database, "SELECT COUNT(*) FROM agent WHERE agent_id = ?", agentId)[0]
+	count, err := strconv.ParseInt(countStr, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return count > 0
+}
+
+func GetAgents(database *sql.DB) []string {
+	return dbSelect(database, "SELECT DISTINCT agent_id FROM agent WHERE agent_id != 'collector'")
+}
+
+// GetDBPathForAgent returns the db path of the given agent
+func GetDBPathForAgent(database *sql.DB, agentId string) string {
+	if AgentIDExists(database, agentId) {
+		return dbSelect(database, "SELECT db_path FROM agent WHERE agent_id = ?", agentId)[0]
+	}
+	return ""
+}
+
 // GetLogFromDBCount returns log records of the given log type
 func GetLogFromDBCount(database *sql.DB, logType string, count int64) []string {
 	return dbSelect(database, "SELECT log_text FROM monitor_log WHERE log_type = ? ORDER BY save_time DESC LIMIT ?", logType, count)
@@ -116,7 +167,6 @@ func dbSelect(database *sql.DB, query string, args ...interface{}) []string {
 		out = append(out, logText)
 	}
 
-	defer database.Close()
 	return out
 }
 

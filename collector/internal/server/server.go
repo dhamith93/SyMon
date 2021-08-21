@@ -20,6 +20,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Agents struct {
+	AgentIDs []string
+}
+
 func Run(port string) {
 	config := config.GetConfig("config.json")
 	handleRequests(port, config)
@@ -28,6 +32,7 @@ func Run(port string) {
 func handleRequests(port string, config config.Config) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Handle("/collect", auth.CheckAuth(returnCollect))
+	router.Handle("/agents", auth.CheckAuth(returnAgents))
 	router.Handle("/system", auth.CheckAuth(returnSystem))
 	router.Handle("/memory", auth.CheckAuth(returnMemory))
 	router.Handle("/swap", auth.CheckAuth(returnSwap))
@@ -84,6 +89,22 @@ func returnCollect(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
+}
+
+func returnAgents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var db *sql.DB
+	db, err := database.OpenDB(db, config.GetConfig("config.json").SQLiteDBPath+"/collector.db")
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
+	defer db.Close()
+	agents := Agents{}
+	agents.AgentIDs = database.GetAgents(db)
+	json.NewEncoder(w).Encode(&agents)
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +218,7 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "network", from, to, time)
+	data := database.GetLogFromDB(db, "networks", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &network)
 	}
@@ -217,7 +238,7 @@ func returnMemUsage(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "memUsage", from, to, time)
+	data := database.GetLogFromDB(db, "memoryUsage", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &memUsage)
 	}
@@ -237,7 +258,7 @@ func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "cpuUsage", from, to, time)
+	data := database.GetLogFromDB(db, "CpuUsage", from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &cpuUsage)
 	}
