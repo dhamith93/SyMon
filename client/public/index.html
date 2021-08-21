@@ -18,41 +18,117 @@
         </div>
 
         <div class="row">
+            <div class="switches">
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="system" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        System
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="cpu" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        CPU
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="usage-graph" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        Usage graph
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="mem" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        Memory
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="swap" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        SWAP
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="disks" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        Disks
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="networks" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        Networks
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="proc-cpu" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        Processes - CPU
+                    </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="proc-mem" class="metric-check-boxes" checked>
+                        <span class="lever"></span>
+                        Processes - Memory
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
             <a class='dropdown-trigger btn' href='#' data-target='dropdown1'>Servers</a>
             <ul id='dropdown1' class='dropdown-content'></ul>
         </div>
 
         <div class="row">
-            <div class="col s6">
+            <div class="col s6" id="system-div">
                 <h5>System</h5>
                 <table id="system-table"></table>
             </div>
-            <div class="col s6">
+            <div class="col s6" id="cpu-div">
                 <h5>CPU</h5>
                 <table id="cpu-table"></table>
             </div>
         </div>
 
         <div class="row">
-            <div class="col s6">
+            <div class="col s6" id="mem-div">
                 <h5>Memory</h5>
                 <table id="memory-table"></table>
             </div>
-            <div class="col s6">
+            <div class="col s6" id="swap-div">
                 <h5>Swap</h5>
                 <table id="swap-table"></table>
             </div>
         </div>
 
         <div class="row">
-            <div class="col s12">
+            <div class="col s12" id="proc-cpu-div">
                 <h5>Processes sorted by CPU usage</h5>
                 <table id="cpu-usage-table"></table>
             </div>
         </div>
 
         <div class="row">
-            <div class="col s12">
+            <div class="col s12" id="proc-mem-div">
                 <h5>Processes sorted by memory usage</h5>
                 <table id="memory-usage-table"></table>
             </div>

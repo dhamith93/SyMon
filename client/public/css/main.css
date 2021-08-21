@@ -6,3 +6,11 @@
     max-width: 90vw;
     margin: auto;
 }
+
+.switches {
+    display: inline-flex;
+}
+
+.spacer {
+    width: 4em;
+}

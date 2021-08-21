@@ -5,14 +5,55 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const swapTable = document.getElementById('swap-table');
     const cpuUsageTable = document.getElementById('cpu-usage-table');
     const memoryUsageTable = document.getElementById('memory-usage-table');
+    const checkBoxes = document.querySelectorAll(".metric-check-boxes");
     const agentsUl = document.getElementById('dropdown1');
     const procHeaders = ['User', 'PID', 'CPU %', 'Memory %', 'Command'];
     let serverTime = 0;
     let hourBefore = 0;
     let serverId = '';
+    let systemEnabled = true;
+    let cpuEnabled = true;
+    let usageGraphEnabled = true;
+    let memoryEnabled = true;
+    let swapEnabled = true;
+    let procCpuEnabled = true;
+    let procMemEnabled = true;
 
     const elems = document.querySelectorAll('.dropdown-trigger');
-    const instances = M.Dropdown.init(elems, null);    
+    const instances = M.Dropdown.init(elems, null);
+    
+    checkBoxes.forEach(checkBox => {
+        checkBox.addEventListener('change', e => {
+            let id = e.target.id; 
+            switch (id) {
+                case 'system':
+                    systemEnabled = e.target.checked;
+                    break;
+                case 'cpu':
+                    cpuEnabled = e.target.checked;
+                    break;
+                case 'mem':
+                    memoryEnabled = e.target.checked;
+                    break;
+                case 'swap':
+                    swapEnabled = e.target.checked;
+                    break;
+                case 'proc-cpu':
+                    procCpuEnabled = e.target.checked;
+                    break;
+                case 'proc-mem':
+                    procMemEnabled = e.target.checked;
+                    break;
+                default:
+                    break;
+            }
+            if (!e.target.checked) {
+                document.getElementById(id + '-div').style.display = 'none';
+            } else {
+                document.getElementById(id + '-div').style.display = 'block';
+            }
+        });
+    });
 
     let handleAgents = (agents) => {
         agents.forEach(agent => {
@@ -155,14 +196,29 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let handleResponse = (data) => {
         serverTime = data['Time'];
         hourBefore = serverTime - 3600;
-        populateTable(systemTable, data);
-        loadCPUUsage();
-        loadMemoryUsage();
-        loadCPU();
-        loadMemory();
-        loadSwap();
-        loadProcessCPUUsage();
-        loadProcessMemUsage();
+        if (systemEnabled)
+            populateTable(systemTable, data);
+
+        if (usageGraphEnabled)
+            loadCPUUsage();
+        
+        if (usageGraphEnabled)
+            loadMemoryUsage();
+
+        if (cpuEnabled)
+            loadCPU();
+
+        if (memoryEnabled)
+            loadMemory();
+
+        if (swapEnabled)
+            loadSwap();
+        
+        if (procCpuEnabled)
+            loadProcessCPUUsage();
+
+        if (procMemEnabled)
+            loadProcessMemUsage();
     }
     loadAgents();    
     loadSysInfo();
