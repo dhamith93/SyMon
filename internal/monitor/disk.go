@@ -15,11 +15,11 @@ type Disk struct {
 	Size            string
 	Used            string
 	Free            string
-	PrecentageUsed  string
+	PercentageUsed  string
 	Inodes          string
 	IUsed           string
 	IFree           string
-	IPrecentageUsed string
+	IPercentageUsed string
 	Time            string
 }
 
@@ -58,11 +58,11 @@ func GetDisks(time string, config config.Config) []Disk {
 			Size:            diskInfo[2],
 			Used:            diskInfo[3],
 			Free:            diskInfo[4],
-			PrecentageUsed:  diskInfo[5],
+			PercentageUsed:  diskInfo[5],
 			Inodes:          diskInodeInfo[2],
 			IUsed:           diskInodeInfo[3],
 			IFree:           diskInodeInfo[4],
-			IPrecentageUsed: diskInodeInfo[5],
+			IPercentageUsed: diskInodeInfo[5],
 			Time:            time,
 		})
 	}

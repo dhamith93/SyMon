@@ -12,7 +12,7 @@ type Swap struct {
 	Used           string
 	Free           string
 	Total          string
-	PrecentageUsed string
+	PercentageUsed string
 	Time           string
 }
 
@@ -22,7 +22,7 @@ func GetSwap() Swap {
 		Used:           strconv.FormatUint(command.ByteToM(getUsedSwap()), 10) + "M",
 		Free:           strconv.FormatUint(command.ByteToM(getFreeSwap()), 10) + "M",
 		Total:          strconv.FormatUint(command.ByteToM(getTotalSwap()), 10) + "M",
-		PrecentageUsed: getSwapPrecentage(),
+		PercentageUsed: getSwapPercentage(),
 	}
 }
 
@@ -53,10 +53,10 @@ func getTotalSwap() uint64 {
 	return out
 }
 
-func getSwapPrecentage() string {
-	precentage := (float64(getUsedSwap()) / float64(getTotalSwap()) * 100)
-	if math.IsNaN(precentage) {
+func getSwapPercentage() string {
+	percentage := (float64(getUsedSwap()) / float64(getTotalSwap()) * 100)
+	if math.IsNaN(percentage) {
 		return "0%"
 	}
-	return strconv.FormatFloat(precentage, 'f', 2, 64) + "%"
+	return strconv.FormatFloat(percentage, 'f', 2, 64) + "%"
 }

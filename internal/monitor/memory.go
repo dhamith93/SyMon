@@ -13,7 +13,7 @@ type Memory struct {
 	Used           string
 	Free           string
 	Total          string
-	PrecentageUsed string
+	PercentageUsed string
 	Time           string
 }
 
@@ -23,7 +23,7 @@ func GetMemory() Memory {
 		Used:           strconv.FormatUint(command.ByteToM(getUsed()), 10) + "M",
 		Free:           strconv.FormatUint(command.ByteToM(getFree()), 10) + "M",
 		Total:          strconv.FormatUint(command.ByteToM(getTotal()), 10) + "M",
-		PrecentageUsed: getPrecentage(),
+		PercentageUsed: getPercentage(),
 	}
 }
 
@@ -58,12 +58,12 @@ func getTotal() uint64 {
 	return out
 }
 
-func getPrecentage() string {
-	precentage := (float64(getUsed()) / float64(getTotal()) * 100)
-	if math.IsNaN(precentage) {
+func getPercentage() string {
+	percentage := (float64(getUsed()) / float64(getTotal()) * 100)
+	if math.IsNaN(percentage) {
 		return "0%"
 	}
-	return strconv.FormatFloat(precentage, 'f', 2, 64) + "%"
+	return strconv.FormatFloat(percentage, 'f', 2, 64) + "%"
 }
 
 // GetFreeCommandOutputAsArr return `free` output
