@@ -1,4 +1,5 @@
 {
+    "ServerId": "unique-id",
     "MonitorEndpoint": "http://localhost:9900/collect",
     "LogFileEnabled": false,
     "LogFilePath": "",

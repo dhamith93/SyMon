@@ -22,6 +22,7 @@ type Config struct {
 	DiskUsageThreshold     int
 	DisksToIgnore          string
 	WarnAfterSecs          int
+	ServerId               string
 	Services               []ServiceToMonitor
 }
 

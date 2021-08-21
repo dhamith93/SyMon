@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"encoding/json"
-	"os"
 	"strconv"
 	"time"
 
@@ -26,7 +25,7 @@ type MonitorData struct {
 
 func MonitorAsJSON(config config.Config) string {
 	monitorData := Monitor(config)
-	monitorData.ServerId = os.Getenv("SYMON_SERVER_ID")
+	monitorData.ServerId = config.ServerId
 	jsonData, err := json.Marshal(&monitorData)
 	if err != nil {
 		logger.Log("Error", err.Error())
