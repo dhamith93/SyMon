@@ -23,6 +23,8 @@ vendor/
 #agent config file 
 agent/config.json
 collector/config.json
-key
 collector/collector
 agent/agent
+client/client
+client/config.json
+key
