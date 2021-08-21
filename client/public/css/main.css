@@ -15,7 +15,7 @@
     width: 4em;
 }
 
-#disks {
+#disks, #networks {
     display: inline-flex;
     white-space: nowrap;
 }

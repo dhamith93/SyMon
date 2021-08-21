@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let memoryEnabled = true;
     let swapEnabled = true;
     let disksEnabled = true;
+    let networksEnabled = true;
     let procCpuEnabled = true;
     let procMemEnabled = true;
     let isCPUFirstTime = true;
@@ -44,6 +45,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     break;
                 case 'swap':
                     swapEnabled = e.target.checked;
+                    break;
+                case 'disk':
+                    disksEnabled = e.target.checked;
+                    break;
+                case 'network':
+                    networksEnabled = e.target.checked;
                     break;
                 case 'proc-cpu':
                     procCpuEnabled = e.target.checked;
@@ -356,13 +363,55 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 parentDiv.appendChild(cardDiv);
             });
         });
-    
-        
     }
 
     let loadDisks = () => {
         axios.get('/disks?serverId='+serverId).then((response) => {
-            handleDisks(response.data.Data, cpuUsageTable)
+            handleDisks(response.data.Data)
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    let handleNetworks = (data) => {
+        let parentDiv = document.getElementById('networks');
+    
+        clearElement(parentDiv).then(() => {
+            data.forEach(network => {
+                let cardDiv = document.createElement('div');
+                cardDiv.style.margin = '20px';
+                let cardContentDiv = document.createElement('div');
+                let table = document.createElement('table');
+                cardDiv.classList.add('card');
+        
+                let tbody = document.createElement('tbody');
+                
+                for (let key in network) {
+                    if (key !== 'Time' && network.hasOwnProperty(key)) {
+                        let tr = document.createElement('tr');
+                        let td1 = document.createElement('td');
+                        td1.classList.add('strong-td');
+                        td1.appendChild(document.createTextNode(key.replace(/([a-z])([A-Z])/, '$1 $2')));
+                        let td2 = document.createElement('td');
+                        let value = network[key];                        
+                        td2.appendChild(document.createTextNode(value));
+                        tr.appendChild(td1);
+                        tr.appendChild(td2);
+                        tbody.appendChild(tr);
+                    }
+                }
+        
+                table.appendChild(tbody);
+                cardContentDiv.appendChild(table)
+                cardDiv.appendChild(cardContentDiv);
+                parentDiv.appendChild(cardDiv);
+            });
+        });
+    }
+
+    let loadNetworks = () => {
+        axios.get('/network?serverId='+serverId).then((response) => {
+            handleNetworks(response.data.Data)
         }, (error) => {
             console.error(error);
         }); 
@@ -476,6 +525,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (disksEnabled)
             loadDisks();
+
+        if (networksEnabled)
+            loadNetworks();
         
         if (procCpuEnabled)
             loadProcessCPUUsage();
