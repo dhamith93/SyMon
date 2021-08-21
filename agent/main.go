@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/monitor"
@@ -28,6 +31,23 @@ func main() {
 	}
 
 	config := config.GetConfig("config.json")
-	monitorData := monitor.MonitorAsJSON(config)
-	send.SendPost(config.MonitorEndpoint, monitorData)
+
+	ticker := time.NewTicker(60 * time.Second)
+	quit := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				monitorData := monitor.MonitorAsJSON(config)
+				send.SendPost(config.MonitorEndpoint, monitorData)
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	wg.Wait()
+	fmt.Println("Exiting")
 }
