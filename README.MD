@@ -1,30 +1,42 @@
 # SyMon
 A simple system monitoring tool to monitor server HW stats. 
 
+## Collecting metrics
+* System info
+* CPU info
+* Memory/SWAP info
+* CPU/Memory usage graphs for past hour
+* Disk usage info
+* Network usage info
+* 10 most CPU/Memory using processes
+
 ## Usage
 
-In progress...
-
-### Agent 
-Collects metrics and send out to collector
-
-#### AGENT ENV VARS
-SYMON_SERVER_ID
-
 ### Collector
-`./collector --init` creates a key
+Change the config-example.json file and save it as config.json.
 
-`./collector --init-agent <server-id>` creates db for agent
+Init Collector by running `./collector --init`. It will create a key file. 
 
-### API
+Copy the key file and place the key file with agents/clients.
 
-* `.../system` 
-* `.../memory` 
-* `.../swap` 
-* `.../disks` 
-* `.../proc` 
-* `.../network` 
-* `.../memusage` 
-* `.../cpuusage` 
-* `.../processor-usage-historical` 
-* `.../memory-historical` 
+Run the collector by executing `./collector`
+
+Agents can be added to collector by running `./collector --init-agent <server-id>`
+
+### Agents
+Change the config-example.json file and save it as config.json. Server-Id should be unique between servers.
+
+Run the agent.
+
+### Clients
+This is used as the frontend of the application. Change the config-example.json file and save it as config.json. 
+
+Run the client and load localhost:port from a browser. Default localhost:9000.
+
+## Todo
+* Network I/O graphs
+* Disk I/O graphs
+* Service status monitoring
+* Alerts
+* Dark mode
+* Search metrics by date range
