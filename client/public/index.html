@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link rel="stylesheet" href="/css/main.css">
     <title>SysInfo</title>
@@ -109,6 +110,20 @@
             </div>
         </div>
 
+        <hr>
+
+        <div class="row" id="usage-div">
+            <div class="col s6" id="cpu-usage-div">
+                <h5>CPU Usage</h5>
+                <canvas id="cpu-usage"></canvas>
+            </div>
+
+            <div class="col s6" id="mem-usage-div">
+                <h5>Memory Usage</h5>
+                <canvas id="mem-usage"></canvas>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col s6" id="mem-div">
                 <h5>Memory</h5>
@@ -120,12 +135,16 @@
             </div>
         </div>
 
+        <hr>
+
         <div class="row">
             <div class="col s12" id="proc-cpu-div">
                 <h5>Processes sorted by CPU usage</h5>
                 <table id="cpu-usage-table"></table>
             </div>
         </div>
+
+        <hr>
 
         <div class="row">
             <div class="col s12" id="proc-mem-div">
@@ -135,8 +154,10 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/scripts/assets/materialize.min.js"></script>
+    <script src="/scripts/assets/axios.min.js"></script>
+    <script src="/scripts/assets/moment.min.js"></script>
+    <script src="/scripts/assets/Chart.min.js"></script>
     <script src="/scripts/main.js"></script>
 </body>
 </html>
