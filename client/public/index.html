@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <title>SysInfo</title>
+</head>
+<body>
+    <div class="main">
+        <div class="row">
+            <div class="col s12">
+                <h4>SysInfo</h4>
+                <p>Current system usage info</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <a class='dropdown-trigger btn' href='#' data-target='dropdown1'>Servers</a>
+            <ul id='dropdown1' class='dropdown-content'></ul>
+        </div>
+
+        <div class="row">
+            <div class="col s6">
+                <h5>System</h5>
+                <table id="system-table"></table>
+            </div>
+            <div class="col s6">
+                <h5>CPU</h5>
+                <table id="cpu-table"></table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col s6">
+                <h5>Memory</h5>
+                <table id="memory-table"></table>
+            </div>
+            <div class="col s6">
+                <h5>Swap</h5>
+                <table id="swap-table"></table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col s12">
+                <h5>Processes sorted by CPU usage</h5>
+                <table id="cpu-usage-table"></table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col s12">
+                <h5>Processes sorted by memory usage</h5>
+                <table id="memory-usage-table"></table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/scripts/main.js"></script>
+</body>
+</html>

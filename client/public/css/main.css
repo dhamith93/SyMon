@@ -1,0 +1,8 @@
+* {
+    font-family: "Fira Code", monospace;
+}
+
+.main {
+    max-width: 90vw;
+    margin: auto;
+}
