@@ -391,7 +391,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                         let tr = document.createElement('tr');
                         let td1 = document.createElement('td');
                         td1.classList.add('strong-td');
-                        td1.appendChild(document.createTextNode(key.replace(/([a-z])([A-Z])/, '$1 $2')));
+                        td1.appendChild(document.createTextNode(key));
                         let td2 = document.createElement('td');
                         let value = network[key];                        
                         td2.appendChild(document.createTextNode(value));
