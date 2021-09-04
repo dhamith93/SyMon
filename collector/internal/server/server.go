@@ -1,6 +1,7 @@
 package server
 
 import (
+	"compress/gzip"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/stringops"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -47,7 +49,7 @@ func handleRequests(port string, config config.Config) {
 
 	server := http.Server{}
 	server.Addr = port
-	server.Handler = router
+	server.Handler = handlers.CompressHandler(router)
 	server.SetKeepAlivesEnabled(false)
 
 	if config.SSLEnabled && config.SSLCertFilePath != "" && config.SSLKeyFilePath != "" {
@@ -61,9 +63,14 @@ func handleRequests(port string, config config.Config) {
 
 func returnCollect(w http.ResponseWriter, r *http.Request) {
 	logger.Log("info", "API HIT "+r.RemoteAddr+" "+time.Now().String())
-	body, _ := ioutil.ReadAll(r.Body)
+	gunzip, err := gzip.NewReader(r.Body)
+	if err != nil {
+		log.Println("error unzip: ", err)
+	}
+	defer gunzip.Close()
+	body, _ := ioutil.ReadAll(gunzip)
 	var monitorData = monitor.MonitorData{}
-	err := json.Unmarshal(body, &monitorData)
+	err = json.Unmarshal(body, &monitorData)
 	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
 
 	data := map[string]string{
@@ -76,7 +83,6 @@ func returnCollect(w http.ResponseWriter, r *http.Request) {
 		data["error"] = err.Error()
 	} else {
 		err := HandleMonitorData(monitorData)
-		logger.Log("info", "API FINISHED "+r.RemoteAddr+" "+time.Now().String())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			data["status"] = "ERROR"
@@ -85,6 +91,7 @@ func returnCollect(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			data["status"] = "OK"
 		}
+		logger.Log("info", "API FINISHED "+r.RemoteAddr+" "+time.Now().String())
 	}
 
 	w.Header().Set("Content-Type", "application/json")

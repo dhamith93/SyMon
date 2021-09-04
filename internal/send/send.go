@@ -2,6 +2,7 @@ package send
 
 import (
 	"bytes"
+	"compress/gzip"
 	"io/ioutil"
 	"net/http"
 
@@ -17,9 +18,21 @@ func SendPost(url string, json string) (bool, int, string) {
 		return false, -1, ""
 	}
 
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	var buf bytes.Buffer
+	g := gzip.NewWriter(&buf)
+	if _, err = g.Write(jsonStr); err != nil {
+		logger.Log("Error", err.Error())
+		return false, -1, ""
+	}
+	if err = g.Close(); err != nil {
+		logger.Log("Error", err.Error())
+		return false, -1, ""
+	}
+
+	req, _ := http.NewRequest("POST", url, &buf)
 	req.Header.Set("Token", token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip")
 
 	return send(req, url)
 }
@@ -33,6 +46,7 @@ func SendGet(url string) (bool, int, string) {
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Token", token)
+	req.Header.Set("Accept-Encoding", "gzip")
 
 	return send(req, url)
 }
@@ -45,7 +59,13 @@ func send(req *http.Request, url string) (bool, int, string) {
 		return false, -1, ""
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	gunzip, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		logger.Log("Error", err.Error())
+		return false, -1, ""
+	}
+	defer gunzip.Close()
+	body, _ := ioutil.ReadAll(gunzip)
 	str := string(body)
 
 	if resp.StatusCode == 200 {

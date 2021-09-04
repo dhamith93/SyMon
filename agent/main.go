@@ -12,17 +12,11 @@ import (
 	"github.com/dhamith93/SyMon/internal/send"
 )
 
-// "log"
-// "os"
-
-// "github.com/dhamith93/SyMon/agent/monitor"
-// "github.com/dhamith93/SyMon/internal/config"
-
-//https://github.com/shirou/gopsutil
-
 func main() {
-	if config.GetConfig("config.json").LogFileEnabled {
-		file, err := os.OpenFile(config.GetConfig("config.json").LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	config := config.GetConfig("config.json")
+
+	if config.LogFileEnabled {
+		file, err := os.OpenFile(config.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -30,9 +24,7 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	config := config.GetConfig("config.json")
-
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(time.Minute)
 	quit := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
