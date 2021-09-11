@@ -115,209 +115,51 @@ func returnAgents(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	system := monitor.System{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	data := database.GetLogFromDBCount(db, "system", 1)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &system)
-	}
-	json.NewEncoder(w).Encode(&system)
+	sendResponse(w, r, "system", monitor.Memory{})
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	memory := monitor.Memory{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "memory", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &memory)
-	}
-	json.NewEncoder(w).Encode(&memory)
+	sendResponse(w, r, "memory", monitor.Memory{})
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	swap := monitor.Swap{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "swap", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &swap)
-	}
-	json.NewEncoder(w).Encode(&swap)
+	sendResponse(w, r, "swap", monitor.Swap{})
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	disks := []monitor.Disk{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "disks", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &disks)
-	}
-	json.NewEncoder(w).Encode(&disks)
+	sendResponseAsArray(w, r, "disks", false, []monitor.Disk{})
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	proc := monitor.Processor{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "processor", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &proc)
-	}
-	json.NewEncoder(w).Encode(&proc)
+	sendResponse(w, r, "processor", monitor.Processor{})
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	network := []monitor.Network{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "networks", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &network)
-	}
-	json.NewEncoder(w).Encode(&network)
+	sendResponseAsArray(w, r, "networks", false, []monitor.Network{})
 }
 
 func returnMemUsage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	memUsage := []monitor.Process{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "memoryUsage", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &memUsage)
-	}
-	json.NewEncoder(w).Encode(&memUsage)
+	sendResponseAsArray(w, r, "memoryUsage", false, []monitor.Process{})
 }
 
 func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	cpuUsage := []monitor.Process{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "CpuUsage", from, to, time)
-	if len(data) > 0 {
-		_ = json.Unmarshal([]byte(data[0]), &cpuUsage)
-	}
-	json.NewEncoder(w).Encode(&cpuUsage)
+	sendResponseAsArray(w, r, "CpuUsage", false, []monitor.Process{})
 }
 
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	procs := []monitor.ProcessorUsage{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, "processor", from, to, time)
-
-	dataString := stringops.StringArrToJSONArr(data)
-
-	_ = json.Unmarshal([]byte(dataString), &procs)
-	json.NewEncoder(w).Encode(&procs)
+	sendResponseAsArray(w, r, "processor", true, []monitor.ProcessorUsage{})
 }
 
 func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	memories := []monitor.Memory{}
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("")
-		return
-	}
-	defer db.Close()
-	time, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-
-	data := database.GetLogFromDB(db, "memory", from, to, time)
-
-	dataString := stringops.StringArrToJSONArr(data)
-
-	_ = json.Unmarshal([]byte(dataString), &memories)
-	json.NewEncoder(w).Encode(&memories)
+	sendResponseAsArray(w, r, "memory", true, []monitor.Memory{})
 }
 
 func returnServices(w http.ResponseWriter, r *http.Request) {
+	sendResponseAsArray(w, r, "services", false, []monitor.Service{})
+}
+
+func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string, convertToJsonArr bool, iface ...interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	services := []monitor.Service{}
 	db, err := getDB(r)
 	if err != nil {
 		logger.Log("ERROR", err.Error())
@@ -326,24 +168,37 @@ func returnServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
-	data := []string{}
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-
-	if (from != 0 && to != 0) || time != 0 {
-		data = database.GetLogFromDB(db, "services", from, to, time)
+	data := database.GetLogFromDB(db, logType, from, to, time)
+	if convertToJsonArr {
+		dataString := stringops.StringArrToJSONArr(data)
+		_ = json.Unmarshal([]byte(dataString), &iface)
 	} else {
-		countArr, ok := r.URL.Query()["count"]
-		count, err := strconv.ParseInt(countArr[0], 10, 64)
-		if ok && err == nil {
-			data = database.GetLogFromDBCount(db, "services", count)
+		if len(data) > 0 {
+			_ = json.Unmarshal([]byte(data[0]), &iface)
 		}
 	}
+	json.NewEncoder(w).Encode(&iface)
+}
 
-	dataString := stringops.StringArrToJSONArr(data)
-
-	_ = json.Unmarshal([]byte(dataString), &services)
-	json.NewEncoder(w).Encode(&services)
+func sendResponse(w http.ResponseWriter, r *http.Request, logType string, iface interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	db, err := getDB(r)
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
+	defer db.Close()
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	data := database.GetLogFromDB(db, logType, from, to, time)
+	if len(data) > 0 {
+		_ = json.Unmarshal([]byte(data[0]), &iface)
+	}
+	json.NewEncoder(w).Encode(&iface)
 }
 
 func getDB(r *http.Request) (*sql.DB, error) {
