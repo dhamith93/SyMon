@@ -32,6 +32,7 @@ func HandleMonitorData(monitorData monitor.MonitorData) error {
 	data["processor"] = &monitorData.Processor
 	data["procUsage"] = &monitorData.ProcUsage
 	data["networks"] = &monitorData.Networks
+	data["services"] = &monitorData.Services
 	data["memoryUsage"] = &monitorData.MemoryUsage
 	data["CpuUsage"] = &monitorData.CpuUsage
 
