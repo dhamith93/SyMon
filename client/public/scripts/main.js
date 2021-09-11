@@ -555,6 +555,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
             let diffRateTx = (newTx - orgTx) / 60;
             orgRx = newRx;
             orgTx = newTx;
+            chart.data.datasets[0].data.shift()
+            chart.data.datasets[1].data.shift()
+            chart.data.labels.shift();
             chart.data.datasets[0].data.push(convertTo(diffRateRx, 'B', 'K'));
             chart.data.datasets[1].data.push(convertTo(diffRateTx, 'B', 'K'));
             chart.data.labels.push(new Date(data[0]['Time'] * 1000));
