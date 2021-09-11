@@ -8,6 +8,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/send"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -44,7 +45,7 @@ func handleRequests(port string) {
 
 	server := http.Server{}
 	server.Addr = port
-	server.Handler = router
+	server.Handler = handlers.CompressHandler(router)
 	server.SetKeepAlivesEnabled(false)
 
 	logger.Log("info", "API started on port "+port)
