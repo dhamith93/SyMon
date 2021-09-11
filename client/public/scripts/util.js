@@ -34,6 +34,8 @@ let convertTo = (amount, unit, outUnit) => {
         case 'B':
             if (outUnit === 'M') {
                 out = (amount / 1024) / 1024;
+            } else if (outUnit === 'K') {
+                out = amount / 1024;
             }
             break;
         case 'M':

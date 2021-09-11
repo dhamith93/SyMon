@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', ()=> {
     const CPU_COLOR = '#FF5733';
     const MEM_COLOR = '#5AD6A9';
+    const NET_RX_COLOR = '#FF8033';
+    const NET_TX_COLOR = '#33AFFF';
     const systemTable = document.getElementById('system-table');
     const cpuTable = document.getElementById('cpu-table');
     const memoryTable = document.getElementById('memory-table');
@@ -26,8 +28,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let procMemEnabled = true;
     let isCPUFirstTime = true;
     let isMemFirstTime = true;
+    let isNetworkFirstTime = true;
     let cpuChart = null;
     let memChart = null;
+    let networkChart = null;
+    let orgRx = 0;
+    let orgTx = 0;
 
     const elems = document.querySelectorAll('.dropdown-trigger');
     const instances = M.Dropdown.init(elems, null);
@@ -405,7 +411,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
                         td1.classList.add('strong-td');
                         td1.appendChild(document.createTextNode(key));
                         let td2 = document.createElement('td');
-                        let value = network[key];                        
+                        let value = network[key];
+                        if (key === 'Rx' || key === 'Tx') {
+                            value = convertTo(parseInt(value, 10), 'B', 'M') + 'M';
+                        }
                         td2.appendChild(document.createTextNode(value));
                         tr.appendChild(td1);
                         tr.appendChild(td2);
@@ -424,9 +433,134 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let loadNetworks = () => {
         axios.get('/network?serverId='+serverId).then((response) => {
             handleNetworks(response.data.Data)
+            if (!isNetworkFirstTime && networkChart !== null) {
+                updateNetworkChart(networkChart, response.data.Data);
+                return;
+            }
         }, (error) => {
             console.error(error);
         }); 
+    }
+
+    let loadNetworksBandwidth = () => {
+        let url = '/network?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
+        axios.get(url).then((response) => {
+            let data = response.data.Data;
+            let oldest = data.pop();
+            orgRx = parseInt(oldest[0]['Rx'], 10);
+            orgTx = parseInt(oldest[0]['Tx'], 10);
+            let processedDataRx = [];
+            let processedDataTx = [];
+            let labels = [];
+            data.forEach(row => {
+                let iface = row[0];
+                let newRx = parseInt(iface['Rx'], 10);
+                let newTx = parseInt(iface['Tx'], 10);
+                let diffRateRx = (newRx - orgRx) / 60;
+                let diffRateTx = (newTx - orgTx) / 60;
+                orgRx = newRx;
+                orgTx = newTx;
+                labels.push(new Date(iface['Time'] * 1000));
+                processedDataRx.push(convertTo(diffRateRx, 'B', 'K'));
+                processedDataTx.push(convertTo(diffRateTx, 'B', 'K'));
+            });
+
+            showNetworkUsageHistory(processedDataRx, processedDataTx, labels, oldest[0]['IP']);
+
+        }, (error) => {
+            console.error(error);
+        });
+    }
+
+    let showNetworkUsageHistory = (processedDataRx, processedDataTx, labels, title) => {
+        let ctx = document.getElementById('network-usage').getContext('2d');    
+        let cData = [];
+        let cOptions = [];
+    
+        cData = {
+            labels: labels,
+            datasets: [{
+                label: 'RX',
+                borderColor: NET_RX_COLOR,
+                data: processedDataRx
+            },
+            {
+                label: 'TX',
+                borderColor: NET_TX_COLOR,
+                data: processedDataTx
+            }
+        ],
+        };
+        cOptions = {
+            title: {
+                display: true,
+                text: title
+            },
+            animation: {
+                duration: 0
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'kB/s'
+                    },
+                    ticks: {
+                        min: 0,
+                        max: Math.max(Math.max(...processedDataRx), Math.max(...processedDataTx)) + 100,
+                        stepSize: 10
+                    }
+                }],
+                xAxes: [{
+                    type: 'time',
+                    time: {
+                        tooltipFormat:'HH:mm:ss MMM D, YYYY',
+                        unit: 'minute',
+                        displayFormats: {
+                            minute: 'HH:mm:ss MMM D'
+                        }
+                    },
+                    ticks:{
+                        display: true,
+                        autoSkip: true,
+                        maxTicksLimit: 11
+                    }
+                }]
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return tooltipItem.yLabel + ' kB/s';
+                    }
+                }
+            }
+        };
+    
+        if (networkChart !== null) {
+            networkChart.destroy();
+        }
+        networkChart = new Chart(ctx, {
+            type: 'line',
+            data: cData,
+            options: cOptions
+        });
+        isNetworkFirstTime = false;
+    }
+
+    let updateNetworkChart = (chart, data) => {
+        if (data && data.length > 0 && chart != null) {
+            let newRx = parseInt(data[0]['Rx'], 10);
+            let newTx = parseInt(data[0]['Tx'], 10);
+            let diffRateRx = (newRx - orgRx) / 60;
+            let diffRateTx = (newTx - orgTx) / 60;
+            orgRx = newRx;
+            orgTx = newTx;
+            chart.data.datasets[0].data.push(convertTo(diffRateRx, 'B', 'K'));
+            chart.data.datasets[1].data.push(convertTo(diffRateTx, 'B', 'K'));
+            chart.data.labels.push(new Date(data[0]['Time'] * 1000));
+            chart.options.scales.yAxes[0].ticks.max = Math.max(Math.max(...chart.data.datasets[0].data), Math.max(...chart.data.datasets[1].data)) + 100;
+            chart.update();
+        }
     }
 
     let loadServices = () => {
@@ -554,8 +688,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (disksEnabled)
             loadDisks();
 
-        if (networksEnabled)
+        if (networksEnabled) {
             loadNetworks();
+            if (isNetworkFirstTime)
+                loadNetworksBandwidth();
+        }
 
         if (servicesEnabled)
             loadServices();

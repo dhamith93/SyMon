@@ -46,19 +46,18 @@ func GetNetwork(time string) []Network {
 
 func getRx(iface string) string {
 	result := command.Execute("cat", false, "/sys/class/net/"+iface+"/statistics/rx_bytes")
-	return processRawTextToM(result)
+	return processRawText(result)
 }
 
 func getTx(iface string) string {
 	result := command.Execute("cat", false, "/sys/class/net/"+iface+"/statistics/tx_bytes")
-	return processRawTextToM(result)
+	return processRawText(result)
 }
 
-func processRawTextToM(input string) string {
-	intResult, err := strconv.ParseUint(strings.TrimSpace(input), 10, 64)
+func processRawText(input string) string {
+	_, err := strconv.ParseUint(strings.TrimSpace(input), 10, 64)
 	if err != nil {
-		return "0 M"
+		return "0"
 	}
-	mbResult := strconv.FormatUint(command.ByteToM(intResult), 10)
-	return string(mbResult) + " M"
+	return input
 }

@@ -171,11 +171,11 @@ func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string,
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
 	data := database.GetLogFromDB(db, logType, from, to, time)
-	if convertToJsonArr {
+	if convertToJsonArr || (to != 0 && from != 0) {
 		dataString := stringops.StringArrToJSONArr(data)
 		_ = json.Unmarshal([]byte(dataString), &iface)
 	} else {
-		if len(data) > 0 {
+		if len(data) > 0 && to == 0 {
 			_ = json.Unmarshal([]byte(data[0]), &iface)
 		}
 	}

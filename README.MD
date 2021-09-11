@@ -7,6 +7,7 @@ A simple system monitoring tool to monitor server HW stats.
 * Memory/SWAP info
 * CPU/Memory usage graphs for past hour
 * Disk usage info
+* Primary network interface bandwidth metrics
 * Network usage info
 * Services Active/Inactive
 * 10 most CPU/Memory using processes
@@ -35,7 +36,6 @@ This is used as the frontend of the application. Change the config-example.json 
 Run the client and load localhost:port from a browser. Default localhost:9000.
 
 ## Todo
-* Network I/O graphs
 * Disk I/O graphs
 * Custom metrics
 * Alerts
