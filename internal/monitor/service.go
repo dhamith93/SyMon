@@ -1,7 +1,6 @@
 package monitor
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/dhamith93/SyMon/internal/command"
@@ -30,6 +29,5 @@ func GetServices(unixTime string, config config.Config) []Service {
 			Time:    unixTime,
 		})
 	}
-	fmt.Println(services)
 	return services
 }
