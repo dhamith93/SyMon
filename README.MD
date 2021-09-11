@@ -36,7 +36,7 @@ Run the client and load localhost:port from a browser. Default localhost:9000.
 ## Todo
 * Network I/O graphs
 * Disk I/O graphs
-* Service status monitoring
+* Custom metrics
 * Alerts
 * Dark mode
 * Search metrics by date range
