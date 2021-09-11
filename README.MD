@@ -8,6 +8,7 @@ A simple system monitoring tool to monitor server HW stats.
 * CPU/Memory usage graphs for past hour
 * Disk usage info
 * Network usage info
+* Services Active/Inactive
 * 10 most CPU/Memory using processes
 
 ## Usage
