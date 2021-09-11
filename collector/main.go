@@ -15,8 +15,9 @@ import (
 )
 
 func main() {
-	if config.GetConfig("config.json").LogFileEnabled {
-		file, err := os.OpenFile(config.GetConfig("config.json").LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	config := config.GetConfig("config.json")
+	if config.LogFileEnabled {
+		file, err := os.OpenFile(config.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -25,16 +26,18 @@ func main() {
 	}
 
 	var initAgentVal string
+	var removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
 	flag.StringVar(&initAgentVal, "init-agent", "", "Register agent")
+	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent DB with monitor data is not deleted.")
 	flag.Parse()
-
-	config := config.GetConfig("config.json")
 
 	if *initPtr {
 		initCollector(config)
 	} else if len(initAgentVal) > 0 {
 		initAgent(initAgentVal, config)
+	} else if len(removeAgentVal) > 0 {
+		removeAgent(removeAgentVal, config)
 	} else {
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -71,6 +74,26 @@ func initAgent(initAgentVal string, config config.Config) {
 			}
 		} else {
 			fmt.Println("Agent ID " + initAgentVal + " exists...")
+		}
+	}
+}
+
+func removeAgent(removeAgentVal string, config config.Config) {
+	fmt.Println("Removing agent " + removeAgentVal)
+	var collectorDB *sql.DB
+	var collectorErr error
+	collectorDB, collectorErr = database.OpenDB(collectorDB, config.SQLiteDBPath+"/collector.db")
+	if collectorErr != nil {
+		fmt.Println(collectorErr.Error())
+	} else {
+		defer collectorDB.Close()
+		if database.AgentIDExists(collectorDB, removeAgentVal) {
+			err := database.RemoveAgent(collectorDB, removeAgentVal)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+		} else {
+			fmt.Println("Agent ID " + removeAgentVal + " doesn't exists...")
 		}
 	}
 }

@@ -91,6 +91,18 @@ func AddAgent(database *sql.DB, agentId string, path string) error {
 	return nil
 }
 
+// RemoveAgent removes agent info
+func RemoveAgent(database *sql.DB, agentId string) error {
+	stmt, err := database.Prepare("DELETE FROM agent WHERE agent_id = ?")
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(agentId)
+	return err
+}
+
 // AgenIDExists checks if agent is added to the db
 func AgentIDExists(database *sql.DB, agentId string) bool {
 	countStr := dbSelect(database, "SELECT COUNT(*) FROM agent WHERE agent_id = ?", agentId)[0]
