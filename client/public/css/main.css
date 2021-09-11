@@ -2,9 +2,20 @@
     font-family: "Fira Code", monospace;
 }
 
+#loader {
+    position: fixed;
+    left: 50%;
+    bottom: 50%;
+}
+
+body {
+    padding: 20px;
+}
+
 .main {
     max-width: 90vw;
     margin: auto;
+    display: none;
 }
 
 .switches {
@@ -16,7 +27,7 @@ label {
 }
 
 .spacer {
-    width: 4em;
+    width: 1em;
 }
 
 #disks, #networks {

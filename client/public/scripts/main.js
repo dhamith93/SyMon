@@ -32,9 +32,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const elems = document.querySelectorAll('.dropdown-trigger');
     const instances = M.Dropdown.init(elems, null);
 
+    document.getElementById('loader').style.display = 'none';
+    document.querySelectorAll('.main')[0].style.display = 'unset';
+
     axios.defaults.headers.post['Accept-Encoding'] = 'gzip'
     
     checkBoxes.forEach(checkBox => {
+        document.getElementById(checkBox.id + '-div').style.display = 'none';
         checkBox.addEventListener('change', e => {
             let id = e.target.id; 
             switch (id) {
@@ -82,6 +86,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
             li.appendChild(a);
             li.addEventListener('click', e => {
                 serverId = agent;
+                checkBoxes.forEach(c => {
+                    c.checked = true;
+                    document.getElementById(c.id + '-div').style.display = 'block';
+                });
                 loadSysInfo();
             });
             agentsUl.appendChild(li);
