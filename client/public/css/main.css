@@ -11,6 +11,10 @@
     display: inline-flex;
 }
 
+label {
+    color: #000 !important;
+}
+
 .spacer {
     width: 4em;
 }

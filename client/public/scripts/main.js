@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const swapTable = document.getElementById('swap-table');
     const cpuUsageTable = document.getElementById('cpu-usage-table');
     const memoryUsageTable = document.getElementById('memory-usage-table');
+    const servicesTable = document.getElementById('services-table');
     const checkBoxes = document.querySelectorAll(".metric-check-boxes");
     const agentsUl = document.getElementById('dropdown1');
     const procHeaders = ['User', 'PID', 'CPU %', 'Memory %', 'Command'];
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let memoryEnabled = true;
     let swapEnabled = true;
     let disksEnabled = true;
+    let servicesEnabled = true;
     let networksEnabled = true;
     let procCpuEnabled = true;
     let procMemEnabled = true;
@@ -29,6 +31,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     const elems = document.querySelectorAll('.dropdown-trigger');
     const instances = M.Dropdown.init(elems, null);
+
+    axios.defaults.headers.post['Accept-Encoding'] = 'gzip'
     
     checkBoxes.forEach(checkBox => {
         checkBox.addEventListener('change', e => {
@@ -417,6 +421,22 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
+    let loadServices = () => {
+        axios.get('/services?serverId='+serverId).then((response) => {
+            try {
+                if (response.data.Data) {
+                    let data = {}
+                    response.data.Data.forEach(row => {
+                        data[row['Name']] = row['Running'] ? '<i class="Small material-icons">check_circle</i>' : '<i class="Small material-icons">cancel</i>';
+                    });
+                    populateTable(servicesTable, data)
+                }
+            } catch (e) { }
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
     let loadCPUUsage = () => {
         let url = '/processor-usage-historical?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
         if (!isCPUFirstTime) {
@@ -528,6 +548,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (networksEnabled)
             loadNetworks();
+
+        if (servicesEnabled)
+            loadServices();
         
         if (procCpuEnabled)
             loadProcessCPUUsage();
