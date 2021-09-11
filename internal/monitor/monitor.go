@@ -20,6 +20,7 @@ type MonitorData struct {
 	Networks    []Network
 	MemoryUsage []Process
 	CpuUsage    []Process
+	Services    []Service
 	ServerId    string
 }
 
@@ -47,6 +48,7 @@ func Monitor(config config.Config) MonitorData {
 	procUsage := GetProcessorUsage()
 	proc.Time = unixTime
 	network := GetNetwork(unixTime)
+	services := GetServices(unixTime, config)
 	memUsage := GetProcessesSortedByMem(unixTime)
 	cpuUsage := GetProcessesSortedByCPU(unixTime)
 
@@ -59,6 +61,7 @@ func Monitor(config config.Config) MonitorData {
 		Processor:   proc,
 		ProcUsage:   procUsage,
 		Networks:    network,
+		Services:    services,
 		MemoryUsage: memUsage,
 		CpuUsage:    cpuUsage,
 	}
