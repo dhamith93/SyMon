@@ -96,6 +96,18 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     c.checked = true;
                     document.getElementById(c.id + '-div').style.display = 'block';
                 });
+                if (cpuChart !== null) {
+                    cpuChart.destroy();
+                }
+                if (memChart !== null) {
+                    memChart.destroy();
+                }
+                if (networkChart !== null) {
+                    networkChart.destroy();
+                }
+                isCPUFirstTime = true;
+                isMemFirstTime = true;
+                isNetworkFirstTime = true;
                 loadSysInfo();
             });
             agentsUl.appendChild(li);
