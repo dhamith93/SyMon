@@ -35,6 +35,11 @@ This is used as the frontend of the application. Change the config-example.json 
 
 Run the client and load localhost:port from a browser. Default localhost:9000.
 
+### Custom metrics
+```bash
+./agent -custom -name=test -unit=byte -value=1.0
+```
+
 ## Todo
 * Disk I/O graphs
 * Custom metrics

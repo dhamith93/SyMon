@@ -25,8 +25,7 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	var initAgentVal string
-	var removeAgentVal string
+	var initAgentVal, removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
 	flag.StringVar(&initAgentVal, "init-agent", "", "Register agent")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent DB with monitor data is not deleted.")

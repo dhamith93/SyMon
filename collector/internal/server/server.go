@@ -34,6 +34,7 @@ func Run(port string) {
 func handleRequests(port string, config config.Config) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Handle("/collect", auth.CheckAuth(returnCollect))
+	router.Handle("/collect-custom", auth.CheckAuth(returnCollectCustom))
 	router.Handle("/agents", auth.CheckAuth(returnAgents))
 	router.Handle("/system", auth.CheckAuth(returnSystem))
 	router.Handle("/memory", auth.CheckAuth(returnMemory))
@@ -62,7 +63,7 @@ func handleRequests(port string, config config.Config) {
 }
 
 func returnCollect(w http.ResponseWriter, r *http.Request) {
-	logger.Log("info", "API HIT "+r.RemoteAddr+" "+time.Now().String())
+	// logger.Log("info", "API HIT "+r.RemoteAddr+" "+time.Now().String())
 	gunzip, err := gzip.NewReader(r.Body)
 	if err != nil {
 		log.Println("error unzip: ", err)
@@ -91,7 +92,42 @@ func returnCollect(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			data["status"] = "OK"
 		}
-		logger.Log("info", "API FINISHED "+r.RemoteAddr+" "+time.Now().String())
+		// logger.Log("info", "API FINISHED "+r.RemoteAddr+" "+time.Now().String())
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+func returnCollectCustom(w http.ResponseWriter, r *http.Request) {
+	gunzip, err := gzip.NewReader(r.Body)
+	if err != nil {
+		log.Println("error unzip: ", err)
+	}
+	defer gunzip.Close()
+	body, _ := ioutil.ReadAll(gunzip)
+	var customMetric = monitor.CustomMetric{}
+	err = json.Unmarshal(body, &customMetric)
+	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
+
+	data := map[string]string{
+		"time": unixTime,
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		data["status"] = "ERROR"
+		data["error"] = err.Error()
+	} else {
+		err := HandleCustomMetric(customMetric)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			data["status"] = "ERROR"
+			data["error"] = err.Error()
+		} else {
+			w.WriteHeader(http.StatusOK)
+			data["status"] = "OK"
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

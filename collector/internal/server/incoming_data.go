@@ -48,3 +48,21 @@ func HandleMonitorData(monitorData monitor.MonitorData) error {
 	}
 	return nil
 }
+
+func HandleCustomMetric(customMetric monitor.CustomMetric) error {
+	var db *sql.DB
+	var err error
+	serverId := customMetric.ServerId
+	time := customMetric.Time
+	path := config.GetConfig("config.json").SQLiteDBPath + "/" + serverId + ".db"
+	db, err = database.OpenDB(db, path)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	res, err := json.Marshal(&customMetric)
+	if err != nil {
+		return err
+	}
+	return database.SaveLogToDB(db, time, string(res), customMetric.Name)
+}
