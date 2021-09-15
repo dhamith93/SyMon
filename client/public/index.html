@@ -134,12 +134,14 @@
         <div class="row" id="usage-graph-div">
             <div class="col s6" id="cpu-usage-div">
                 <h5>CPU Usage</h5>
-                <canvas id="cpu-usage"></canvas>
+                <canvas id="cpu-usage" width="800px"></canvas>
+                <a class="waves-effect waves-light btn" id="cpu-chart-reset">Reset Zoom</a>
             </div>
 
             <div class="col s6" id="mem-usage-div">
                 <h5>Memory Usage</h5>
-                <canvas id="mem-usage"></canvas>
+                <canvas id="mem-usage" width="800px"></canvas>
+                <a class="waves-effect waves-light btn" id="mem-chart-reset">Reset Zoom</a>
             </div>
         </div>
 
@@ -165,7 +167,8 @@
         <div class="row" id="network-div">
             <div class="col s6">
                 <h5>Networks</h5>
-                <canvas id="network-usage"></canvas>
+                <canvas id="network-usage" width="800px"></canvas>
+                <a class="waves-effect waves-light btn" id="net-chart-reset">Reset Zoom</a>
                 <div id="networks">                    
                 </div>
             </div>
@@ -197,8 +200,11 @@
 
     <script src="/scripts/assets/materialize.min.js"></script>
     <script src="/scripts/assets/axios.min.js"></script>
-    <script src="/scripts/assets/moment.min.js"></script>
-    <script src="/scripts/assets/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.1.1/chartjs-plugin-zoom.min.js" integrity="sha512-NxlWEbNbTV6acWnTsWRLIiwzOw0IwHQOYUCKBiu/NqZ+5jSy7gjMbpYI+/4KvaNuZ1qolbw+Vnd76pbIUYEG8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
     <script src="/scripts/util.js"></script>
     <script src="/scripts/main.js"></script>
 </body>

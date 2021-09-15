@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         cData = {
             labels: processedData['labels'],
             datasets: [{
-                label: label + ': ' + last + '%',
+                label: label,
                 borderColor: (type === 'cpu-usage') ? CPU_COLOR : MEM_COLOR,
                 data: processedData['data']
             }],
@@ -227,36 +227,45 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 duration: 0
             },
             scales: {
-                yAxes: [{
-                    ticks: {
-                        min: 0,
-                        max: 100,
-                        stepSize: 10
-                    }
-                }],
-                xAxes: [{
-                    type: 'time',
-                    time: {
-                        tooltipFormat:'HH:mm:ss MMM D, YYYY',
-                        unit: 'minute',
-                        displayFormats: {
-                            minute: 'HH:mm:ss MMM D'
-                        }
-                    },
+                y: {
+                    display: true,
+                    min: 0,
+                    max: 100
+                },
+                x: {
+                    type: 'timeseries',
                     ticks:{
                         display: true,
                         autoSkip: true,
                         maxTicksLimit: 11
                     }
-                }]
+                }
             },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem) {
-                        return tooltipItem.yLabel + "%";
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return context.parsed.y + '%';
+                        }
+                    }
+                },
+                zoom: {
+                    limits: {
+                        x: {min: 0, max: 'original'}
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            modifierKey: 'ctrl'
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'xy',
                     }
                 }
-            }
+            },
+            maintainAspectRatio: true
         };
     
         if (type === 'cpu-usage') {
@@ -313,6 +322,24 @@ document.addEventListener('DOMContentLoaded', ()=> {
         chart.data.labels = newLabels;
         chart.update();
     }
+
+    document.getElementById('cpu-chart-reset').addEventListener('click', () => {
+        if (cpuChart !== null) {
+            cpuChart.resetZoom();
+        }
+    });
+
+    document.getElementById('mem-chart-reset').addEventListener('click', () => {
+        if (memChart !== null) {
+            memChart.resetZoom();
+        }
+    });
+
+    document.getElementById('net-chart-reset').addEventListener('click', () => {
+        if (networkChart !== null) {
+            networkChart.resetZoom();
+        }
+    });
 
     let handleDisks = (data) => {
         let parentDiv = document.getElementById('disks');
@@ -375,18 +402,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
                         ]
                     },
                     options : {
-                        tooltips: {
-                            callbacks: {
-                                label: function(tooltipItem, data) {
-                                    let index = tooltipItem.index;
-                                    return data.datasets[tooltipItem.datasetIndex].data[index] + units[0];
-                              },
-                              title: function(tooltipItem, data) {
-                                return data.datasets[tooltipItem[0].datasetIndex].label;
-                              }
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        return context.formattedValue + units[context.dataIndex];
+                                    }
+                                }
                             }
                         },
-                        responsive:false
+                        responsive: false
                     }
                 });
                 
@@ -512,40 +537,49 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 duration: 0
             },
             scales: {
-                yAxes: [{
-                    scaleLabel: {
+                y: {
+                    display: true,
+                    min: 0,
+                    max: Math.max(Math.max(...processedDataRx), Math.max(...processedDataTx)) + 100,
+                    title: {
                         display: true,
-                        labelString: 'kB/s'
-                    },
-                    ticks: {
-                        min: 0,
-                        max: Math.max(Math.max(...processedDataRx), Math.max(...processedDataTx)) + 100,
-                        stepSize: 10
+                        text: 'kB/s'
                     }
-                }],
-                xAxes: [{
-                    type: 'time',
-                    time: {
-                        tooltipFormat:'HH:mm:ss MMM D, YYYY',
-                        unit: 'minute',
-                        displayFormats: {
-                            minute: 'HH:mm:ss MMM D'
-                        }
-                    },
+                },
+                x: {
+                    type: 'timeseries',
                     ticks:{
                         display: true,
                         autoSkip: true,
                         maxTicksLimit: 11
                     }
-                }]
+                }
             },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem) {
-                        return tooltipItem.yLabel + ' kB/s';
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            return context.parsed.y + 'kB/s';
+                        }
+                    }
+                },
+                zoom: {
+                    limits: {
+                        x: {min: 0, max: 'original'}
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            modifierKey: 'ctrl'
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'xy',
                     }
                 }
-            }
+            },
+            maintainAspectRatio: true
         };
     
         if (networkChart !== null) {
@@ -573,7 +607,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             chart.data.datasets[0].data.push(convertTo(diffRateRx, 'B', 'K'));
             chart.data.datasets[1].data.push(convertTo(diffRateTx, 'B', 'K'));
             chart.data.labels.push(new Date(data[0]['Time'] * 1000));
-            chart.options.scales.yAxes[0].ticks.max = Math.max(Math.max(...chart.data.datasets[0].data), Math.max(...chart.data.datasets[1].data)) + 100;
+            chart.options.scales.y.max = Math.max(Math.max(...chart.data.datasets[0].data), Math.max(...chart.data.datasets[1].data)) + 100;
             chart.update();
         }
     }
@@ -685,11 +719,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (systemEnabled)
             populateTable(systemTable, data);
 
-        if (usageGraphEnabled)
+        if (usageGraphEnabled) {
             loadCPUUsage();
-        
-        if (usageGraphEnabled)
             loadMemoryUsage();
+        }
 
         if (cpuEnabled)
             loadCPU();
