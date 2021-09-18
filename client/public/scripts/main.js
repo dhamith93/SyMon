@@ -10,8 +10,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const cpuUsageTable = document.getElementById('cpu-usage-table');
     const memoryUsageTable = document.getElementById('memory-usage-table');
     const servicesTable = document.getElementById('services-table');
-    const checkBoxes = document.querySelectorAll(".metric-check-boxes");
-    const agentsUl = document.getElementById('dropdown1');
+    const checkBoxes = document.querySelectorAll('.metric-check-boxes');
+    const agentsUl = document.getElementById('dropdown-server');
+    const customMetricsDiv = document.getElementById('custom-metrics');
+    const customMetricsDisplayArea = document.getElementById('custom-metrics-display-area');
     const procHeaders = ['User', 'PID', 'CPU %', 'Memory %', 'Command'];
     let serverTime = 0;
     let hourBefore = 0;
@@ -24,6 +26,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let disksEnabled = true;
     let servicesEnabled = true;
     let networksEnabled = true;
+    let customMetricsEnabled = true;
+    let customMetricsLoaded = false;
+    let enabledCustomMetrics = [];
     let procCpuEnabled = true;
     let procMemEnabled = true;
     let isCPUFirstTime = true;
@@ -72,6 +77,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 case 'proc-mem':
                     procMemEnabled = e.target.checked;
                     break;
+                case 'custom-metric':
+                    customMetricsEnabled = e.target.checked;
+                    break;
                 default:
                     break;
             }
@@ -83,7 +91,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     });
 
-    let handleAgents = (agents) => {
+    function handleAgents(agents) {
         agents.forEach(agent => {
             let a = document.createElement('a');
             let li = document.createElement('li');
@@ -114,7 +122,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    let loadAgents = () => {
+    function loadAgents() {
         axios.get('/agents').then((response) => {
             try {
                 handleAgents(response.data.Data.AgentIDs);
@@ -126,7 +134,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let loadSysInfo = () => {
+    function loadSysInfo() {
         if (serverId) {
             axios.get('/system?serverId='+serverId).then((response) => {
                 handleResponse(response.data.Data);
@@ -136,7 +144,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    let loadCPU = () => {
+    function loadCPU() {
         axios.get('/proc?serverId='+serverId).then((response) => {
             populateTable(cpuTable, response.data.Data);
         }, (error) => {
@@ -144,7 +152,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let loadMemory = () => {
+    function loadMemory() {
         axios.get('/memory?serverId='+serverId).then((response) => {
             populateTable(memoryTable, response.data.Data);
         }, (error) => {
@@ -152,7 +160,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let loadSwap = () => {
+    function loadSwap() {
         axios.get('/swap?serverId='+serverId).then((response) => {
             populateTable(swapTable, response.data.Data);
         }, (error) => {
@@ -177,6 +185,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 case 'disk':
                     usageData = record['PercentageUsed'].replace('%', '');
                     break;
+                case 'custom':
+                    usageData = record['Value'];
+                    break;
                 default:
                     usageData = -1;
                     break;
@@ -190,103 +201,61 @@ document.addEventListener('DOMContentLoaded', ()=> {
         return output;
     }
 
-    let showUsageHistory = (data, elemId, label, type, callback = null) => {
-        let processedData = processHistoricalData(data, type);
-    
-        if (!isCPUFirstTime && type === 'cpu-usage' && cpuChart !== null) {
-            updateChart(cpuChart, processedData['labels'], processedData['data'], label);
-            return;
-        }
-        
-        if (!isMemFirstTime && type === 'mem-usage' && memChart !== null) {
-            updateChart(memChart, processedData['labels'], processedData['data'], label);
-            return;
-        }
-    
-        if (type === 'cpu-usage')
-            isCPUFirstTime = false;
-        if (type === 'mem-usage')
-            isMemFirstTime = false;
-    
-        let ctx = document.getElementById(elemId).getContext('2d');
-        let last = processedData['data'][processedData['data'].length - 1];
-    
-        let cData = [];
-        let cOptions = [];
-    
-        cData = {
-            labels: processedData['labels'],
-            datasets: [{
-                label: label,
-                borderColor: (type === 'cpu-usage') ? CPU_COLOR : MEM_COLOR,
-                data: processedData['data']
-            }],
-        };
-        cOptions = {
-            animation: {
-                duration: 0
+    function generateUsageChart(processedData, elem, label, color, callback) {
+        return new Chart(elem.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: processedData['labels'],
+                datasets: [{
+                    label: label,
+                    borderColor: color,
+                    data: processedData['data']
+                }],
             },
-            scales: {
-                y: {
-                    display: true,
-                    min: 0,
-                    max: 100
+            options: {
+                animation: {
+                    duration: 0
                 },
-                x: {
-                    type: 'timeseries',
-                    ticks:{
+                scales: {
+                    y: {
                         display: true,
-                        autoSkip: true,
-                        maxTicksLimit: 11
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            return context.parsed.y + '%';
+                        min: 0,
+                        max: 100
+                    },
+                    x: {
+                        type: 'timeseries',
+                        ticks:{
+                            display: true,
+                            autoSkip: true,
+                            maxTicksLimit: 11
                         }
                     }
                 },
-                zoom: {
-                    limits: {
-                        x: {min: 0, max: 'original'}
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: callback
+                        }
                     },
                     zoom: {
-                        wheel: {
-                            enabled: true,
-                            modifierKey: 'ctrl'
+                        limits: {
+                            x: {min: 0, max: 'original'}
                         },
-                        pinch: {
-                            enabled: true
-                        },
-                        mode: 'xy',
+                        zoom: {
+                            wheel: {
+                                enabled: true,
+                                modifierKey: 'ctrl'
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy',
+                        }
                     }
-                }
-            },
-            maintainAspectRatio: true
-        };
-    
-        if (type === 'cpu-usage') {
-            if (cpuChart !== null) {
-                cpuChart.destroy();
+                },
+                maintainAspectRatio: true
             }
-            cpuChart = new Chart(ctx, {
-                type: 'line',
-                data: cData,
-                options: cOptions
-            });
-        } else if (type === 'mem-usage') {
-            if (memChart !== null) {
-                memChart.destroy();
-            }
-            memChart = new Chart(ctx, {
-                type: 'line',
-                data: cData,
-                options: cOptions
-            });
-        }
+        });
     
         // document.getElementById(elemId).addEventListener('click', (e) => {
         //     let activePoints = (type === 'cpu-usage') ? 
@@ -300,26 +269,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
         // });
     }
 
-    let updateChart = (chart, labels, data, label) => {
+    function updateChart(chart, labels, data) {
         if (chart.data.labels[0].getTime() === labels[0].getTime()) {
             return;
         }
-    
-        let last = data[data.length - 1];
         chart.data.labels.pop();
         chart.data.datasets[0].data.pop();
-        chart.data.datasets[0].label = label + ': ' + last + '%'
-    
-        let newData = [];
-        let newLabels = [];
-    
-        newData = newData.concat(data);
-        newLabels = newLabels.concat(labels);
-        newData = newData.concat(chart.data.datasets[0].data);
-        newLabels = newLabels.concat(chart.data.labels);
-    
-        chart.data.datasets[0].data = newData;
-        chart.data.labels = newLabels;
+        chart.data.labels = labels.concat(chart.data.labels);
+        chart.data.datasets[0].data = data.concat(chart.data.datasets[0].data);
         chart.update();
     }
 
@@ -341,7 +298,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     });
 
-    let handleDisks = (data) => {
+    function handleDisks(data) {
         let parentDiv = document.getElementById('disks');
     
         clearElement(parentDiv).then(() => {
@@ -420,7 +377,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    let loadDisks = () => {
+    function loadDisks() {
         axios.get('/disks?serverId='+serverId).then((response) => {
             handleDisks(response.data.Data)
         }, (error) => {
@@ -428,7 +385,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let handleNetworks = (data) => {
+    function handleNetworks(data) {
         let parentDiv = document.getElementById('networks');
     
         clearElement(parentDiv).then(() => {
@@ -467,7 +424,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    let loadNetworks = () => {
+    function loadNetworks() {
         axios.get('/network?serverId='+serverId).then((response) => {
             handleNetworks(response.data.Data)
             if (!isNetworkFirstTime && networkChart !== null) {
@@ -479,7 +436,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let loadNetworksBandwidth = () => {
+    function loadNetworksBandwidth() {
         let url = '/network?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
         axios.get(url).then((response) => {
             let data = response.data.Data;
@@ -509,7 +466,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    let showNetworkUsageHistory = (processedDataRx, processedDataTx, labels, title) => {
+    function showNetworkUsageHistory (processedDataRx, processedDataTx, labels, title) {
         let ctx = document.getElementById('network-usage').getContext('2d');    
         let cData = [];
         let cOptions = [];
@@ -593,7 +550,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         isNetworkFirstTime = false;
     }
 
-    let updateNetworkChart = (chart, data) => {
+    function updateNetworkChart(chart, data) {
         if (data && data.length > 0 && chart != null) {
             let newRx = parseInt(data[0]['Rx'], 10);
             let newTx = parseInt(data[0]['Tx'], 10);
@@ -612,7 +569,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    let loadServices = () => {
+    function loadServices() {
         axios.get('/services?serverId='+serverId).then((response) => {
             try {
                 if (response.data.Data) {
@@ -628,31 +585,45 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let loadCPUUsage = () => {
+    function loadCPUUsage() {
         let url = '/processor-usage-historical?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
         if (!isCPUFirstTime) {
             url = '/processor-usage-historical?serverId='+serverId;
         }
         axios.get(url).then((response) => {
-            showUsageHistory(response.data.Data, 'cpu-usage', 'CPU', 'cpu-usage');
+            let processedData = processHistoricalData(response.data.Data, 'cpu-usage');    
+            if (!isCPUFirstTime && cpuChart !== null) {
+                updateChart(cpuChart, processedData['labels'], processedData['data']);
+                return;
+            }
+            isCPUFirstTime = false;
+            if (cpuChart !== null) cpuChart.destroy();
+            cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage'), 'CPU', CPU_COLOR, context => context.parsed.y + '%');
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    let loadMemoryUsage = () => {
+    function loadMemoryUsage() {
         let url = '/memory-historical?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
-        if (!isCPUFirstTime) {
+        if (!isMemFirstTime) {
             url = '/memory-historical?serverId='+serverId;
         }
         axios.get(url).then((response) => {            
-            showUsageHistory(response.data.Data, 'mem-usage', 'MEM', 'mem-usage');
+            let processedData = processHistoricalData(response.data.Data, 'mem-usage');    
+            if (!isMemFirstTime && memChart !== null) {
+                updateChart(memChart, processedData['labels'], processedData['data']);
+                return;
+            }
+            isMemFirstTime = false;
+            if (memChart !== null) memChart.destroy();
+            memChart = generateUsageChart(processedData, document.getElementById('mem-usage'), 'MEM', MEM_COLOR, context => context.parsed.y + '%');
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    let loadProcessCPUUsage = () => {
+    function loadProcessCPUUsage() {
         axios.get('/cpuusage?serverId='+serverId).then((response) => {
             handleUsage(response.data.Data, cpuUsageTable)
         }, (error) => {
@@ -660,7 +631,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let loadProcessMemUsage = () => {
+    function loadProcessMemUsage() {
         axios.get('/memusage?serverId='+serverId).then((response) => {            
             handleUsage(response.data.Data, memoryUsageTable)
         }, (error) => {
@@ -668,13 +639,71 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    let clearElement = async(element) => {
+    function loadCustomMetrics() {
+        clearElement(customMetricsDisplayArea);
+        enabledCustomMetrics.forEach(metric => {
+            let url = '/custom?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime+'&custom-metric='+metric;
+            axios.get(url).then((response) => {
+                if (response.data.Data) {
+                    let processedData = processHistoricalData(response.data.Data, 'custom');
+                    let divId = 'custom-data-for-' + metric;
+                    let canvas = document.createElement('canvas');
+                    canvas.setAttribute('width', '800px');
+                    canvas.setAttribute('id', divId);
+                    customMetricsDisplayArea.appendChild(canvas);
+                    generateUsageChart(processedData, canvas, metric, CPU_COLOR, context => context.parsed.y + ' ' + response.data.Data[0].Unit);
+                }
+            }, (error) => {
+                console.error(error);
+            })
+        });
+    }
+
+    function loadCustomMetricNames() {
+        axios.get('/custom-metric-names?serverId='+serverId).then((response) => {
+            try {
+                if (response.data.Data) {
+                    let data = response.data.Data;
+                    if (data.CustomMetrics) {
+                        clearElement(customMetricsDisplayArea);
+                        data.CustomMetrics.forEach(metric => {
+                            let div = document.createElement('div');
+                            div.classList.add('switch');
+                            let label = document.createElement('label');
+                            let span = document.createElement('span');
+                            span.classList.add('lever');
+                            let chkbox = document.createElement('input');
+                            chkbox.setAttribute('type', 'checkbox');
+                            chkbox.classList.add('metric-check-boxes')
+                            chkbox.addEventListener('click', e => {
+                                enabledCustomMetrics = enabledCustomMetrics.filter(item => item !== metric);
+                                if (e.target.checked) {
+                                    enabledCustomMetrics.push(metric);
+                                }
+                                loadCustomMetrics();
+                            });
+                            label.appendChild(chkbox);
+                            label.appendChild(span);
+                            label.appendChild(document.createTextNode(metric));
+                            div.appendChild(label);
+                            customMetricsDiv.appendChild(div);
+                        });
+                    }
+                    customMetricsLoaded = true;
+                }
+            } catch (e) { }
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    async function clearElement(element){
         while (element.firstChild) {
             element.removeChild(element.lastChild);
         }
     }
 
-    let populateTable = (table, data) => {
+    function populateTable(table, data) {
         if (data) {
             clearElement(table).then(() => {
                 for (let key in data) {
@@ -690,7 +719,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    let handleUsage = (usage, table) => {
+    function handleUsage (usage, table) {
         if (usage) {
             clearElement(table).then(() => {
                 table.createTHead();
@@ -713,7 +742,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    let handleResponse = (data) => {
+    function handleResponse(data) {
         serverTime = data['Time'];
         hourBefore = serverTime - 3600;
         if (systemEnabled)
@@ -744,6 +773,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (servicesEnabled)
             loadServices();
+
+        if (customMetricsEnabled && !customMetricsLoaded) {
+            loadCustomMetricNames();
+        }
+
+        if (customMetricsEnabled) {
+            loadCustomMetrics();
+        }
         
         if (procCpuEnabled)
             loadProcessCPUUsage();

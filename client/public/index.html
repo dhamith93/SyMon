@@ -32,8 +32,8 @@
         </div>
 
         <div class="row">
-            <a class='dropdown-trigger btn' href='#' data-target='dropdown1'>Servers <i class="material-icons right">arrow_drop_down</i></a>
-            <ul id='dropdown1' class='dropdown-content'></ul>
+            <a class='dropdown-trigger btn' href='#' data-target='dropdown-server'>Servers <i class="material-icons right">arrow_drop_down</i></a>
+            <ul id='dropdown-server' class='dropdown-content'></ul>
         </div>
 
         <div class="row">
@@ -117,6 +117,14 @@
                         Processes - Memory
                     </label>
                 </div>
+                <div class="spacer"></div>
+                <div class="switch">
+                    <label>
+                        <input type="checkbox" id="custom-metric" class="metric-check-boxes">
+                        <span class="lever"></span>
+                        Custom Metrics
+                    </label>
+                </div>
             </div>
         </div>        
 
@@ -196,11 +204,19 @@
                 <table id="memory-usage-table"></table>
             </div>
         </div>
+
+        <div class="row">
+            <div class="col s12" id="custom-metric-div">
+                <h5>Custom metrics</h5>
+                <div id='custom-metrics' class="switches"></div>
+                <div id="custom-metrics-display-area"></div>
+            </div>
+        </div>
     </div>
 
-    <script src="/scripts/assets/materialize.min.js"></script>
-    <script src="/scripts/assets/axios.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.1.1/chartjs-plugin-zoom.min.js" integrity="sha512-NxlWEbNbTV6acWnTsWRLIiwzOw0IwHQOYUCKBiu/NqZ+5jSy7gjMbpYI+/4KvaNuZ1qolbw+Vnd76pbIUYEG8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>

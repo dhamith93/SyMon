@@ -11,6 +11,7 @@ A simple system monitoring tool to monitor server HW stats.
 * Network usage info
 * Services Active/Inactive
 * 10 most CPU/Memory using processes
+* Custom timeseries metrics
 
 ## Usage
 
@@ -36,13 +37,14 @@ This is used as the frontend of the application. Change the config-example.json 
 Run the client and load localhost:port from a browser. Default localhost:9000.
 
 ### Custom metrics
+Custom timeseries data can be added using the agent as below. Current server time will be taken as the time.
+
 ```bash
 ./agent -custom -name=test -unit=byte -value=1.0
 ```
 
 ## Todo
 * Disk I/O graphs
-* Custom metrics
 * Alerts
 * Dark mode
 * Search metrics by date range
