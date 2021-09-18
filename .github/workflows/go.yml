@@ -41,9 +41,18 @@ jobs:
         filename: 'release.zip'
         exclusions: '*.git* *.go* *.mod *.sum /*internal/*'
         
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v5.6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }} 
+        
     - name: Upload Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "release.zip"
+        artifacts: 'release.zip'
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
         commit: ${{ steps.vars.outputs.sha_short }}
         token: ${{ secrets.GITHUB_TOKEN }}  
