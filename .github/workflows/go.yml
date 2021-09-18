@@ -23,13 +23,13 @@ jobs:
       run: echo "::set-output name=sha::$(git rev-parse HEAD)"
 
     - name: Build collector
-      run: go build -v -o symon-collector ./collector
+      run: go build -v -o ./collector/symon-collector ./collector
       
     - name: Build aget
-      run: go build -v -o symon-agent ./agent
+      run: go build -v -o ./agent/symon-agent ./agent
       
     - name: Build client
-      run: go build -v -o symon-client ./client
+      run: go build -v -o ./client/symon-client ./client
       
     - name: Test
       run: go test -v ./...
