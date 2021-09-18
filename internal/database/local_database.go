@@ -117,6 +117,10 @@ func GetAgents(database *sql.DB) []string {
 	return dbSelect(database, "SELECT DISTINCT agent_id FROM agent WHERE agent_id != 'collector'")
 }
 
+func GetCustomMetricNames(database *sql.DB) []string {
+	return dbSelect(database, "SELECT DISTINCT log_type FROM monitor_log WHERE log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'memoryUsage', 'CpuUsage')")
+}
+
 // GetDBPathForAgent returns the db path of the given agent
 func GetDBPathForAgent(database *sql.DB, agentId string) string {
 	if AgentIDExists(database, agentId) {

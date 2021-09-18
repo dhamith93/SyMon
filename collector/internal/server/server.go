@@ -26,6 +26,10 @@ type Agents struct {
 	AgentIDs []string
 }
 
+type CustomMetrics struct {
+	CustomMetrics []string
+}
+
 func Run(port string) {
 	config := config.GetConfig("config.json")
 	handleRequests(port, config)
@@ -35,6 +39,8 @@ func handleRequests(port string, config config.Config) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Handle("/collect", auth.CheckAuth(returnCollect))
 	router.Handle("/collect-custom", auth.CheckAuth(returnCollectCustom))
+	router.Handle("/custom", auth.CheckAuth(returnCustom))
+	router.Handle("/custom-metric-names", auth.CheckAuth(returnCustomMetricNames))
 	router.Handle("/agents", auth.CheckAuth(returnAgents))
 	router.Handle("/system", auth.CheckAuth(returnSystem))
 	router.Handle("/memory", auth.CheckAuth(returnMemory))
@@ -148,6 +154,32 @@ func returnAgents(w http.ResponseWriter, r *http.Request) {
 	agents := Agents{}
 	agents.AgentIDs = database.GetAgents(db)
 	json.NewEncoder(w).Encode(&agents)
+}
+
+func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	db, err := getDB(r)
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
+	defer db.Close()
+	customMetrics := CustomMetrics{}
+	customMetrics.CustomMetrics = database.GetCustomMetricNames(db)
+	json.NewEncoder(w).Encode(&customMetrics)
+}
+
+func returnCustom(w http.ResponseWriter, r *http.Request) {
+	customMetricName, err := parseGETForCustomMetricName(r)
+	if err != nil {
+		logger.Log("ERROR", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
+	sendResponseAsArray(w, r, customMetricName, false, []monitor.CustomMetric{})
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
@@ -283,4 +315,18 @@ func parseGETForDates(r *http.Request) (int64, int64, error) {
 	}
 
 	return fromTime, toTime, nil
+}
+
+func parseGETForCustomMetricName(r *http.Request) (string, error) {
+	customMetricNameArr, ok := r.URL.Query()["custom-metric"]
+
+	if !ok {
+		return "", fmt.Errorf("error parsing get vars")
+	}
+
+	if len(customMetricNameArr) == 0 {
+		return "", fmt.Errorf("error parsing get vars")
+	}
+
+	return customMetricNameArr[0], nil
 }

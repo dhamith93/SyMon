@@ -41,6 +41,8 @@ func handleRequests(port string) {
 	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
 	router.HandleFunc("/memory-historical", returnMemoryHistorical)
 	router.HandleFunc("/services", returnServices)
+	router.HandleFunc("/custom", returnCustom)
+	router.HandleFunc("/custom-metric-names", returnCustomMetricNames)
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 
 	server := http.Server{}
@@ -109,6 +111,16 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 
 func returnServices(w http.ResponseWriter, r *http.Request) {
 	url := config.GetConfig("config.json").MonitorEndpoint + "/services?" + r.URL.Query().Encode()
+	handleRequest(url, w)
+}
+
+func returnCustom(w http.ResponseWriter, r *http.Request) {
+	url := config.GetConfig("config.json").MonitorEndpoint + "/custom?" + r.URL.Query().Encode()
+	handleRequest(url, w)
+}
+
+func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
+	url := config.GetConfig("config.json").MonitorEndpoint + "/custom-metric-names?" + r.URL.Query().Encode()
 	handleRequest(url, w)
 }
 
