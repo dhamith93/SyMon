@@ -1,0 +1,49 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+        
+    - name: Set outputs
+      id: vars
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+    - name: Build collector
+      run: go build -v -o symon-collector ./collector
+      
+    - name: Build aget
+      run: go build -v -o symon-agent ./agent
+      
+    - name: Build client
+      run: go build -v -o symon-client ./client
+      
+    - name: Test
+      run: go test -v ./...
+      
+    - name: Archive Release
+      uses: thedoctor0/zip-release@master
+      with:
+        type: 'zip'
+        filename: 'release.zip'
+        exclusions: '*.git* *.go* *.mod *.sum /*internal/*'
+        
+    - name: Upload Release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "release.zip"
+        commit: ${{ steps.vars.outputs.sha_short }}
+        token: ${{ secrets.GITHUB_TOKEN }}  
