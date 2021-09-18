@@ -20,7 +20,7 @@ jobs:
         
     - name: Set outputs
       id: vars
-      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      run: echo "::set-output name=sha::$(git rev-parse HEAD)"
 
     - name: Build collector
       run: go build -v -o symon-collector ./collector
@@ -53,5 +53,5 @@ jobs:
         artifacts: 'release.zip'
         tag: ${{ steps.tag_version.outputs.new_tag }}
         name: Release ${{ steps.tag_version.outputs.new_tag }}
-        commit: ${{ steps.vars.outputs.sha_short }}
+        commit: ${{ steps.vars.outputs.sha }}
         token: ${{ secrets.GITHUB_TOKEN }}  
