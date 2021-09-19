@@ -1,7 +1,9 @@
 # SyMon
 A simple system monitoring tool to monitor server HW stats. 
 
-## Collecting metrics
+[![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dhamith93/SyMon)](https://goreportcard.com/report/github.com/dhamith93/SyMon)
+
+## Collecting metrics and features
 * System info
 * CPU info
 * Memory/SWAP info
