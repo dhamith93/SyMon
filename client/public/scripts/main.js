@@ -51,47 +51,51 @@ document.addEventListener('DOMContentLoaded', ()=> {
     document.querySelectorAll('.main')[0].style.display = 'unset';
 
     axios.defaults.headers.post['Accept-Encoding'] = 'gzip';
+
+    function toggleMetricsSwitch(id, isChecked) {
+        switch (id) {
+            case 'system':
+                systemEnabled = isChecked;
+                break;
+            case 'cpu':
+                cpuEnabled = isChecked;
+                break;
+            case 'mem':
+                memoryEnabled = isChecked;
+                break;
+            case 'swap':
+                swapEnabled = isChecked;
+                break;
+            case 'disk':
+                disksEnabled = isChecked;
+                break;
+            case 'network':
+                networksEnabled = isChecked;
+                break;
+            case 'proc-cpu':
+                procCpuEnabled = isChecked;
+                break;
+            case 'proc-mem':
+                procMemEnabled = isChecked;
+                break;
+            case 'custom-metric':
+                customMetricsEnabled = isChecked;
+                break;
+            default:
+                break;
+        }
+        if (!isChecked) {
+            document.getElementById(id + '-div').style.display = 'none';
+        } else {
+            document.getElementById(id + '-div').style.display = 'block';
+        }
+    }
     
     checkBoxes.forEach(checkBox => {
         document.getElementById(checkBox.id + '-div').style.display = 'none';
         checkBox.addEventListener('change', e => {
             let id = e.target.id; 
-            switch (id) {
-                case 'system':
-                    systemEnabled = e.target.checked;
-                    break;
-                case 'cpu':
-                    cpuEnabled = e.target.checked;
-                    break;
-                case 'mem':
-                    memoryEnabled = e.target.checked;
-                    break;
-                case 'swap':
-                    swapEnabled = e.target.checked;
-                    break;
-                case 'disk':
-                    disksEnabled = e.target.checked;
-                    break;
-                case 'network':
-                    networksEnabled = e.target.checked;
-                    break;
-                case 'proc-cpu':
-                    procCpuEnabled = e.target.checked;
-                    break;
-                case 'proc-mem':
-                    procMemEnabled = e.target.checked;
-                    break;
-                case 'custom-metric':
-                    customMetricsEnabled = e.target.checked;
-                    break;
-                default:
-                    break;
-            }
-            if (!e.target.checked) {
-                document.getElementById(id + '-div').style.display = 'none';
-            } else {
-                document.getElementById(id + '-div').style.display = 'block';
-            }
+            toggleMetricsSwitch(id, e.target.checked);
         });
     });
 
@@ -105,8 +109,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             li.addEventListener('click', e => {
                 serverId = agent;
                 checkBoxes.forEach(c => {
-                    c.checked = true;
-                    document.getElementById(c.id + '-div').style.display = 'block';
+                    toggleMetricsSwitch(c.id, c.checked);
                 });
                 if (cpuChart !== null) {
                     cpuChart.destroy();
