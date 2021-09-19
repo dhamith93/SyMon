@@ -22,6 +22,10 @@ body {
     display: inline-flex;
 }
 
+#date-range-row {
+    display: none;
+}
+
 label {
     color: #000 !important;
 }

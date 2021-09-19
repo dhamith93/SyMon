@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const MEM_COLOR = '#5AD6A9';
     const NET_RX_COLOR = '#FF8033';
     const NET_TX_COLOR = '#33AFFF';
+    const getBtn = document.getElementById('get-btn');
+    const resetBtn = document.getElementById('reset-btn');
     const systemTable = document.getElementById('system-table');
     const cpuTable = document.getElementById('cpu-table');
     const memoryTable = document.getElementById('memory-table');
@@ -15,9 +17,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const customMetricsDiv = document.getElementById('custom-metrics');
     const customMetricsDisplayArea = document.getElementById('custom-metrics-display-area');
     const procHeaders = ['User', 'PID', 'CPU %', 'Memory %', 'Command'];
-    let serverTime = 0;
-    let hourBefore = 0;
+    let toTime = 0;
+    let fromTime = 0;
     let serverId = '';
+    let loadingFromCustomRange = false;
+    let loadingPoinInTime = false;
     let systemEnabled = true;
     let cpuEnabled = true;
     let usageGraphEnabled = true;
@@ -46,7 +50,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     document.getElementById('loader').style.display = 'none';
     document.querySelectorAll('.main')[0].style.display = 'unset';
 
-    axios.defaults.headers.post['Accept-Encoding'] = 'gzip'
+    axios.defaults.headers.post['Accept-Encoding'] = 'gzip';
     
     checkBoxes.forEach(checkBox => {
         document.getElementById(checkBox.id + '-div').style.display = 'none';
@@ -116,6 +120,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 isCPUFirstTime = true;
                 isMemFirstTime = true;
                 isNetworkFirstTime = true;
+                document.getElementById('date-range-row').style.display = 'block';
                 loadSysInfo();
             });
             agentsUl.appendChild(li);
@@ -144,140 +149,57 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    function loadCPU() {
-        axios.get('/proc?serverId='+serverId).then((response) => {
+    function loadCPU(time = null) {
+        let url = '/proc?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             populateTable(cpuTable, response.data.Data);
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    function loadMemory() {
-        axios.get('/memory?serverId='+serverId).then((response) => {
+    function loadMemory(time = null) {
+        let url = '/memory?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             populateTable(memoryTable, response.data.Data);
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    function loadSwap() {
-        axios.get('/swap?serverId='+serverId).then((response) => {
+    function loadSwap(time = null) {
+        let url = '/swap?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             populateTable(swapTable, response.data.Data);
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    function processHistoricalData(data, type) {
-        let output = [];
-        let usage = [];
-        let labels = [];
-    
-        data.reverse();
-    
-        data.forEach(record => {
-            let usageData = null;
-            switch (type) {
-                case 'cpu-usage':
-                    usageData = record['LoadAvg'].replace('%', '');
-                    break;
-                case 'mem-usage':
-                case 'disk':
-                    usageData = record['PercentageUsed'].replace('%', '');
-                    break;
-                case 'custom':
-                    usageData = record['Value'];
-                    break;
-                default:
-                    usageData = -1;
-                    break;
+    function dataPointClickHandler(e, el) {
+        if (el.length > 0) {
+            try {
+                let time = e.chart.data.labels[el[0].index].getTime() / 1000;
+                axios.get('/system?serverId='+serverId+'&time='+time).then((response) => {
+                    loadingPoinInTime = true;
+                    populateTable(systemTable, response.data.Data);
+                    loadInTime(time);
+                }, (error) => {
+                    console.error(error);
+                });
+            } catch (e) {
+                console.log(e);
             }
-            usage.push(parseFloat(usageData));
-            labels.push(new Date(record['Time'] * 1000));
-        });
-    
-        output['data'] = usage; 
-        output['labels'] = labels;
-        return output;
-    }
-
-    function generateUsageChart(processedData, elem, label, color, callback) {
-        return new Chart(elem.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: processedData['labels'],
-                datasets: [{
-                    label: label,
-                    borderColor: color,
-                    data: processedData['data']
-                }],
-            },
-            options: {
-                animation: {
-                    duration: 0
-                },
-                scales: {
-                    y: {
-                        display: true,
-                        min: 0,
-                        max: 100
-                    },
-                    x: {
-                        type: 'timeseries',
-                        ticks:{
-                            display: true,
-                            autoSkip: true,
-                            maxTicksLimit: 11
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: callback
-                        }
-                    },
-                    zoom: {
-                        limits: {
-                            x: {min: 0, max: 'original'}
-                        },
-                        zoom: {
-                            wheel: {
-                                enabled: true,
-                                modifierKey: 'ctrl'
-                            },
-                            pinch: {
-                                enabled: true
-                            },
-                            mode: 'xy',
-                        }
-                    }
-                },
-                maintainAspectRatio: true
-            }
-        });
-    
-        // document.getElementById(elemId).addEventListener('click', (e) => {
-        //     let activePoints = (type === 'cpu-usage') ? 
-        //         cpuChart.getElementsAtEvent(e) : memChart.getElementsAtEvent(e);
-        //     let firstPoint = activePoints[0];
-        //     let unixTime = (type === 'cpu-usage') ?
-        //         cpuChart.data.labels[firstPoint._index] : memChart.data.labels[firstPoint._index];;
-        //     if (firstPoint !== undefined) {
-        //         callback(unixTime);
-        //     }
-        // });
-    }
-
-    function updateChart(chart, labels, data) {
-        if (chart.data.labels[0].getTime() === labels[0].getTime()) {
-            return;
         }
-        chart.data.labels.pop();
-        chart.data.datasets[0].data.pop();
-        chart.data.labels = labels.concat(chart.data.labels);
-        chart.data.datasets[0].data = data.concat(chart.data.datasets[0].data);
-        chart.update();
     }
 
     document.getElementById('cpu-chart-reset').addEventListener('click', () => {
@@ -377,8 +299,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    function loadDisks() {
-        axios.get('/disks?serverId='+serverId).then((response) => {
+    function loadDisks(time = null) {
+        let url = '/disks?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             handleDisks(response.data.Data)
         }, (error) => {
             console.error(error);
@@ -424,10 +350,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    function loadNetworks() {
-        axios.get('/network?serverId='+serverId).then((response) => {
+    function loadNetworks(time = null) {
+        let url = '/network?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             handleNetworks(response.data.Data)
-            if (!isNetworkFirstTime && networkChart !== null) {
+            if (!isNetworkFirstTime && !loadingPoinInTime && networkChart !== null) {
                 updateNetworkChart(networkChart, response.data.Data);
                 return;
             }
@@ -437,7 +367,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     }
 
     function loadNetworksBandwidth() {
-        let url = '/network?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
+        let url = '/network?serverId='+serverId+'&from='+fromTime+'&to='+toTime;
         axios.get(url).then((response) => {
             let data = response.data.Data;
             let oldest = data.pop();
@@ -466,7 +396,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
-    function showNetworkUsageHistory (processedDataRx, processedDataTx, labels, title) {
+    function showNetworkUsageHistory(processedDataRx, processedDataTx, labels, title) {
         let ctx = document.getElementById('network-usage').getContext('2d');    
         let cData = [];
         let cOptions = [];
@@ -536,6 +466,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     }
                 }
             },
+            onClick: (e, el) => {
+                if (el.length > 0) {
+                    try {
+                        let time = e.chart.data.labels[el[0].index].getTime() / 1000;
+                        handlePointInTimeClick(time);
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            },
             maintainAspectRatio: true
         };
     
@@ -569,8 +509,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    function loadServices() {
-        axios.get('/services?serverId='+serverId).then((response) => {
+    function loadServices(time = null) {
+        let url = '/services?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             try {
                 if (response.data.Data) {
                     let data = {}
@@ -586,7 +530,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     }
 
     function loadCPUUsage() {
-        let url = '/processor-usage-historical?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
+        let url = '/processor-usage-historical?serverId='+serverId+'&from='+fromTime+'&to='+toTime;
         if (!isCPUFirstTime) {
             url = '/processor-usage-historical?serverId='+serverId;
         }
@@ -598,14 +542,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
             }
             isCPUFirstTime = false;
             if (cpuChart !== null) cpuChart.destroy();
-            cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage'), 'CPU', CPU_COLOR, context => context.parsed.y + '%');
+            cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage'), 'CPU', CPU_COLOR, context => context.parsed.y + '%', dataPointClickHandler);
         }, (error) => {
             console.error(error);
         }); 
     }
 
     function loadMemoryUsage() {
-        let url = '/memory-historical?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime;
+        let url = '/memory-historical?serverId='+serverId+'&from='+fromTime+'&to='+toTime;
         if (!isMemFirstTime) {
             url = '/memory-historical?serverId='+serverId;
         }
@@ -617,22 +561,30 @@ document.addEventListener('DOMContentLoaded', ()=> {
             }
             isMemFirstTime = false;
             if (memChart !== null) memChart.destroy();
-            memChart = generateUsageChart(processedData, document.getElementById('mem-usage'), 'MEM', MEM_COLOR, context => context.parsed.y + '%');
+            memChart = generateUsageChart(processedData, document.getElementById('mem-usage'), 'MEM', MEM_COLOR, context => context.parsed.y + '%', dataPointClickHandler);
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    function loadProcessCPUUsage() {
-        axios.get('/cpuusage?serverId='+serverId).then((response) => {
+    function loadProcessCPUUsage(time = null) {
+        let url = '/cpuusage?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
             handleUsage(response.data.Data, cpuUsageTable)
         }, (error) => {
             console.error(error);
         }); 
     }
 
-    function loadProcessMemUsage() {
-        axios.get('/memusage?serverId='+serverId).then((response) => {            
+    function loadProcessMemUsage(time = null) {
+        let url = '/memusage?serverId='+serverId;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {            
             handleUsage(response.data.Data, memoryUsageTable)
         }, (error) => {
             console.error(error);
@@ -642,7 +594,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     function loadCustomMetrics() {
         clearElement(customMetricsDisplayArea);
         enabledCustomMetrics.forEach(metric => {
-            let url = '/custom?serverId='+serverId+'&from='+hourBefore+'&to='+serverTime+'&custom-metric='+metric;
+            let url = '/custom?serverId='+serverId+'&from='+fromTime+'&to='+toTime+'&custom-metric='+metric;
             axios.get(url).then((response) => {
                 if (response.data.Data) {
                     let processedData = processHistoricalData(response.data.Data, 'custom');
@@ -697,28 +649,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    async function clearElement(element){
-        while (element.firstChild) {
-            element.removeChild(element.lastChild);
-        }
-    }
-
-    function populateTable(table, data) {
-        if (data) {
-            clearElement(table).then(() => {
-                for (let key in data) {
-                    if (data.hasOwnProperty(key) && key !== 'Time') {
-                        let row = table.insertRow(-1);
-                        let cell1 = row.insertCell(-1);
-                        cell1.innerHTML = key;
-                        let cell2 = row.insertCell(-1);
-                        cell2.innerHTML = data[key];
-                    }
-                }
-            });
-        }
-    }
-
     function handleUsage (usage, table) {
         if (usage) {
             clearElement(table).then(() => {
@@ -742,37 +672,34 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    function handleResponse(data) {
-        serverTime = data['Time'];
-        hourBefore = serverTime - 3600;
-        if (systemEnabled)
+    getBtn.addEventListener('click', e => {
+        let from = new Date(document.getElementById('from-datetime').value);
+        let to = new Date(document.getElementById('to-datetime').value);
+        if (from > to) {
+            return;
+        }
+        loadingFromCustomRange = true;
+        fromTime = from.getTime() / 1000;
+        toTime = to.getTime() / 1000;
+
+        isCPUFirstTime = true;
+        isMemFirstTime = true;
+        isNetworkFirstTime = true;
+
+        let tmpFromTime = toTime - 60;
+        axios.get('/system?serverId='+serverId+'&from='+tmpFromTime+'&to='+toTime).then((response) => {
+            let data = response.data.Data;
             populateTable(systemTable, data);
+            loadInTime(data.Time);
+        }, (error) => {
+            console.error(error);
+        });
 
         if (usageGraphEnabled) {
             loadCPUUsage();
             loadMemoryUsage();
+            loadNetworksBandwidth();
         }
-
-        if (cpuEnabled)
-            loadCPU();
-
-        if (memoryEnabled)
-            loadMemory();
-
-        if (swapEnabled)
-            loadSwap();
-
-        if (disksEnabled)
-            loadDisks();
-
-        if (networksEnabled) {
-            loadNetworks();
-            if (isNetworkFirstTime)
-                loadNetworksBandwidth();
-        }
-
-        if (servicesEnabled)
-            loadServices();
 
         if (customMetricsEnabled && !customMetricsLoaded) {
             loadCustomMetricNames();
@@ -781,16 +708,87 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (customMetricsEnabled) {
             loadCustomMetrics();
         }
-        
+    });
+
+    resetBtn.addEventListener('click', e => {
+        loadingFromCustomRange = false;
+        isCPUFirstTime = true;
+        isMemFirstTime = true;
+        isNetworkFirstTime = true;
+        isFirstRodeo = true;
+        loadingPoinInTime = false;
+        loadSysInfo();
+    });
+
+    function loadInTime(time = null) {
+        if (cpuEnabled)
+            loadCPU(time);
+
+        if (memoryEnabled)
+            loadMemory(time);
+
+        if (swapEnabled)
+            loadSwap(time);
+
+        if (disksEnabled)
+            loadDisks(time);
+
+        if (networksEnabled)
+            loadNetworks(time);
+
+        if (servicesEnabled)
+            loadServices(time);
+
         if (procCpuEnabled)
-            loadProcessCPUUsage();
+            loadProcessCPUUsage(time);
 
         if (procMemEnabled)
-            loadProcessMemUsage();
+            loadProcessMemUsage(time);
+    }
+
+    function handleResponse(data) {
+        toTime = data['Time'];
+        fromTime = toTime - 3600;
+
+        flatpickr('#from-datetime', {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            defaultDate: new Date(fromTime * 1000),
+            maxDate: new Date(toTime * 1000),
+        });
+    
+        flatpickr('#to-datetime', {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            defaultDate: new Date(toTime * 1000),
+            maxDate: new Date(toTime * 1000),
+        });
+
+        if (systemEnabled)
+            populateTable(systemTable, data);
+
+        if (usageGraphEnabled) {
+            loadCPUUsage();
+            loadMemoryUsage();
+        }
+
+        loadInTime();
+
+        if (networksEnabled && isNetworkFirstTime)
+            loadNetworksBandwidth();
+
+        if (customMetricsEnabled && !customMetricsLoaded) {
+            loadCustomMetricNames();
+        }
+
+        if (customMetricsEnabled) {
+            loadCustomMetrics();
+        }
     }
     loadAgents();    
     loadSysInfo();
     setInterval(() => {
-        loadSysInfo();
+        if (!loadingFromCustomRange && !loadingPoinInTime)
+            loadSysInfo();
     }, 60000);
 });

@@ -5,7 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/css/materialize.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="/css/main.css">
     <title>SyMon</title>
 </head>
@@ -26,8 +27,7 @@
     <div class="main">
         <div class="row">
             <div class="col s12">
-                <h4>SyMon</h4>
-                <p>Current system usage info</p>
+                <h5>SyMon - System monitoring report</h5>
             </div>
         </div>
 
@@ -126,7 +126,22 @@
                     </label>
                 </div>
             </div>
-        </div>        
+        </div>
+        
+        <div class="row" id="date-range-row">
+            <div class="input-field col s2">
+                <input type="datetime" id="from-datetime">
+                <label for="from-datetime" class="active">From date and time</label>
+            </div>
+            <div class="input-field col s2">
+                <input type="datetime" id="to-datetime">
+                <label for="to-datetime" class="active">To date and time</label>
+            </div>
+            <div class="input-field col s2">
+                <a class="waves-effect waves-light btn" id="get-btn">Get</a>
+                <a class="waves-effect waves-light btn red darken-1" id="reset-btn">Reset</a>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col s6" id="system-div">
@@ -214,8 +229,9 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/js/materialize.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.1.1/chartjs-plugin-zoom.min.js" integrity="sha512-NxlWEbNbTV6acWnTsWRLIiwzOw0IwHQOYUCKBiu/NqZ+5jSy7gjMbpYI+/4KvaNuZ1qolbw+Vnd76pbIUYEG8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

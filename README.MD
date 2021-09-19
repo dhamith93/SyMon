@@ -12,6 +12,8 @@ A simple system monitoring tool to monitor server HW stats.
 * Services Active/Inactive
 * 10 most CPU/Memory using processes
 * Custom timeseries metrics
+* Search metrics by date range
+* Point-in-time metrics loading
 
 ## Usage
 
@@ -47,4 +49,3 @@ Custom timeseries data can be added using the agent as below. Current server tim
 * Disk I/O graphs
 * Alerts
 * Dark mode
-* Search metrics by date range

@@ -69,3 +69,127 @@ let convertTo = (amount, unit, outUnit) => {
     }
     return Math.round(out);
 }
+
+async function clearElement(element){
+    while (element.firstChild) {
+        element.removeChild(element.lastChild);
+    }
+}
+
+function populateTable(table, data) {
+    if (data) {
+        clearElement(table).then(() => {
+            for (let key in data) {
+                if (data.hasOwnProperty(key) && key !== 'Time') {
+                    let row = table.insertRow(-1);
+                    let cell1 = row.insertCell(-1);
+                    cell1.innerHTML = key;
+                    let cell2 = row.insertCell(-1);
+                    cell2.innerHTML = data[key];
+                }
+            }
+        });
+    }
+}
+
+function processHistoricalData(data, type) {
+    let output = [];
+    let usage = [];
+    let labels = [];
+
+    data.reverse();
+
+    data.forEach(record => {
+        let usageData = null;
+        switch (type) {
+            case 'cpu-usage':
+                usageData = record['LoadAvg'].replace('%', '');
+                break;
+            case 'mem-usage':
+            case 'disk':
+                usageData = record['PercentageUsed'].replace('%', '');
+                break;
+            case 'custom':
+                usageData = record['Value'];
+                break;
+            default:
+                usageData = -1;
+                break;
+        }
+        usage.push(parseFloat(usageData));
+        labels.push(new Date(record['Time'] * 1000));
+    });
+
+    output['data'] = usage; 
+    output['labels'] = labels;
+    return output;
+}
+
+function generateUsageChart(processedData, elem, label, color, callback, dataPointClickHandler) {
+    return new Chart(elem.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: processedData['labels'],
+            datasets: [{
+                label: label,
+                borderColor: color,
+                data: processedData['data']
+            }],
+        },
+        options: {
+            animation: {
+                duration: 0
+            },
+            scales: {
+                y: {
+                    display: true,
+                    min: 0,
+                    max: 100
+                },
+                x: {
+                    type: 'timeseries',
+                    ticks:{
+                        display: true,
+                        autoSkip: true,
+                        maxTicksLimit: 11
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: callback
+                    }
+                },
+                zoom: {
+                    limits: {
+                        x: {min: 0, max: 'original'}
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            modifierKey: 'ctrl'
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'xy',
+                    }
+                }
+            },
+            onClick: dataPointClickHandler,
+            maintainAspectRatio: true
+        }
+    });
+}
+
+function updateChart(chart, labels, data) {
+    if (chart.data.labels[0].getTime() === labels[0].getTime()) {
+        return;
+    }
+    chart.data.labels.pop();
+    chart.data.datasets[0].data.pop();
+    chart.data.labels = labels.concat(chart.data.labels);
+    chart.data.datasets[0].data = data.concat(chart.data.datasets[0].data);
+    chart.update();
+}
