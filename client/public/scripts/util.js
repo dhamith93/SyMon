@@ -149,9 +149,7 @@ function generateUsageChart(processedData, elem, label, color, callback, dataPoi
                 x: {
                     type: 'timeseries',
                     ticks:{
-                        display: true,
-                        autoSkip: true,
-                        maxTicksLimit: 11
+                        display: true
                     }
                 }
             },

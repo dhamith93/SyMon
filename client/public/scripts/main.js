@@ -436,9 +436,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 x: {
                     type: 'timeseries',
                     ticks:{
-                        display: true,
-                        autoSkip: true,
-                        maxTicksLimit: 11
+                        display: true
                     }
                 }
             },
