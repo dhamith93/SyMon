@@ -467,14 +467,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 }
             },
             onClick: (e, el) => {
-                if (el.length > 0) {
-                    try {
-                        let time = e.chart.data.labels[el[0].index].getTime() / 1000;
-                        handlePointInTimeClick(time);
-                    } catch (e) {
-                        console.log(e);
-                    }
-                }
+                dataPointClickHandler(e, el);
             },
             maintainAspectRatio: true
         };
