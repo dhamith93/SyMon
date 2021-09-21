@@ -12,9 +12,7 @@ body {
     padding: 20px;
 }
 
-.main {
-    max-width: 90vw;
-    margin: auto;
+main {
     display: none;
 }
 
@@ -31,7 +29,7 @@ label {
 }
 
 .spacer {
-    width: 1em;
+    width: 0.5em;
 }
 
 #disks, #networks {
@@ -46,4 +44,26 @@ label {
 
 canvas {
     margin: auto;
+}
+
+header, main, footer {
+    padding-left: 250px;
+}
+
+@media only screen and (max-width: 992.99px) {
+    .sidenav.sidenav-fixed {
+        -webkit-transform: none !important;
+        transform: none !important;
+    }
+}
+
+.sidenav {
+    width: 250px;
+}
+
+.sidenav li>h5 {
+    display: block;
+    height: 48px;
+    line-height: 48px;
+    text-align: center;
 }

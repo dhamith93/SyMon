@@ -43,12 +43,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let networkChart = null;
     let orgRx = 0;
     let orgTx = 0;
+    let currentActiveNavLi = null;
 
-    const elems = document.querySelectorAll('.dropdown-trigger');
-    const instances = M.Dropdown.init(elems, null);
+    const elems = document.querySelectorAll('.sidenav');
+    const instances = M.Sidenav.init(elems);
 
     document.getElementById('loader').style.display = 'none';
-    document.querySelectorAll('.main')[0].style.display = 'unset';
+    document.getElementsByTagName('main')[0].style.display = 'block';
 
     axios.defaults.headers.post['Accept-Encoding'] = 'gzip';
 
@@ -107,6 +108,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
             a.appendChild(document.createTextNode(agent));
             li.appendChild(a);
             li.addEventListener('click', e => {
+                if (currentActiveNavLi !== null) {
+                   currentActiveNavLi.classList.remove('active');
+                }
+                currentActiveNavLi = e.target.parentNode;
+                currentActiveNavLi.classList.add('active');
+
                 serverId = agent;
                 checkBoxes.forEach(c => {
                     toggleMetricsSwitch(c.id, c.checked);

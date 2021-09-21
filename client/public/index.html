@@ -24,18 +24,20 @@
             </div>
         </div>
     </div>
-    <div class="main">
-        <div class="row">
-            <div class="col s12">
-                <h5>SyMon - System monitoring report</h5>
-            </div>
-        </div>
-
-        <div class="row">
-            <a class='dropdown-trigger btn' href='#' data-target='dropdown-server'>Servers <i class="material-icons right">arrow_drop_down</i></a>
-            <ul id='dropdown-server' class='dropdown-content'></ul>
-        </div>
-
+    <header>
+        <ul class="sidenav sidenav-fixed">
+            <li><h5>SyMon</h5></li>
+            <li>
+                <ul class="collapsible collapsible-accordion">
+                    <a class="collapsible-header waves-effect waves-teal" tabindex="0">Servers</a>
+                    <div class="collapsible-body" style="display: block;">
+                        <ul id='dropdown-server'></ul>
+                    </div>
+                </ul>
+            </li>            
+          </ul>
+    </header>
+    <main>
         <div class="row">
             <div class="switches">
                 <div class="switch">
@@ -120,7 +122,7 @@
                 <div class="spacer"></div>
                 <div class="switch">
                     <label>
-                        <input type="checkbox" id="custom-metric" class="metric-check-boxes">
+                        <input type="checkbox" id="custom-metric" class="metric-check-boxes" checked>
                         <span class="lever"></span>
                         Custom Metrics
                     </label>
@@ -227,7 +229,7 @@
                 <div id="custom-metrics-display-area"></div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/js/materialize.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
