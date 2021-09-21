@@ -45,7 +45,12 @@ Custom timeseries data can be added using the agent as below. Current server tim
 
 ```bash
 ./agent -custom -name=test -unit=byte -value=1.0
+
+# example
+./agent -custom -name='active-http-requests' -unit='requests' -value=$(netstat | grep -c https)
 ```
+
+This can be automated using a cron or a script
 
 ## Todo
 * Disk I/O graphs
