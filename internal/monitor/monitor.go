@@ -14,7 +14,7 @@ type MonitorData struct {
 	System      System
 	Memory      []string
 	Swap        []string
-	Disks       []Disk
+	Disk        Disk
 	Processor   Processor
 	ProcUsage   []string
 	Networks    []Network
@@ -43,7 +43,7 @@ func Monitor(config config.Config) MonitorData {
 	memory = append(memory, GetMemory()...)
 	swap := []string{unixTime}
 	swap = append(swap, GetSwap()...)
-	disks := GetDisks(unixTime, config)
+	disk := GetDisks(unixTime, config)
 	proc := GetProcessor()
 	procUsage := []string{unixTime, GetLoadAvg()}
 	proc.Time = unixTime
@@ -57,7 +57,7 @@ func Monitor(config config.Config) MonitorData {
 		System:      system,
 		Memory:      memory,
 		Swap:        swap,
-		Disks:       disks,
+		Disk:        disk,
 		Processor:   proc,
 		ProcUsage:   procUsage,
 		Networks:    network,

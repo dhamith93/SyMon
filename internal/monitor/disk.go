@@ -7,34 +7,22 @@ import (
 	"github.com/dhamith93/SyMon/internal/config"
 )
 
-// Disk struct with disk info
 type Disk struct {
-	FileSystem      string
-	MountPoint      string
-	Type            string
-	Size            string
-	Used            string
-	Free            string
-	PercentageUsed  string
-	Inodes          string
-	IUsed           string
-	IFree           string
-	IPercentageUsed string
-	Time            string
+	Time  string
+	Disks [][]string
 }
 
-// GetDisks returns an array of Disk structs
-func GetDisks(time string, config config.Config) []Disk {
+// Returns Disk struct with array of disks info
+// `[ FileSystem, MountPoint, Type, Size, Free, Used, Used%, Inodes, IFree, IUsed, IUsed% ]`
+func GetDisks(time string, config config.Config) Disk {
 	disks := getDiskInfo()
 	disksInode := getDiskInodeInfo()
-	out := []Disk{}
+	out := [][]string{}
 	disksTOIgnore := strings.Split(config.DisksToIgnore, ",")
-	i := 0
 
-	for _, disk := range disks {
+	for i, disk := range disks {
 		diskInfo := strings.Fields(disk)
 		diskInodeInfo := strings.Fields(disksInode[i])
-		i++
 		if len(diskInfo) == 0 {
 			continue
 		}
@@ -51,23 +39,25 @@ func GetDisks(time string, config config.Config) []Disk {
 			continue
 		}
 
-		out = append(out, Disk{
-			FileSystem:      diskInfo[0],
-			MountPoint:      diskInfo[6],
-			Type:            diskInfo[1],
-			Size:            diskInfo[2],
-			Used:            diskInfo[3],
-			Free:            diskInfo[4],
-			PercentageUsed:  diskInfo[5],
-			Inodes:          diskInodeInfo[2],
-			IUsed:           diskInodeInfo[3],
-			IFree:           diskInodeInfo[4],
-			IPercentageUsed: diskInodeInfo[5],
-			Time:            time,
-		})
+		out = append(out, [][]string{{
+			diskInfo[0],
+			diskInfo[6],
+			diskInfo[1],
+			diskInfo[2],
+			diskInfo[4],
+			diskInfo[3],
+			diskInfo[5],
+			diskInodeInfo[2],
+			diskInodeInfo[4],
+			diskInodeInfo[3],
+			diskInodeInfo[5],
+		}}...)
 	}
 
-	return out
+	return Disk{
+		Time:  time,
+		Disks: out,
+	}
 }
 
 func getDiskInfo() []string {

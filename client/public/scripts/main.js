@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         let parentDiv = document.getElementById('disks');
     
         clearElement(parentDiv).then(() => {
-            data.forEach(disk => {
+            data.Disks.forEach(disk => {
                 let cardDiv = document.createElement('div');
                 cardDiv.style.margin = '20px';
                 let cardContentDiv = document.createElement('div');
@@ -258,17 +258,17 @@ document.addEventListener('DOMContentLoaded', ()=> {
         
                 let tbody = document.createElement('tbody');
                 let processedDisk = {
-                    'File system' : disk['FileSystem'],
-                    'Mount point' : disk['MountPoint'],
-                    'Type' : disk['Type'],
-                    'Size' : disk['Size'],
-                    'Free' : disk['Free'],
-                    'Used' : disk['Used'],
-                    'Used %' : disk['PercentageUsed'],
-                    'Inodes' : disk['Inodes'],
-                    'Inodes free' : disk['IFree'],
-                    'Inodes used' : disk['IUsed'],
-                    'Inodes used %' : disk['IPercentageUsed'],
+                    'File system' : disk[0],
+                    'Mount point' : disk[1],
+                    'Type' : disk[2],
+                    'Size' : disk[3],
+                    'Free' : disk[4],
+                    'Used' : disk[5],
+                    'Used %' : disk[6],
+                    'Inodes' : disk[7],
+                    'Inodes free' : disk[8],
+                    'Inodes used' : disk[9],
+                    'Inodes used %' : disk[10],
                 }
         
                 for (let key in processedDisk) {
@@ -287,8 +287,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 cardContentDiv.appendChild(table)
                 cardDiv.appendChild(cardContentDiv);
         
-                let diskData = convertToSame(disk['Free'], disk['Used']);
-                let units = getUnits(disk['Free'], disk['Used']);
+                let diskData = convertToSame(disk[4], disk[5]);
+                let units = getUnits(disk[4], disk[5]);
         
                 let diskUsageChart = new Chart(canvas, {
                     type: 'doughnut',

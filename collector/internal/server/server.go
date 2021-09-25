@@ -195,7 +195,7 @@ func returnSwap(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
-	sendResponseAsArray(w, r, "disks", false, []monitor.Disk{})
+	sendResponse(w, r, "disks", monitor.Disk{})
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
