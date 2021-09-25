@@ -177,7 +177,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = url + '&time=' + time;
         }
         axios.get(url).then((response) => {
-            populateTable(memoryTable, response.data.Data);
+            let data = {
+                'Total': response.data.Data[2],
+                'Used': response.data.Data[3],
+                'Free': response.data.Data[4],
+                'Used %': response.data.Data[1],
+            };
+            populateTable(memoryTable, data);
         }, (error) => {
             console.error(error);
         }); 
@@ -189,7 +195,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = url + '&time=' + time;
         }
         axios.get(url).then((response) => {
-            populateTable(swapTable, response.data.Data);
+            let data = {
+                'Total': response.data.Data[2],
+                'Used': response.data.Data[3],
+                'Free': response.data.Data[4],
+                'Used %': response.data.Data[1],
+            };
+            populateTable(swapTable, data);
         }, (error) => {
             console.error(error);
         }); 
@@ -536,7 +548,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = '/processor-usage-historical?serverId='+serverId;
         }
         axios.get(url).then((response) => {
-            let processedData = processHistoricalData(response.data.Data, 'cpu-usage');    
+            let processedData = processHistoricalData(response.data.Data);    
             if (!isCPUFirstTime && cpuChart !== null) {
                 updateChart(cpuChart, processedData['labels'], processedData['data']);
                 return;
@@ -555,7 +567,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = '/memory-historical?serverId='+serverId;
         }
         axios.get(url).then((response) => {            
-            let processedData = processHistoricalData(response.data.Data, 'mem-usage');    
+            let processedData = processHistoricalData(response.data.Data);    
             if (!isMemFirstTime && memChart !== null) {
                 updateChart(memChart, processedData['labels'], processedData['data']);
                 return;

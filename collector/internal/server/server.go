@@ -183,15 +183,15 @@ func returnCustom(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	sendResponse(w, r, "system", monitor.Memory{})
+	sendResponse(w, r, "system", monitor.System{})
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	sendResponse(w, r, "memory", monitor.Memory{})
+	sendResponse(w, r, "memory", []string{})
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
-	sendResponse(w, r, "swap", monitor.Swap{})
+	sendResponse(w, r, "swap", []string{})
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
@@ -215,11 +215,11 @@ func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	sendResponseAsArray(w, r, "processor", true, []monitor.ProcessorUsage{})
+	sendResponseAsArray(w, r, "procUsage", true, []string{})
 }
 
 func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	sendResponseAsArray(w, r, "memory", true, []monitor.Memory{})
+	sendResponseAsArray(w, r, "memory", true, []string{})
 }
 
 func returnServices(w http.ResponseWriter, r *http.Request) {

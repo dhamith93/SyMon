@@ -19,13 +19,6 @@ type Processor struct {
 	Time      string
 }
 
-// ProcessorUsage struct with processor usage info
-type ProcessorUsage struct {
-	Temp    string
-	LoadAvg string
-	Time    string
-}
-
 // GetProcessor returns a Processor struct
 func GetProcessor() Processor {
 	return Processor{
@@ -38,12 +31,8 @@ func GetProcessor() Processor {
 	}
 }
 
-// GetProcessorUsage returns a ProcessorUsage struct
-func GetProcessorUsage() ProcessorUsage {
-	return ProcessorUsage{
-		Temp:    getTemp(),
-		LoadAvg: getLoadAvg(),
-	}
+func GetLoadAvg() string {
+	return getLoadAvg()
 }
 
 func getModel() string {

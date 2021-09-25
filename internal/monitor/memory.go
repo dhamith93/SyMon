@@ -8,22 +8,12 @@ import (
 	"github.com/dhamith93/SyMon/internal/command"
 )
 
-// Memory struct with memory info
-type Memory struct {
-	Used           string
-	Free           string
-	Total          string
-	PercentageUsed string
-	Time           string
-}
-
-// GetMemory returns Memory struct
-func GetMemory() Memory {
-	return Memory{
-		Used:           strconv.FormatUint(command.ByteToM(getUsed()), 10) + "M",
-		Free:           strconv.FormatUint(command.ByteToM(getFree()), 10) + "M",
-		Total:          strconv.FormatUint(command.ByteToM(getTotal()), 10) + "M",
-		PercentageUsed: getPercentage(),
+func GetMemory() []string {
+	return []string{
+		getPercentage(),
+		strconv.FormatUint(command.ByteToM(getTotal()), 10) + "M",
+		strconv.FormatUint(command.ByteToM(getUsed()), 10) + "M",
+		strconv.FormatUint(command.ByteToM(getFree()), 10) + "M",
 	}
 }
 

@@ -92,7 +92,7 @@ function populateTable(table, data) {
     }
 }
 
-function processHistoricalData(data, type) {
+function processHistoricalData(data, type = 'default') {
     let output = [];
     let usage = [];
     let labels = [];
@@ -102,22 +102,16 @@ function processHistoricalData(data, type) {
     data.forEach(record => {
         let usageData = null;
         switch (type) {
-            case 'cpu-usage':
-                usageData = record['LoadAvg'].replace('%', '');
-                break;
-            case 'mem-usage':
-            case 'disk':
-                usageData = record['PercentageUsed'].replace('%', '');
-                break;
             case 'custom':
+                labels.push(new Date(record['Time'] * 1000));
                 usageData = record['Value'];
                 break;
             default:
-                usageData = -1;
+                labels.push(new Date(record[0] * 1000));
+                usageData = record[1].replace('%', '');
                 break;
         }
         usage.push(parseFloat(usageData));
-        labels.push(new Date(record['Time'] * 1000));
     });
 
     output['data'] = usage; 

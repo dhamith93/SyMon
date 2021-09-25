@@ -7,22 +7,12 @@ import (
 	"github.com/dhamith93/SyMon/internal/command"
 )
 
-// Swap struct with Swap info
-type Swap struct {
-	Used           string
-	Free           string
-	Total          string
-	PercentageUsed string
-	Time           string
-}
-
-// GetSwap returns Swap struct
-func GetSwap() Swap {
-	return Swap{
-		Used:           strconv.FormatUint(command.ByteToM(getUsedSwap()), 10) + "M",
-		Free:           strconv.FormatUint(command.ByteToM(getFreeSwap()), 10) + "M",
-		Total:          strconv.FormatUint(command.ByteToM(getTotalSwap()), 10) + "M",
-		PercentageUsed: getSwapPercentage(),
+func GetSwap() []string {
+	return []string{
+		getSwapPercentage(),
+		strconv.FormatUint(command.ByteToM(getTotalSwap()), 10) + "M",
+		strconv.FormatUint(command.ByteToM(getUsedSwap()), 10) + "M",
+		strconv.FormatUint(command.ByteToM(getFreeSwap()), 10) + "M",
 	}
 }
 

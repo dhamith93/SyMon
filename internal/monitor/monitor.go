@@ -12,11 +12,11 @@ import (
 type MonitorData struct {
 	UnixTime    string
 	System      System
-	Memory      Memory
-	Swap        Swap
+	Memory      []string
+	Swap        []string
 	Disks       []Disk
 	Processor   Processor
-	ProcUsage   ProcessorUsage
+	ProcUsage   []string
 	Networks    []Network
 	MemoryUsage []Process
 	CpuUsage    []Process
@@ -39,13 +39,13 @@ func Monitor(config config.Config) MonitorData {
 	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
 	system := GetSystem()
 	system.Time = unixTime
-	memory := GetMemory()
-	memory.Time = unixTime
-	swap := GetSwap()
-	swap.Time = unixTime
+	memory := []string{unixTime}
+	memory = append(memory, GetMemory()...)
+	swap := []string{unixTime}
+	swap = append(swap, GetSwap()...)
 	disks := GetDisks(unixTime, config)
 	proc := GetProcessor()
-	procUsage := GetProcessorUsage()
+	procUsage := []string{unixTime, GetLoadAvg()}
 	proc.Time = unixTime
 	network := GetNetwork(unixTime)
 	services := GetServices(unixTime, config)
