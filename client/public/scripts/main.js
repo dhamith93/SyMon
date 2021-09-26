@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let loadingFromCustomRange = false;
     let loadingPoinInTime = false;
     let systemEnabled = true;
-    let cpuEnabled = true;
     let usageGraphEnabled = true;
     let memoryEnabled = true;
     let swapEnabled = true;
@@ -57,9 +56,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
         switch (id) {
             case 'system':
                 systemEnabled = isChecked;
-                break;
-            case 'cpu':
-                cpuEnabled = isChecked;
                 break;
             case 'mem':
                 memoryEnabled = isChecked;
@@ -727,9 +723,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
     });
 
     function loadInTime(time = null) {
-        if (cpuEnabled)
-            loadCPU(time);
-
         if (memoryEnabled)
             loadMemory(time);
 
