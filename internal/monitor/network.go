@@ -8,40 +8,40 @@ import (
 )
 
 // Network struct with network info
+// `IP, Interface, Rx, Tx`
 type Network struct {
-	Interface string
-	IP        string
-	Tx        string
-	Rx        string
-	Time      string
+	Time     string
+	Networks [][]string
 }
 
 // GetNetwork returns a Network struct
-func GetNetwork(time string) []Network {
+func GetNetwork(time string) Network {
 	ipCommand := command.GetExecPath("ip")
 	if ipCommand == "" {
-		return nil
+		return Network{}
 	}
 	execCommand := ipCommand + " -o addr show scope global | awk '{split($4, a, \"/\"); print $2\" : \"a[1]}'"
 	result := command.Execute(execCommand, true)
 	resultSplit := strings.Split(result, "\n")
-	out := []Network{}
+	out := [][]string{}
 
 	for _, iface := range resultSplit {
 		ifaceArray := strings.Fields(iface)
 		if len(ifaceArray) != 3 {
 			continue
 		}
-		out = append(out, Network{
-			Interface: ifaceArray[0],
-			IP:        ifaceArray[2],
-			Tx:        getTx(ifaceArray[0]),
-			Rx:        getRx(ifaceArray[0]),
-			Time:      time,
-		})
+		out = append(out, [][]string{{
+			ifaceArray[2],
+			ifaceArray[0],
+			strings.TrimSpace(getRx(ifaceArray[0])),
+			strings.TrimSpace(getTx(ifaceArray[0])),
+		}}...)
 	}
 
-	return out
+	return Network{
+		Time:     time,
+		Networks: out,
+	}
 }
 
 func getRx(iface string) string {

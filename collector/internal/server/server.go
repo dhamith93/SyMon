@@ -202,7 +202,7 @@ func returnProc(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	sendResponseAsArray(w, r, "networks", false, []monitor.Network{})
+	sendResponseAsArray(w, r, "networks", true, [][]monitor.Network{})
 }
 
 func returnProcesses(w http.ResponseWriter, r *http.Request) {

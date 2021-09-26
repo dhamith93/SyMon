@@ -345,23 +345,24 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 cardDiv.classList.add('card');
         
                 let tbody = document.createElement('tbody');
+                let processedNetwork = {
+                    'IP' : network[0],
+                    'Interface' : network[1],
+                    'Rx' : convertTo(network[2], 'B', 'M') + 'M',
+                    'Tx' : convertTo(network[3], 'B', 'M') + 'M',
+                }
                 
-                for (let key in network) {
-                    if (key !== 'Time' && network.hasOwnProperty(key)) {
-                        let tr = document.createElement('tr');
-                        let td1 = document.createElement('td');
-                        td1.classList.add('strong-td');
-                        td1.appendChild(document.createTextNode(key));
-                        let td2 = document.createElement('td');
-                        let value = network[key];
-                        if (key === 'Rx' || key === 'Tx') {
-                            value = convertTo(parseInt(value, 10), 'B', 'M') + 'M';
-                        }
-                        td2.appendChild(document.createTextNode(value));
-                        tr.appendChild(td1);
-                        tr.appendChild(td2);
-                        tbody.appendChild(tr);
-                    }
+                for (let key in processedNetwork) {
+                    let tr = document.createElement('tr');
+                    let td1 = document.createElement('td');
+                    td1.classList.add('strong-td');
+                    td1.appendChild(document.createTextNode(key));
+                    let td2 = document.createElement('td');
+                    let value = processedNetwork[key];
+                    td2.appendChild(document.createTextNode(value));
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tbody.appendChild(tr);
                 }
         
                 table.appendChild(tbody);
@@ -378,9 +379,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = url + '&time=' + time;
         }
         axios.get(url).then((response) => {
-            handleNetworks(response.data.Data)
+            handleNetworks(response.data.Data[0].Networks)
             if (!isNetworkFirstTime && !loadingPoinInTime && networkChart !== null) {
-                updateNetworkChart(networkChart, response.data.Data);
+                updateNetworkChart(networkChart, response.data.Data[0]);
                 return;
             }
         }, (error) => {
@@ -392,21 +393,21 @@ document.addEventListener('DOMContentLoaded', ()=> {
         let url = '/network?serverId='+serverId+'&from='+fromTime+'&to='+toTime;
         axios.get(url).then((response) => {
             let data = response.data.Data;
-            let oldest = data.pop();
-            orgRx = parseInt(oldest[0]['Rx'], 10);
-            orgTx = parseInt(oldest[0]['Tx'], 10);
+            let oldest = data.pop().Networks;
+            orgRx = parseInt(oldest[0][2], 10);
+            orgTx = parseInt(oldest[0][3], 10);
             let processedDataRx = [];
             let processedDataTx = [];
             let labels = [];
             data.forEach(row => {
-                let iface = row[0];
-                let newRx = parseInt(iface['Rx'], 10);
-                let newTx = parseInt(iface['Tx'], 10);
+                let iface = row.Networks[0];
+                let newRx = parseInt(iface[2], 10);
+                let newTx = parseInt(iface[3], 10);
                 let diffRateRx = (newRx - orgRx) / 60;
                 let diffRateTx = (newTx - orgTx) / 60;
                 orgRx = newRx;
                 orgTx = newTx;
-                labels.push(new Date(iface['Time'] * 1000));
+                labels.push(new Date(row['Time'] * 1000));
                 processedDataRx.push(convertTo(diffRateRx, 'B', 'K'));
                 processedDataTx.push(convertTo(diffRateTx, 'B', 'K'));
             });
@@ -504,9 +505,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
     }
 
     function updateNetworkChart(chart, data) {
-        if (data && data.length > 0 && chart != null) {
-            let newRx = parseInt(data[0]['Rx'], 10);
-            let newTx = parseInt(data[0]['Tx'], 10);
+        if (data && chart != null) {
+            let newRx = parseInt(data.Networks[0][2], 10);
+            let newTx = parseInt(data.Networks[0][3], 10);
             let diffRateRx = (newRx - orgRx) / 60;
             let diffRateTx = (newTx - orgTx) / 60;
             orgRx = newRx;
@@ -516,7 +517,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             chart.data.labels.shift();
             chart.data.datasets[0].data.push(convertTo(diffRateRx, 'B', 'K'));
             chart.data.datasets[1].data.push(convertTo(diffRateTx, 'B', 'K'));
-            chart.data.labels.push(new Date(data[0]['Time'] * 1000));
+            chart.data.labels.push(new Date(data['Time'] * 1000));
             chart.options.scales.y.max = Math.max(Math.max(...chart.data.datasets[0].data), Math.max(...chart.data.datasets[1].data)) + 100;
             chart.update();
         }

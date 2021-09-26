@@ -16,7 +16,7 @@ type MonitorData struct {
 	Swap      []string
 	Disk      Disk
 	ProcUsage []string
-	Networks  []Network
+	Networks  Network
 	Processes Process
 	Services  []Service
 	ServerId  string
