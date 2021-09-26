@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const agentsUl = document.getElementById('dropdown-server');
     const customMetricsDiv = document.getElementById('custom-metrics');
     const customMetricsDisplayArea = document.getElementById('custom-metrics-display-area');
-    const procHeaders = ['User', 'PID', 'CPU %', 'Memory %', 'Command'];
+    const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
     let toTime = 0;
     let fromTime = 0;
     let serverId = '';
@@ -580,25 +580,17 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
-    function loadProcessCPUUsage(time = null) {
-        let url = '/cpuusage?serverId='+serverId;
+    function loadProcesses(time = null) {
+        let url = '/processes?serverId='+serverId;
         if (time !== null) {
             url = url + '&time=' + time;
         }
         axios.get(url).then((response) => {
-            handleUsage(response.data.Data, cpuUsageTable)
-        }, (error) => {
-            console.error(error);
-        }); 
-    }
+            if (procCpuEnabled)
+                handleUsage(response.data.Data.CPU, cpuUsageTable);
 
-    function loadProcessMemUsage(time = null) {
-        let url = '/memusage?serverId='+serverId;
-        if (time !== null) {
-            url = url + '&time=' + time;
-        }
-        axios.get(url).then((response) => {            
-            handleUsage(response.data.Data, memoryUsageTable)
+            if (procMemEnabled)
+                handleUsage(response.data.Data.Memory, memoryUsageTable);
         }, (error) => {
             console.error(error);
         }); 
@@ -675,7 +667,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 table.tHead.appendChild(tr);
                 usage.forEach(row => {
                     let tableRow = table.insertRow(-1);
-                    let data = [row['User'], row['PID'], row['CPUUsage'], row['MemoryUsage'], row['Command']];
+                    let data = [row[0], row[1], row[2], row[3]];
                     data.forEach(i => {
                         let cell = tableRow.insertCell(-1);
                         cell.innerHTML = i;
@@ -752,11 +744,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (servicesEnabled)
             loadServices(time);
 
-        if (procCpuEnabled)
-            loadProcessCPUUsage(time);
-
-        if (procMemEnabled)
-            loadProcessMemUsage(time);
+        if (procCpuEnabled || procMemEnabled)
+            loadProcesses(time);
     }
 
     function handleResponse(data) {

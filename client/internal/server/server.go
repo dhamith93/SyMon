@@ -36,8 +36,7 @@ func handleRequests(port string) {
 	router.HandleFunc("/disks", returnDisks)
 	router.HandleFunc("/proc", returnProc)
 	router.HandleFunc("/network", returnNetwork)
-	router.HandleFunc("/memusage", returnMemUsage)
-	router.HandleFunc("/cpuusage", returnCPUUsage)
+	router.HandleFunc("/processes", returnProcesses)
 	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
 	router.HandleFunc("/memory-historical", returnMemoryHistorical)
 	router.HandleFunc("/services", returnServices)
@@ -89,13 +88,8 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 	handleRequest(url, w)
 }
 
-func returnMemUsage(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/memusage?" + r.URL.Query().Encode()
-	handleRequest(url, w)
-}
-
-func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/cpuusage?" + r.URL.Query().Encode()
+func returnProcesses(w http.ResponseWriter, r *http.Request) {
+	url := config.GetConfig("config.json").MonitorEndpoint + "/processes?" + r.URL.Query().Encode()
 	handleRequest(url, w)
 }
 

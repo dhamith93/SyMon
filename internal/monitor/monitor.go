@@ -10,18 +10,16 @@ import (
 )
 
 type MonitorData struct {
-	UnixTime    string
-	System      System
-	Memory      []string
-	Swap        []string
-	Disk        Disk
-	Processor   Processor
-	ProcUsage   []string
-	Networks    []Network
-	MemoryUsage []Process
-	CpuUsage    []Process
-	Services    []Service
-	ServerId    string
+	UnixTime  string
+	System    System
+	Memory    []string
+	Swap      []string
+	Disk      Disk
+	ProcUsage []string
+	Networks  []Network
+	Processes Process
+	Services  []Service
+	ServerId  string
 }
 
 func MonitorAsJSON(config config.Config) string {
@@ -44,25 +42,20 @@ func Monitor(config config.Config) MonitorData {
 	swap := []string{unixTime}
 	swap = append(swap, GetSwap()...)
 	disk := GetDisks(unixTime, config)
-	proc := GetProcessor()
 	procUsage := []string{unixTime, GetLoadAvg()}
-	proc.Time = unixTime
 	network := GetNetwork(unixTime)
 	services := GetServices(unixTime, config)
-	memUsage := GetProcessesSortedByMem(unixTime)
-	cpuUsage := GetProcessesSortedByCPU(unixTime)
+	processes := GetProcesses()
 
 	return MonitorData{
-		UnixTime:    unixTime,
-		System:      system,
-		Memory:      memory,
-		Swap:        swap,
-		Disk:        disk,
-		Processor:   proc,
-		ProcUsage:   procUsage,
-		Networks:    network,
-		Services:    services,
-		MemoryUsage: memUsage,
-		CpuUsage:    cpuUsage,
+		UnixTime:  unixTime,
+		System:    system,
+		Memory:    memory,
+		Swap:      swap,
+		Disk:      disk,
+		ProcUsage: procUsage,
+		Networks:  network,
+		Services:  services,
+		Processes: processes,
 	}
 }

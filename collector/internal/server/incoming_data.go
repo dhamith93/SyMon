@@ -28,13 +28,11 @@ func HandleMonitorData(monitorData monitor.MonitorData) error {
 	data["system"] = &monitorData.System
 	data["memory"] = &monitorData.Memory
 	data["swap"] = &monitorData.Swap
-	data["disks"] = &monitorData.Disks
-	data["processor"] = &monitorData.Processor
+	data["disks"] = &monitorData.Disk
 	data["procUsage"] = &monitorData.ProcUsage
 	data["networks"] = &monitorData.Networks
 	data["services"] = &monitorData.Services
-	data["memoryUsage"] = &monitorData.MemoryUsage
-	data["CpuUsage"] = &monitorData.CpuUsage
+	data["processes"] = &monitorData.Processes
 
 	for key, item := range data {
 		res, err := json.Marshal(item)

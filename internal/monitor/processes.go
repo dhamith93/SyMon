@@ -6,44 +6,36 @@ import (
 	"github.com/dhamith93/SyMon/internal/command"
 )
 
-// Process struct with process info
 type Process struct {
-	User        string
-	PID         string
-	CPUUsage    string
-	MemoryUsage string
-	Command     string
-	Time        string
+	CPU    [][]string
+	Memory [][]string
 }
 
-// GetProcessesSortedByCPU returns a Process struct
-func GetProcessesSortedByCPU(time string) []Process {
-	return getProcesses("-pcpu", "11", time)
+// GetProcesses returns struct with process info
+// `PID, CPUUsage, MemoryUsage, Command`
+func GetProcesses() Process {
+	return Process{
+		CPU:    getProcesses("-pcpu", "10"),
+		Memory: getProcesses("-pmem", "10"),
+	}
 }
 
-// GetProcessesSortedByMem returns a Process struct
-func GetProcessesSortedByMem(time string) []Process {
-	return getProcesses("-pmem", "11", time)
-}
-
-func getProcesses(sort string, count string, time string) []Process {
-	result := command.Execute("ps aux --sort="+sort+" | head -n "+count, true)
-	resultArray := strings.Split(result, "\n")[1:]
-	out := []Process{}
+func getProcesses(sort string, count string) [][]string {
+	result := command.Execute("ps -eo pid,%cpu,%mem,command --sort="+sort+" | awk '$2 > 0.0 || $3 > 0.0 {print}' | head -n "+count, true)
+	resultArray := strings.Split(result, "\n")
+	out := [][]string{}
 
 	for _, process := range resultArray {
 		processArray := strings.Fields(process)
 		if len(processArray) == 0 {
 			continue
 		}
-		out = append(out, Process{
-			User:        processArray[0],
-			PID:         processArray[1],
-			CPUUsage:    processArray[2] + "%",
-			MemoryUsage: processArray[3] + "%",
-			Command:     processArray[10],
-			Time:        time,
-		})
+		out = append(out, [][]string{{
+			processArray[0],
+			processArray[1] + "%",
+			processArray[2] + "%",
+			processArray[3],
+		}}...)
 	}
 
 	return out

@@ -48,8 +48,7 @@ func handleRequests(port string, config config.Config) {
 	router.Handle("/disks", auth.CheckAuth(returnDisks))
 	router.Handle("/proc", auth.CheckAuth(returnProc))
 	router.Handle("/network", auth.CheckAuth(returnNetwork))
-	router.Handle("/memusage", auth.CheckAuth(returnMemUsage))
-	router.Handle("/cpuusage", auth.CheckAuth(returnCPUUsage))
+	router.Handle("/processes", auth.CheckAuth(returnProcesses))
 	router.Handle("/processor-usage-historical", auth.CheckAuth(returnProcHistorical))
 	router.Handle("/memory-historical", auth.CheckAuth(returnMemoryHistorical))
 	router.Handle("/services", auth.CheckAuth(returnServices))
@@ -206,12 +205,8 @@ func returnNetwork(w http.ResponseWriter, r *http.Request) {
 	sendResponseAsArray(w, r, "networks", false, []monitor.Network{})
 }
 
-func returnMemUsage(w http.ResponseWriter, r *http.Request) {
-	sendResponseAsArray(w, r, "memoryUsage", false, []monitor.Process{})
-}
-
-func returnCPUUsage(w http.ResponseWriter, r *http.Request) {
-	sendResponseAsArray(w, r, "CpuUsage", false, []monitor.Process{})
+func returnProcesses(w http.ResponseWriter, r *http.Request) {
+	sendResponse(w, r, "processes", monitor.Process{})
 }
 
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {

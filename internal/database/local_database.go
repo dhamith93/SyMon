@@ -37,7 +37,7 @@ func CreateDB(dbName string) (*sql.DB, error) {
 
 // SaveLogToDB saves given monitor log to the sqlite DB
 func SaveLogToDB(database *sql.DB, unixTime string, jsonStr string, logType string) error {
-	stmt, err := database.Prepare("CREATE TABLE IF NOT EXISTS monitor_log (save_time TEXT, log_type TEXT, log_text TEXT)")
+	stmt, err := database.Prepare("CREATE TABLE IF NOT EXISTS monitor_log (save_time TEXT, log_type TEXT, log_text TEXT) WITHOUT ROWID;")
 
 	if err != nil {
 		logger.Log("ERROR", err.Error())
@@ -118,7 +118,7 @@ func GetAgents(database *sql.DB) []string {
 }
 
 func GetCustomMetricNames(database *sql.DB) []string {
-	return dbSelect(database, "SELECT DISTINCT log_type FROM monitor_log WHERE log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'memoryUsage', 'CpuUsage')")
+	return dbSelect(database, "SELECT DISTINCT log_type FROM monitor_log WHERE log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'processes', 'memoryUsage', 'CpuUsage')")
 }
 
 // GetDBPathForAgent returns the db path of the given agent
