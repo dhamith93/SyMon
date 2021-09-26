@@ -95,7 +95,8 @@ This can be automated using a cron or a script
             ["pid", "cpu", "mem", "command"],
             ["pid", "cpu", "mem", "command"]
         ],
-		Memory: [
+        
+        Memory: [
             ["pid", "cpu", "mem", "command"],
             ["pid", "cpu", "mem", "command"]
         ]
