@@ -147,15 +147,15 @@ func GetLogFromDB(database *sql.DB, logType string, from int64, to int64, time i
 
 func getLogFromDBInRange(database *sql.DB, logType string, from int64, to int64) []string {
 	query := "SELECT log_text FROM monitor_log WHERE log_type = ?"
-	diff := to - from
+	// diff := to - from
 
-	if diff > 21600 && diff <= 172800 {
-		query = query + " AND STRFTIME('%M', DATETIME(save_time, 'unixepoch')) IN ('01', '30')"
-	}
+	// if diff > 21600 && diff <= 172800 {
+	// 	query = query + " AND STRFTIME('%M', DATETIME(save_time, 'unixepoch')) IN ('01', '30')"
+	// }
 
-	if diff > 172800 {
-		query = query + " AND STRFTIME('%H%M', DATETIME(save_time, 'unixepoch')) IN ('0001', '0601', '1201', '1801')"
-	}
+	// if diff > 172800 {
+	// 	query = query + " AND STRFTIME('%H%M', DATETIME(save_time, 'unixepoch')) IN ('0001', '0601', '1201', '1801')"
+	// }
 
 	query = query + " AND save_time BETWEEN ? AND ? ORDER BY save_time"
 
