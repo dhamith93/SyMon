@@ -37,7 +37,7 @@ func CreateDB(dbName string) (*sql.DB, error) {
 
 // SaveLogToDB saves given monitor log to the sqlite DB
 func SaveLogToDB(database *sql.DB, unixTime string, jsonStr string, logType string) error {
-	stmt, err := database.Prepare("CREATE TABLE IF NOT EXISTS monitor_log (save_time TEXT, log_type TEXT, log_text TEXT) WITHOUT ROWID;")
+	stmt, err := database.Prepare("CREATE TABLE IF NOT EXISTS monitor_log (save_time TEXT, log_type TEXT, log_text TEXT)")
 
 	if err != nil {
 		logger.Log("ERROR", err.Error())
