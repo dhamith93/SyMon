@@ -478,6 +478,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     limits: {
                         x: {min: 0, max: 'original'}
                     },
+                    pan: {
+                        enabled: true
+                    },
                     zoom: {
                         wheel: {
                             enabled: true,
