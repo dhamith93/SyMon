@@ -112,7 +112,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 currentActiveNavLi.classList.add('active');
 
                 clearElement(customMetricsDisplayArea);
+                clearElement(customMetricsDiv);
                 customMetricCharts = [];
+                enabledCustomMetrics = [];
 
                 serverId = agent;
                 checkBoxes.forEach(c => {
