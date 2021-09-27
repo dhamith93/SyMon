@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let customMetricsEnabled = true;
     let customMetricsLoaded = false;
     let enabledCustomMetrics = [];
+    let customMetricCharts = [];
     let procCpuEnabled = true;
     let procMemEnabled = true;
     let isCPUFirstTime = true;
@@ -109,6 +110,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 }
                 currentActiveNavLi = e.target.parentNode;
                 currentActiveNavLi.classList.add('active');
+
+                clearElement(customMetricsDisplayArea);
+                customMetricCharts = [];
 
                 serverId = agent;
                 checkBoxes.forEach(c => {
@@ -595,6 +599,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     function loadCustomMetrics() {
         clearElement(customMetricsDisplayArea);
+        customMetricCharts = [];
         enabledCustomMetrics.forEach(metric => {
             let url = '/custom?serverId='+serverId+'&from='+fromTime+'&to='+toTime+'&custom-metric='+metric;
             axios.get(url).then((response) => {
@@ -605,7 +610,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     canvas.setAttribute('width', '800px');
                     canvas.setAttribute('id', divId);
                     customMetricsDisplayArea.appendChild(canvas);
-                    generateUsageChart(processedData, canvas, metric, CPU_COLOR, context => context.parsed.y + ' ' + response.data.Data[0].Unit);
+                    customMetricCharts.push(generateUsageChart(processedData, canvas, metric, CPU_COLOR, context => context.parsed.y + ' ' + response.data.Data[0].Unit));
                 }
             }, (error) => {
                 console.error(error);
