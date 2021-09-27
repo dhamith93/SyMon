@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 clearElement(customMetricsDiv);
                 customMetricCharts = [];
                 enabledCustomMetrics = [];
+                customMetricsLoaded = false;
 
                 serverId = agent;
                 checkBoxes.forEach(c => {
