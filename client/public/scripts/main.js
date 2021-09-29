@@ -687,14 +687,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
     }
 
     getBtn.addEventListener('click', e => {
-        let from = new Date(document.getElementById('from-datetime').value);
-        let to = new Date(document.getElementById('to-datetime').value);
+        let from = moment(document.getElementById('from-datetime').value);
+        let to = moment(document.getElementById('to-datetime').value);
         if (from > to) {
             return;
         }
         loadingFromCustomRange = true;
-        fromTime = from.getTime() / 1000;
-        toTime = to.getTime() / 1000;
+        fromTime = from.unix();
+        toTime = to.unix();
 
         isCPUFirstTime = true;
         isMemFirstTime = true;
@@ -766,6 +766,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             dateFormat: "Y-m-d H:i",
             defaultDate: new Date(fromTime * 1000),
             maxDate: new Date(toTime * 1000),
+            formatDate: (date, format, locale) => { return moment(date).format('YYYY-MM-DD HH:mm:ss'); }
         });
     
         flatpickr('#to-datetime', {
@@ -773,6 +774,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             dateFormat: "Y-m-d H:i",
             defaultDate: new Date(toTime * 1000),
             maxDate: new Date(toTime * 1000),
+            formatDate: (date, format, locale) => { return moment(date).format('YYYY-MM-DD HH:mm:ss'); }
         });
 
         if (systemEnabled)
