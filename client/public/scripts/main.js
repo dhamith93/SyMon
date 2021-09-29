@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const customMetricsDiv = document.getElementById('custom-metrics');
     const customMetricsDisplayArea = document.getElementById('custom-metrics-display-area');
     const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
+    let timeZone = '';
     let toTime = 0;
     let fromTime = 0;
     let serverId = '';
@@ -756,6 +757,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
     function handleResponse(data) {
         toTime = data['Time'];
         fromTime = toTime - 3600;
+        timeZone = data.TimeZone;
+
+        moment.tz.setDefault(timeZone);
 
         flatpickr('#from-datetime', {
             enableTime: true,

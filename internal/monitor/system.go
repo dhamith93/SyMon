@@ -16,6 +16,7 @@ type System struct {
 	NoOfCurrUsers string
 	DateTime      string
 	Time          string
+	TimeZone      string
 }
 
 // GetSystem returns System struct
@@ -28,6 +29,7 @@ func GetSystem() System {
 		LastBootDate:  strings.TrimSpace(getLastBootDate()),
 		NoOfCurrUsers: strings.TrimSpace(getNoOfCurrUsers()),
 		DateTime:      strings.TrimSpace(getDateTime()),
+		TimeZone:      strings.TrimSpace(getTimeZone()),
 	}
 }
 
@@ -69,4 +71,8 @@ func getNoOfCurrUsers() string {
 
 func getDateTime() string {
 	return command.Execute("date", false)
+}
+
+func getTimeZone() string {
+	return command.Execute("ls -la /etc/localtime | awk -F'[/]' '{ print $7 \"/\" $8 }'", true)
 }
