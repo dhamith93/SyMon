@@ -29,13 +29,17 @@ func main() {
 
 	var name, value, unit string
 
+	initPtr := flag.Bool("init", false, "Initialize agent")
 	customPtr := flag.Bool("custom", false, "Send custom metrics")
 	flag.StringVar(&name, "name", "", "Name of the metric")
 	flag.StringVar(&unit, "unit", "", "Unit of the metric")
 	flag.StringVar(&value, "value", "", "Value of the metric")
 	flag.Parse()
 
-	if *customPtr {
+	if *initPtr {
+		initAgent(config)
+		return
+	} else if *customPtr {
 		if len(name) > 0 && len(value) > 0 && len(unit) > 0 {
 			sendCustomMetric(name, unit, value, config)
 		} else {
@@ -62,6 +66,15 @@ func main() {
 	}()
 	wg.Wait()
 	fmt.Println("Exiting")
+}
+
+func initAgent(config config.Config) {
+	_, code, response := send.SendGet(config.MonitorEndpoint + "-init?serverId=" + config.ServerId)
+	if code == -1 {
+		fmt.Println("Cannot connect to collector, make sure config.json is correct and collector is running.")
+	} else {
+		fmt.Println(response)
+	}
 }
 
 func sendCustomMetric(name string, unit string, value string, config config.Config) {

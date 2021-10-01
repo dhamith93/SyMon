@@ -25,16 +25,13 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	var initAgentVal, removeAgentVal string
+	var removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
-	flag.StringVar(&initAgentVal, "init-agent", "", "Register agent")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent DB with monitor data is not deleted.")
 	flag.Parse()
 
 	if *initPtr {
 		initCollector(config)
-	} else if len(initAgentVal) > 0 {
-		initAgent(initAgentVal, config)
 	} else if len(removeAgentVal) > 0 {
 		removeAgent(removeAgentVal, config)
 	} else {
@@ -47,34 +44,6 @@ func main() {
 		wg.Wait()
 	}
 
-}
-
-func initAgent(initAgentVal string, config config.Config) {
-	fmt.Println("Initializing agent for " + initAgentVal)
-	path := config.SQLiteDBPath + "/" + initAgentVal + ".db"
-
-	var collectorDB *sql.DB
-	var collectorErr error
-	collectorDB, collectorErr = database.OpenDB(collectorDB, config.SQLiteDBPath+"/collector.db")
-
-	if collectorErr != nil {
-		fmt.Println(collectorErr.Error())
-	} else {
-		defer collectorDB.Close()
-		if !database.AgentIDExists(collectorDB, initAgentVal) {
-			_, err := database.CreateDB(path)
-			if err != nil {
-				fmt.Println(err.Error())
-			} else {
-				err := database.AddAgent(collectorDB, initAgentVal, path)
-				if err != nil {
-					fmt.Println(err.Error())
-				}
-			}
-		} else {
-			fmt.Println("Agent ID " + initAgentVal + " exists...")
-		}
-	}
 }
 
 func removeAgent(removeAgentVal string, config config.Config) {

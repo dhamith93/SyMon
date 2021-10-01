@@ -28,14 +28,18 @@ Copy the key file and place the key file with agents/clients.
 
 Run the collector by executing `./collector`
 
-Agents can be added to collector by running `./collector --init-agent <server-id>`
-
 Agents can be removed by running `./collector --remove-agent <server-id>`
 
 ### Agents
 Change the config-example.json file and save it as config.json. Server-Id should be unique between servers.
 
-Run the agent.
+Once the `config.json` file is configured, run the below command to register the agent with the collector.
+
+```bash
+./agent -init
+```
+
+Once the agent is registered, run the agent in background.
 
 ### Clients
 This is used as the frontend of the application. Change the config-example.json file and save it as config.json. 
