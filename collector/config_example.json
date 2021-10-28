@@ -1,7 +1,12 @@
 {
     "Port": "9900",
     "SSLEnabled": false,
+    "SSLCertFilePath": "",
+	"SSLKeyFilePath": "",
     "LogFileEnabled": false,
     "LogFilePath": "",
-    "SQLiteDBPath": ""
+    "SQLiteDBPath": "",
+    "MySQLUserName": "user",
+    "MySQLHost": "127.0.0.1:3306",
+    "MySQLDatabaseName": "symon"
 }

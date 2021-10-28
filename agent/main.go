@@ -69,7 +69,7 @@ func main() {
 }
 
 func initAgent(config config.Config) {
-	_, code, response := send.SendGet(config.MonitorEndpoint + "-init?serverId=" + config.ServerId)
+	_, code, response := send.SendGet(config.MonitorEndpoint + "-init?serverId=" + config.ServerId + "&timezone=" + monitor.GetSystem().TimeZone)
 	if code == -1 {
 		fmt.Println("Cannot connect to collector, make sure config.json is correct and collector is running.")
 	} else {

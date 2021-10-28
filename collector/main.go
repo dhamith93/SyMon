@@ -1,16 +1,14 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"sync"
 
+	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/collector/internal/server"
-	"github.com/dhamith93/SyMon/internal/auth"
-	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 )
 
@@ -27,11 +25,11 @@ func main() {
 
 	var removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
-	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent DB with monitor data is not deleted.")
+	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
 	flag.Parse()
 
 	if *initPtr {
-		initCollector(config)
+		initCollector(&config)
 	} else if len(removeAgentVal) > 0 {
 		removeAgent(removeAgentVal, config)
 	} else {
@@ -48,31 +46,37 @@ func main() {
 
 func removeAgent(removeAgentVal string, config config.Config) {
 	fmt.Println("Removing agent " + removeAgentVal)
-	var collectorDB *sql.DB
-	var collectorErr error
-	collectorDB, collectorErr = database.OpenDB(collectorDB, config.SQLiteDBPath+"/collector.db")
-	if collectorErr != nil {
-		fmt.Println(collectorErr.Error())
-	} else {
-		defer collectorDB.Close()
-		if database.AgentIDExists(collectorDB, removeAgentVal) {
-			err := database.RemoveAgent(collectorDB, removeAgentVal)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		} else {
-			fmt.Println("Agent ID " + removeAgentVal + " doesn't exists...")
-		}
-	}
-}
+	mysql := getMySQLConnection(&config)
+	defer mysql.Close()
 
-func initCollector(config config.Config) {
-	path := config.SQLiteDBPath + "/collector.db"
-	db, err := database.CreateDB(path)
+	if mysql.SqlErr != nil {
+		fmt.Println(mysql.SqlErr.Error())
+		return
+	}
+
+	if !mysql.AgentIDExists(removeAgentVal) {
+		fmt.Println("Agent ID " + removeAgentVal + " doesn't exists...")
+		return
+	}
+
+	err := mysql.RemoveAgent(removeAgentVal)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	database.AddAgent(db, "collector", path)
-	defer db.Close()
-	fmt.Println("Generated Key: " + auth.GetKey())
+}
+
+func initCollector(config *config.Config) {
+	mysql := getMySQLConnection(config)
+	defer mysql.Close()
+	err := mysql.Init()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func getMySQLConnection(c *config.Config) database.MySql {
+	mysql := database.MySql{}
+	password := os.Getenv("SYMON_MYSQL_PSWD")
+	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
+	return mysql
 }

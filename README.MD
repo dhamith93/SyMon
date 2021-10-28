@@ -20,7 +20,9 @@ A simple system monitoring tool to monitor server HW stats.
 ## Usage
 
 ### Collector
-Change the config-example.json file and save it as config.json.
+Install or set up a MySQL/MariaDB database for the collector. 
+
+Change the config-example.json file and save it as config.json. Set up the env var `SYMON_MYSQL_PSWD` with the MySQL/MariaDB user name.
 
 Init Collector by running `./collector --init`. It will create a key file. 
 

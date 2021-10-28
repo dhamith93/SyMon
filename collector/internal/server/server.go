@@ -2,17 +2,17 @@ package server
 
 import (
 	"compress/gzip"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/internal/auth"
-	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
@@ -71,14 +71,15 @@ func handleRequests(port string, config config.Config) {
 func returnInit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	serverIdArr, ok := r.URL.Query()["serverId"]
+	timeZoneArr, ok2 := r.URL.Query()["timezone"]
 
-	if !ok {
+	if !ok || !ok2 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("cannot parse server id")
+		json.NewEncoder(w).Encode("cannot parse server id/timezone")
 		return
 	}
 
-	err := initAgent(serverIdArr[0], config.GetConfig("config.json"))
+	err := initAgent(serverIdArr[0], timeZoneArr[0], config.GetConfig("config.json"))
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -164,32 +165,36 @@ func returnCollectCustom(w http.ResponseWriter, r *http.Request) {
 
 func returnAgents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var db *sql.DB
-	db, err := database.OpenDB(db, config.GetConfig("config.json").SQLiteDBPath+"/collector.db")
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
+
 	agents := Agents{}
-	agents.AgentIDs = database.GetAgents(db)
+	agents.AgentIDs = mysql.GetAgents()
 	json.NewEncoder(w).Encode(&agents)
 }
 
 func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
 	customMetrics := CustomMetrics{}
-	customMetrics.CustomMetrics = database.GetCustomMetricNames(db)
+	customMetrics.CustomMetrics = mysql.GetCustomMetricNames()
 	json.NewEncoder(w).Encode(&customMetrics)
 }
 
@@ -246,17 +251,27 @@ func returnServices(w http.ResponseWriter, r *http.Request) {
 
 func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string, convertToJsonArr bool, iface ...interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	serverIdArr, ok := r.URL.Query()["serverId"]
+	if !ok || len(serverIdArr) == 0 {
+		logger.Log("ERROR", "cannot parse for server ID")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
+	serverName := serverIdArr[0]
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, logType, from, to, time)
+	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
 	if convertToJsonArr || (to != 0 && from != 0) {
 		dataString := stringops.StringArrToJSONArr(data)
 		_ = json.Unmarshal([]byte(dataString), &iface)
@@ -270,68 +285,51 @@ func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string,
 
 func sendResponse(w http.ResponseWriter, r *http.Request, logType string, iface interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	serverIdArr, ok := r.URL.Query()["serverId"]
+	if !ok || len(serverIdArr) == 0 {
+		logger.Log("ERROR", "cannot parse for server ID")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
+	serverName := serverIdArr[0]
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, logType, from, to, time)
+	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &iface)
 	}
 	json.NewEncoder(w).Encode(&iface)
 }
 
-func initAgent(agentId string, config config.Config) error {
+func initAgent(agentId string, timezone string, config config.Config) error {
 	logger.Log("info", "Initializing agent for "+agentId)
-	path := config.SQLiteDBPath + "/" + agentId + ".db"
 
-	var collectorDB *sql.DB
-	var collectorErr error
-	collectorDB, collectorErr = database.OpenDB(collectorDB, config.SQLiteDBPath+"/collector.db")
+	mysql := getMySQLConnection(&config)
+	defer mysql.Close()
 
-	if collectorErr != nil {
-		logger.Log("error", collectorErr.Error())
-		return collectorErr
-	} else {
-		defer collectorDB.Close()
-		if !database.AgentIDExists(collectorDB, agentId) {
-			_, err := database.CreateDB(path)
-			if err != nil {
-				logger.Log("error", err.Error())
-				return fmt.Errorf("error creating db")
-			} else {
-				err := database.AddAgent(collectorDB, agentId, path)
-				if err != nil {
-					logger.Log("error", err.Error())
-					return fmt.Errorf("error adding agent")
-				}
-			}
-		} else {
-			logger.Log("error", "agent id "+agentId+" exists")
-			return fmt.Errorf("agent id " + agentId + " exists")
-		}
+	if mysql.AgentIDExists(agentId) {
+		logger.Log("error", "agent id "+agentId+" exists")
+		return fmt.Errorf("agent id " + agentId + " exists")
 	}
+
+	err := mysql.AddAgent(agentId, timezone)
+	if err != nil {
+		logger.Log("error", err.Error())
+		return fmt.Errorf("error adding agent")
+	}
+
 	return nil
-}
-
-func getDB(r *http.Request) (*sql.DB, error) {
-	var db *sql.DB
-	var err error
-	serverIdArr, ok := r.URL.Query()["serverId"]
-	if ok {
-		db, err = database.OpenDB(db, config.GetConfig("config.json").SQLiteDBPath+"/"+serverIdArr[0]+".db")
-		if err != nil {
-			return nil, err
-		}
-		return db, nil
-	}
-	return nil, fmt.Errorf("cannot parse server id")
 }
 
 func parseGETForTime(r *http.Request) (int64, error) {
@@ -380,4 +378,11 @@ func parseGETForCustomMetricName(r *http.Request) (string, error) {
 	}
 
 	return customMetricNameArr[0], nil
+}
+
+func getMySQLConnection(c *config.Config) database.MySql {
+	mysql := database.MySql{}
+	password := os.Getenv("SYMON_MYSQL_PSWD")
+	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
+	return mysql
 }
