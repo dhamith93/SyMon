@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"strconv"
 
@@ -32,7 +31,6 @@ func (mysql *MySql) connect(user string, password string, host string, database 
 	if isMultiStatement {
 		connStr += "?multiStatements=true"
 	}
-	fmt.Println(connStr)
 	mysql.DB, mysql.SqlErr = sql.Open("mysql", connStr)
 	if mysql.SqlErr != nil {
 		mysql.Connected = false
