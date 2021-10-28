@@ -46,8 +46,7 @@ func main() {
 
 func removeAgent(removeAgentVal string, config config.Config) {
 	fmt.Println("Removing agent " + removeAgentVal)
-	mysql := database.MySql{}
-	mysql.Connect()
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {
@@ -67,12 +66,17 @@ func removeAgent(removeAgentVal string, config config.Config) {
 }
 
 func initCollector(config *config.Config) {
-	mysql := database.MySql{}
-	mysql.Connect()
+	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 	err := mysql.Init()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+}
 
+func getMySQLConnection(c *config.Config) database.MySql {
+	mysql := database.MySql{}
+	password := os.Getenv("SYMON_MYSQL_PSWD")
+	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
+	return mysql
 }

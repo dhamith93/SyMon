@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -164,8 +165,8 @@ func returnCollectCustom(w http.ResponseWriter, r *http.Request) {
 
 func returnAgents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	mysql := database.MySql{}
-	mysql.Connect()
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {
@@ -182,8 +183,8 @@ func returnAgents(w http.ResponseWriter, r *http.Request) {
 
 func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	mysql := database.MySql{}
-	mysql.Connect()
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {
@@ -258,8 +259,8 @@ func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string,
 		return
 	}
 	serverName := serverIdArr[0]
-	mysql := database.MySql{}
-	mysql.Connect()
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {
@@ -292,8 +293,8 @@ func sendResponse(w http.ResponseWriter, r *http.Request, logType string, iface 
 		return
 	}
 	serverName := serverIdArr[0]
-	mysql := database.MySql{}
-	mysql.Connect()
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {
@@ -314,8 +315,7 @@ func sendResponse(w http.ResponseWriter, r *http.Request, logType string, iface 
 func initAgent(agentId string, timezone string, config config.Config) error {
 	logger.Log("info", "Initializing agent for "+agentId)
 
-	mysql := database.MySql{}
-	mysql.Connect()
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	if mysql.AgentIDExists(agentId) {
@@ -378,4 +378,11 @@ func parseGETForCustomMetricName(r *http.Request) (string, error) {
 	}
 
 	return customMetricNameArr[0], nil
+}
+
+func getMySQLConnection(c *config.Config) database.MySql {
+	mysql := database.MySql{}
+	password := os.Getenv("SYMON_MYSQL_PSWD")
+	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
+	return mysql
 }

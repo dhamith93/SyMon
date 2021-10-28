@@ -20,11 +20,7 @@ type MySql struct {
 	Database  string
 }
 
-func (mysql *MySql) Connect() {
-	mysql.connect("root", "1234", "172.17.0.2:3306", "symon_test", true)
-}
-
-func (mysql *MySql) connect(user string, password string, host string, database string, isMultiStatement bool) {
+func (mysql *MySql) Connect(user string, password string, host string, database string, isMultiStatement bool) {
 	mysql.User = user
 	mysql.Host = host
 	mysql.Database = database
