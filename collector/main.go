@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -26,7 +25,7 @@ func main() {
 
 	var removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
-	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent DB with monitor data is not deleted.")
+	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
 	flag.Parse()
 
 	if *initPtr {
@@ -47,21 +46,23 @@ func main() {
 
 func removeAgent(removeAgentVal string, config config.Config) {
 	fmt.Println("Removing agent " + removeAgentVal)
-	var collectorDB *sql.DB
-	var collectorErr error
-	collectorDB, collectorErr = database.OpenDB(collectorDB, config.SQLiteDBPath+"/collector.db")
-	if collectorErr != nil {
-		fmt.Println(collectorErr.Error())
-	} else {
-		defer collectorDB.Close()
-		if database.AgentIDExists(collectorDB, removeAgentVal) {
-			err := database.RemoveAgent(collectorDB, removeAgentVal)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		} else {
-			fmt.Println("Agent ID " + removeAgentVal + " doesn't exists...")
-		}
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		fmt.Println(mysql.SqlErr.Error())
+		return
+	}
+
+	if !mysql.AgentIDExists(removeAgentVal) {
+		fmt.Println("Agent ID " + removeAgentVal + " doesn't exists...")
+		return
+	}
+
+	err := mysql.RemoveAgent(removeAgentVal)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 }
 
