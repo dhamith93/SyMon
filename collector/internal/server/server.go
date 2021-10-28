@@ -2,7 +2,6 @@ package server
 
 import (
 	"compress/gzip"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -165,32 +164,36 @@ func returnCollectCustom(w http.ResponseWriter, r *http.Request) {
 
 func returnAgents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var db *sql.DB
-	db, err := database.OpenDB(db, config.GetConfig("config.json").SQLiteDBPath+"/collector.db")
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
+
 	agents := Agents{}
-	agents.AgentIDs = database.GetAgents(db)
+	agents.AgentIDs = mysql.GetAgents()
 	json.NewEncoder(w).Encode(&agents)
 }
 
 func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
 	customMetrics := CustomMetrics{}
-	customMetrics.CustomMetrics = database.GetCustomMetricNames(db)
+	customMetrics.CustomMetrics = mysql.GetCustomMetricNames()
 	json.NewEncoder(w).Encode(&customMetrics)
 }
 
@@ -247,17 +250,27 @@ func returnServices(w http.ResponseWriter, r *http.Request) {
 
 func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string, convertToJsonArr bool, iface ...interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	serverIdArr, ok := r.URL.Query()["serverId"]
+	if !ok || len(serverIdArr) == 0 {
+		logger.Log("ERROR", "cannot parse for server ID")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
+	serverName := serverIdArr[0]
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, logType, from, to, time)
+	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
 	if convertToJsonArr || (to != 0 && from != 0) {
 		dataString := stringops.StringArrToJSONArr(data)
 		_ = json.Unmarshal([]byte(dataString), &iface)
@@ -271,17 +284,27 @@ func sendResponseAsArray(w http.ResponseWriter, r *http.Request, logType string,
 
 func sendResponse(w http.ResponseWriter, r *http.Request, logType string, iface interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	db, err := getDB(r)
-	if err != nil {
-		logger.Log("ERROR", err.Error())
+	serverIdArr, ok := r.URL.Query()["serverId"]
+	if !ok || len(serverIdArr) == 0 {
+		logger.Log("ERROR", "cannot parse for server ID")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("")
 		return
 	}
-	defer db.Close()
+	serverName := serverIdArr[0]
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+
+	if mysql.SqlErr != nil {
+		logger.Log("ERROR", mysql.SqlErr.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("")
+		return
+	}
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	data := database.GetLogFromDB(db, logType, from, to, time)
+	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
 	if len(data) > 0 {
 		_ = json.Unmarshal([]byte(data[0]), &iface)
 	}
@@ -307,20 +330,6 @@ func initAgent(agentId string, timezone string, config config.Config) error {
 	}
 
 	return nil
-}
-
-func getDB(r *http.Request) (*sql.DB, error) {
-	var db *sql.DB
-	var err error
-	serverIdArr, ok := r.URL.Query()["serverId"]
-	if ok {
-		db, err = database.OpenDB(db, config.GetConfig("config.json").SQLiteDBPath+"/"+serverIdArr[0]+".db")
-		if err != nil {
-			return nil, err
-		}
-		return db, nil
-	}
-	return nil, fmt.Errorf("cannot parse server id")
 }
 
 func parseGETForTime(r *http.Request) (int64, error) {

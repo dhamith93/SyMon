@@ -36,7 +36,9 @@ CREATE TABLE `monitor_log` (
   `log_time` bigint(20),
   `log_type` varchar(255),
   `log_text` text
-);
+)
+ENGINE=InnoDB
+PAGE_COMPRESSED=1;
 
 CREATE TABLE `monitor_alert` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
