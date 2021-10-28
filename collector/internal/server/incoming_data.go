@@ -1,28 +1,18 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
 
-	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/monitor"
 )
 
 func HandleMonitorData(monitorData monitor.MonitorData) error {
-	var db *sql.DB
-	var err error
-
-	serverId := monitorData.ServerId
+	serverName := monitorData.ServerId
 	time := monitorData.UnixTime
-	path := config.GetConfig("config.json").SQLiteDBPath + "/" + serverId + ".db"
-	db, err = database.OpenDB(db, path)
-
-	if err != nil {
-		return err
-	}
-
-	defer db.Close()
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
 
 	data := make(map[string]interface{})
 	data["system"] = &monitorData.System
@@ -39,8 +29,9 @@ func HandleMonitorData(monitorData monitor.MonitorData) error {
 		if err != nil {
 			return err
 		}
-		errDB := database.SaveLogToDB(db, time, string(res), key)
-		if errDB != nil {
+
+		err = mysql.SaveLogToDB(serverName, time, string(res), key)
+		if err != nil {
 			return err
 		}
 	}
@@ -48,19 +39,15 @@ func HandleMonitorData(monitorData monitor.MonitorData) error {
 }
 
 func HandleCustomMetric(customMetric monitor.CustomMetric) error {
-	var db *sql.DB
-	var err error
-	serverId := customMetric.ServerId
+	serverName := customMetric.ServerId
 	time := customMetric.Time
-	path := config.GetConfig("config.json").SQLiteDBPath + "/" + serverId + ".db"
-	db, err = database.OpenDB(db, path)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+
 	res, err := json.Marshal(&customMetric)
 	if err != nil {
 		return err
 	}
-	return database.SaveLogToDB(db, time, string(res), customMetric.Name)
+	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name)
 }
