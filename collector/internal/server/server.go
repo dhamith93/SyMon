@@ -79,8 +79,6 @@ func returnInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(serverIdArr)
-
 	err := initAgent(serverIdArr[0], timeZoneArr[0], config.GetConfig("config.json"))
 
 	if err != nil {
