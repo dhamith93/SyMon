@@ -7,8 +7,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/collector/internal/server"
-	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 )
 

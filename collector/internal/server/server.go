@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/internal/auth"
-	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
