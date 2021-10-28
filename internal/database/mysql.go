@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -115,8 +116,15 @@ func (mysql *MySql) monitorDataSelect(query string, args ...interface{}) []strin
 	return out
 }
 
-func (mysql *MySql) SaveLogToDB(unixTime string, jsonStr string, logType string) error {
-	stmt, err := mysql.DB.Prepare("INSERT INTO monitor_log (save_time, log_type, log_text) VALUES (?, ?, ?)")
+func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr string, logType string) error {
+	serverId := mysql.getServerId(serverName)
+	if len(serverId) == 0 {
+		err := fmt.Errorf("server %s not registered", serverName)
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	stmt, err := mysql.DB.Prepare("INSERT INTO monitor_log (server_id, log_time, log_type, log_text) VALUES (?, ?, ?, ?)")
 
 	if err != nil {
 		mysql.SqlErr = err
@@ -126,7 +134,7 @@ func (mysql *MySql) SaveLogToDB(unixTime string, jsonStr string, logType string)
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(unixTime, logType, jsonStr)
+	_, err = stmt.Exec(serverId, unixTime, logType, jsonStr)
 
 	if err != nil {
 		mysql.SqlErr = err
@@ -180,6 +188,14 @@ func (mysql *MySql) AgentIDExists(agentId string) bool {
 	return count > 0
 }
 
+func (mysql *MySql) getServerId(serverName string) string {
+	res := mysql.monitorDataSelect("SELECT id FROM server WHERE name = ?", serverName)
+	if len(res) == 0 {
+		return ""
+	}
+	return res[0]
+}
+
 func (mysql *MySql) GetAgents() []string {
 	return mysql.monitorDataSelect("SELECT DISTINCT name FROM server WHERE name != 'collector'")
 }
@@ -189,7 +205,7 @@ func (mysql *MySql) GetCustomMetricNames() []string {
 }
 
 func (mysql *MySql) GetLogFromDBCount(logType string, count int64) []string {
-	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE log_type = ? ORDER BY save_time DESC LIMIT ?", logType, count)
+	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE log_type = ? ORDER BY log_time DESC LIMIT ?", logType, count)
 }
 
 // GetLogFromDB returns log records of the given log type in the given time/range
@@ -208,18 +224,18 @@ func (mysql *MySql) getLogFromDBInRange(logType string, from int64, to int64) []
 	// diff := to - from
 
 	// if diff > 21600 && diff <= 172800 {
-	// 	query = query + " AND STRFTIME('%M', DATETIME(save_time, 'unixepoch')) IN ('01', '30')"
+	// 	query = query + " AND STRFTIME('%M', DATETIME(log_time, 'unixepoch')) IN ('01', '30')"
 	// }
 
 	// if diff > 172800 {
-	// 	query = query + " AND STRFTIME('%H%M', DATETIME(save_time, 'unixepoch')) IN ('0001', '0601', '1201', '1801')"
+	// 	query = query + " AND STRFTIME('%H%M', DATETIME(log_time, 'unixepoch')) IN ('0001', '0601', '1201', '1801')"
 	// }
 
-	query = query + " AND save_time BETWEEN ? AND ? ORDER BY save_time"
+	query = query + " AND log_time BETWEEN ? AND ? ORDER BY log_time"
 
 	return mysql.monitorDataSelect(query, logType, from, to)
 }
 
 func (mysql *MySql) getLogFromDBAt(logType string, time int64) []string {
-	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE log_type = ? AND save_time = ?", logType, time)
+	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE log_type = ? AND log_time = ?", logType, time)
 }
