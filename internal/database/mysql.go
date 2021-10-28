@@ -204,23 +204,23 @@ func (mysql *MySql) GetCustomMetricNames() []string {
 	return mysql.monitorDataSelect("SELECT DISTINCT log_type FROM monitor_log WHERE log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'processes', 'memoryUsage', 'CpuUsage')")
 }
 
-func (mysql *MySql) GetLogFromDBCount(logType string, count int64) []string {
-	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE log_type = ? ORDER BY log_time DESC LIMIT ?", logType, count)
+func (mysql *MySql) GetLogFromDBCount(serverId string, logType string, count int64) []string {
+	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
 }
 
-// GetLogFromDB returns log records of the given log type in the given time/range
-func (mysql *MySql) GetLogFromDB(logType string, from int64, to int64, time int64) []string {
+func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, to int64, time int64) []string {
+	serverId := mysql.getServerId(serverName)
 	if from > 0 && to > 0 {
-		return mysql.getLogFromDBInRange(logType, from, to)
+		return mysql.getLogFromDBInRange(serverId, logType, from, to)
 	} else if time > 0 {
-		return mysql.getLogFromDBAt(logType, time)
+		return mysql.getLogFromDBAt(serverId, logType, time)
 	} else {
-		return mysql.GetLogFromDBCount(logType, 1)
+		return mysql.GetLogFromDBCount(serverId, logType, 1)
 	}
 }
 
-func (mysql *MySql) getLogFromDBInRange(logType string, from int64, to int64) []string {
-	query := "SELECT log_text FROM monitor_log WHERE log_type = ?"
+func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from int64, to int64) []string {
+	query := "SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ?"
 	// diff := to - from
 
 	// if diff > 21600 && diff <= 172800 {
@@ -233,9 +233,9 @@ func (mysql *MySql) getLogFromDBInRange(logType string, from int64, to int64) []
 
 	query = query + " AND log_time BETWEEN ? AND ? ORDER BY log_time"
 
-	return mysql.monitorDataSelect(query, logType, from, to)
+	return mysql.monitorDataSelect(query, serverId, logType, from, to)
 }
 
-func (mysql *MySql) getLogFromDBAt(logType string, time int64) []string {
-	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE log_type = ? AND log_time = ?", logType, time)
+func (mysql *MySql) getLogFromDBAt(serverId string, logType string, time int64) []string {
+	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time = ?", serverId, logType, time)
 }
