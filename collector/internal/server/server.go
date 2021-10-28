@@ -71,14 +71,17 @@ func handleRequests(port string, config config.Config) {
 func returnInit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	serverIdArr, ok := r.URL.Query()["serverId"]
+	timeZoneArr, ok2 := r.URL.Query()["timezone"]
 
-	if !ok {
+	if !ok || !ok2 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("cannot parse server id")
+		json.NewEncoder(w).Encode("cannot parse server id/timezone")
 		return
 	}
 
-	err := initAgent(serverIdArr[0], config.GetConfig("config.json"))
+	fmt.Println(serverIdArr)
+
+	err := initAgent(serverIdArr[0], timeZoneArr[0], config.GetConfig("config.json"))
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -287,36 +290,24 @@ func sendResponse(w http.ResponseWriter, r *http.Request, logType string, iface 
 	json.NewEncoder(w).Encode(&iface)
 }
 
-func initAgent(agentId string, config config.Config) error {
+func initAgent(agentId string, timezone string, config config.Config) error {
 	logger.Log("info", "Initializing agent for "+agentId)
-	path := config.SQLiteDBPath + "/" + agentId + ".db"
 
-	var collectorDB *sql.DB
-	var collectorErr error
-	collectorDB, collectorErr = database.OpenDB(collectorDB, config.SQLiteDBPath+"/collector.db")
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
 
-	if collectorErr != nil {
-		logger.Log("error", collectorErr.Error())
-		return collectorErr
-	} else {
-		defer collectorDB.Close()
-		if !database.AgentIDExists(collectorDB, agentId) {
-			_, err := database.CreateDB(path)
-			if err != nil {
-				logger.Log("error", err.Error())
-				return fmt.Errorf("error creating db")
-			} else {
-				err := database.AddAgent(collectorDB, agentId, path)
-				if err != nil {
-					logger.Log("error", err.Error())
-					return fmt.Errorf("error adding agent")
-				}
-			}
-		} else {
-			logger.Log("error", "agent id "+agentId+" exists")
-			return fmt.Errorf("agent id " + agentId + " exists")
-		}
+	if mysql.AgentIDExists(agentId) {
+		logger.Log("error", "agent id "+agentId+" exists")
+		return fmt.Errorf("agent id " + agentId + " exists")
 	}
+
+	err := mysql.AddAgent(agentId, timezone)
+	if err != nil {
+		logger.Log("error", err.Error())
+		return fmt.Errorf("error adding agent")
+	}
+
 	return nil
 }
 

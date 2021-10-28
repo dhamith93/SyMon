@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/dhamith93/SyMon/collector/internal/server"
-	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 )
@@ -31,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	if *initPtr {
-		initCollector(config)
+		initCollector(&config)
 	} else if len(removeAgentVal) > 0 {
 		removeAgent(removeAgentVal, config)
 	} else {
@@ -66,13 +65,13 @@ func removeAgent(removeAgentVal string, config config.Config) {
 	}
 }
 
-func initCollector(config config.Config) {
-	path := config.SQLiteDBPath + "/collector.db"
-	db, err := database.CreateDB(path)
+func initCollector(config *config.Config) {
+	mysql := database.MySql{}
+	mysql.Connect()
+	defer mysql.Close()
+	err := mysql.Init()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	database.AddAgent(db, "collector", path)
-	defer db.Close()
-	fmt.Println("Generated Key: " + auth.GetKey())
+
 }
