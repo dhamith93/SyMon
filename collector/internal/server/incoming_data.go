@@ -3,15 +3,15 @@ package server
 import (
 	"encoding/json"
 
-	"github.com/dhamith93/SyMon/internal/database"
+	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/internal/monitor"
 )
 
 func HandleMonitorData(monitorData monitor.MonitorData) error {
 	serverName := monitorData.ServerId
 	time := monitorData.UnixTime
-	mysql := database.MySql{}
-	mysql.Connect()
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	data := make(map[string]interface{})
@@ -41,8 +41,8 @@ func HandleMonitorData(monitorData monitor.MonitorData) error {
 func HandleCustomMetric(customMetric monitor.CustomMetric) error {
 	serverName := customMetric.ServerId
 	time := customMetric.Time
-	mysql := database.MySql{}
-	mysql.Connect()
+	config := config.GetConfig("config.json")
+	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
 	res, err := json.Marshal(&customMetric)

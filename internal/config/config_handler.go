@@ -17,6 +17,9 @@ type Config struct {
 	CLIMonitoringInterval  int
 	SQLiteDBLoggingEnabled bool
 	SQLiteDBPath           string
+	MySQLUserName          string
+	MySQLHost              string
+	MySQLDatabaseName      string
 	CPUThreshold           int
 	MemoryThreshold        int
 	DiskUsageThreshold     int
