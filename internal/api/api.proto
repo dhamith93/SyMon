@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package api;
+option go_package = "./api";
+
+message Message {
+    string body = 1;
+}
+
+message ServerInfo {
+    string serverId = 1;
+    string timezone = 2;
+}
+
+message MonitorData {
+    string monitorData = 1; 
+}
+
+service MonitorDataService {
+    rpc InitAgent(ServerInfo) returns (Message) {}
+    rpc HandleMonitorData(MonitorData) returns (Message) {}
+    rpc HandleCustomMonitorData(MonitorData) returns (Message) {}
+}
