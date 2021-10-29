@@ -14,7 +14,7 @@ type Disk struct {
 
 // Returns Disk struct with array of disks info
 // `[ FileSystem, MountPoint, Type, Size, Free, Used, Used%, Inodes, IFree, IUsed, IUsed% ]`
-func GetDisks(time string, config config.Config) Disk {
+func GetDisks(time string, config *config.Config) Disk {
 	disks := getDiskInfo()
 	disksInode := getDiskInodeInfo()
 	out := [][]string{}

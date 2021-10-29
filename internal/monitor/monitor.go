@@ -22,7 +22,7 @@ type MonitorData struct {
 	ServerId  string
 }
 
-func MonitorAsJSON(config config.Config) string {
+func MonitorAsJSON(config *config.Config) string {
 	monitorData := Monitor(config)
 	monitorData.ServerId = config.ServerId
 	jsonData, err := json.Marshal(&monitorData)
@@ -33,7 +33,7 @@ func MonitorAsJSON(config config.Config) string {
 	return string(jsonData)
 }
 
-func Monitor(config config.Config) MonitorData {
+func Monitor(config *config.Config) MonitorData {
 	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
 	system := GetSystem()
 	system.Time = unixTime
