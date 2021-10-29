@@ -1,15 +1,24 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"sync"
 
 	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/collector/internal/server"
+	"github.com/dhamith93/SyMon/internal/api"
+	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
+	"github.com/dhamith93/SyMon/internal/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -25,6 +34,7 @@ func main() {
 
 	var removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
+	grpcPtr := flag.Bool("grpc", false, "Experimental: gPRC")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
 	flag.Parse()
 
@@ -32,6 +42,17 @@ func main() {
 		initCollector(&config)
 	} else if len(removeAgentVal) > 0 {
 		removeAgent(removeAgentVal, config)
+	} else if *grpcPtr {
+		lis, err := net.Listen("tcp", ":"+config.Port)
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+		s := api.Server{}
+		grpcServer := grpc.NewServer(grpc.UnaryInterceptor(authInterceptor))
+		api.RegisterMonitorDataServiceServer(grpcServer, &s)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %s", err)
+		}
 	} else {
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -41,7 +62,23 @@ func main() {
 		}()
 		wg.Wait()
 	}
+}
 
+func authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	meta, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		logger.Log("error", "cannot parse meta")
+		return nil, status.Error(codes.Unauthenticated, "INTERNAL_SERVER_ERROR")
+	}
+	if len(meta["jwt"]) != 1 {
+		logger.Log("error", "cannot parse meta - token empty")
+		return nil, status.Error(codes.Unauthenticated, "token empty")
+	}
+	if !auth.ValidToken(meta["jwt"][0]) {
+		logger.Log("error", "auth error")
+		return nil, status.Error(codes.PermissionDenied, "invalid auth token")
+	}
+	return handler(ctx, req)
 }
 
 func removeAgent(removeAgentVal string, config config.Config) {
