@@ -19,7 +19,7 @@ func IsServiceUp(serviceName string) bool {
 	return strings.TrimSpace(command.Execute("systemctl is-active "+serviceName, true)) == "active"
 }
 
-func GetServices(unixTime string, config config.Config) []Service {
+func GetServices(unixTime string, config *config.Config) []Service {
 	servicesToCheck := config.Services
 	var services []Service
 	for _, serviceToCheck := range servicesToCheck {
