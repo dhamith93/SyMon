@@ -1,15 +1,12 @@
 package server
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/internal/auth"
@@ -37,9 +34,6 @@ func Run(port string) {
 
 func handleRequests(port string, config config.Config) {
 	router := mux.NewRouter().StrictSlash(true)
-	router.Handle("/collect", auth.CheckAuth(returnCollect))
-	router.Handle("/collect-custom", auth.CheckAuth(returnCollectCustom))
-	router.Handle("/collect-init", auth.CheckAuth(returnInit))
 	router.Handle("/custom", auth.CheckAuth(returnCustom))
 	router.Handle("/custom-metric-names", auth.CheckAuth(returnCustomMetricNames))
 	router.Handle("/agents", auth.CheckAuth(returnAgents))
@@ -66,101 +60,6 @@ func handleRequests(port string, config config.Config) {
 		logger.Log("info", "API started on port "+port)
 		log.Fatal(server.ListenAndServe())
 	}
-}
-
-func returnInit(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	serverIdArr, ok := r.URL.Query()["serverId"]
-	timeZoneArr, ok2 := r.URL.Query()["timezone"]
-
-	if !ok || !ok2 {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("cannot parse server id/timezone")
-		return
-	}
-
-	err := initAgent(serverIdArr[0], timeZoneArr[0], config.GetConfig("config.json"))
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("agent added")
-}
-
-func returnCollect(w http.ResponseWriter, r *http.Request) {
-	// logger.Log("info", "API HIT "+r.RemoteAddr+" "+time.Now().String())
-	gunzip, err := gzip.NewReader(r.Body)
-	if err != nil {
-		log.Println("error unzip: ", err)
-	}
-	defer gunzip.Close()
-	body, _ := ioutil.ReadAll(gunzip)
-	var monitorData = monitor.MonitorData{}
-	err = json.Unmarshal(body, &monitorData)
-	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
-
-	data := map[string]string{
-		"time": unixTime,
-	}
-
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		data["status"] = "ERROR"
-		data["error"] = err.Error()
-	} else {
-		err := HandleMonitorData(monitorData)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			data["status"] = "ERROR"
-			data["error"] = err.Error()
-		} else {
-			w.WriteHeader(http.StatusOK)
-			data["status"] = "OK"
-		}
-		// logger.Log("info", "API FINISHED "+r.RemoteAddr+" "+time.Now().String())
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
-}
-
-func returnCollectCustom(w http.ResponseWriter, r *http.Request) {
-	gunzip, err := gzip.NewReader(r.Body)
-	if err != nil {
-		log.Println("error unzip: ", err)
-	}
-	defer gunzip.Close()
-	body, _ := ioutil.ReadAll(gunzip)
-	var customMetric = monitor.CustomMetric{}
-	err = json.Unmarshal(body, &customMetric)
-	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
-
-	data := map[string]string{
-		"time": unixTime,
-	}
-
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		data["status"] = "ERROR"
-		data["error"] = err.Error()
-	} else {
-		err := HandleCustomMetric(customMetric)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			data["status"] = "ERROR"
-			data["error"] = err.Error()
-		} else {
-			w.WriteHeader(http.StatusOK)
-			data["status"] = "OK"
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
 }
 
 func returnAgents(w http.ResponseWriter, r *http.Request) {
