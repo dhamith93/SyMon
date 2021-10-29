@@ -29,6 +29,7 @@ func (mysql *MySql) Connect(user string, password string, host string, database 
 		connStr += "?multiStatements=true"
 	}
 	mysql.DB, mysql.SqlErr = sql.Open("mysql", connStr)
+	mysql.SqlErr = mysql.DB.Ping()
 	if mysql.SqlErr != nil {
 		mysql.Connected = false
 		log.Fatalf("cannot connect to mysql database %v", mysql.SqlErr)
