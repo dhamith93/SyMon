@@ -46,6 +46,20 @@ func CheckAuth(endpoint func(w http.ResponseWriter, r *http.Request)) http.Handl
 	})
 }
 
+func ValidToken(token string) bool {
+	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("error with method")
+		}
+		return []byte(GetKey()), nil
+	})
+	if err != nil {
+		logger.Log("Auth Error", err.Error())
+		return false
+	}
+	return t.Valid
+}
+
 func GenerateJWT() (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
