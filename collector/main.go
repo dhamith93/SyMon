@@ -7,10 +7,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"sync"
 
 	"github.com/dhamith93/SyMon/collector/internal/config"
-	"github.com/dhamith93/SyMon/collector/internal/server"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
@@ -34,7 +32,6 @@ func main() {
 
 	var removeAgentVal string
 	initPtr := flag.Bool("init", false, "Initialize the collector")
-	grpcPtr := flag.Bool("grpc", false, "Experimental: gPRC")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
 	flag.Parse()
 
@@ -42,7 +39,7 @@ func main() {
 		initCollector(&config)
 	} else if len(removeAgentVal) > 0 {
 		removeAgent(removeAgentVal, config)
-	} else if *grpcPtr {
+	} else {
 		lis, err := net.Listen("tcp", ":"+config.Port)
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
@@ -53,14 +50,6 @@ func main() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %s", err)
 		}
-	} else {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			server.Run(":" + config.Port)
-			wg.Done()
-		}()
-		wg.Wait()
 	}
 }
 
