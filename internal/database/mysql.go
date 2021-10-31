@@ -197,8 +197,9 @@ func (mysql *MySql) GetAgents() []string {
 	return mysql.monitorDataSelect("SELECT DISTINCT name FROM server WHERE name != 'collector'")
 }
 
-func (mysql *MySql) GetCustomMetricNames() []string {
-	return mysql.monitorDataSelect("SELECT DISTINCT log_type FROM monitor_log WHERE log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'processes', 'memoryUsage', 'CpuUsage')")
+func (mysql *MySql) GetCustomMetricNames(serverName string) []string {
+	serverId := mysql.getServerId(serverName)
+	return mysql.monitorDataSelect("SELECT DISTINCT log_type FROM monitor_log WHERE server_id = ? AND log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'processes', 'memoryUsage', 'CpuUsage')", serverId)
 }
 
 func (mysql *MySql) GetLogFromDBCount(serverId string, logType string, count int64) []string {
