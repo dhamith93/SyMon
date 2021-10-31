@@ -63,6 +63,10 @@ Custom timeseries data can be added using the agent as below. Current server tim
 This can be automated using a cron or a script
 
 ### API documentation
+
+#### API Authenticatication 
+* Client app
+    * Since the API call authentication is handled through the client app, API calls via the client app can be used without any authentication. 
 #### End points
 * `/system`
     * Returns system info
@@ -80,16 +84,16 @@ This can be automated using a cron or a script
     * Return disk info/usage
 ```json
 	{
-	    Time: "time", 
-	    Disks: [["file system", "mount point", "type", "size", "free", "used", "used%", "inodes", "inodes free", "inodes used", "inodes used%"]]
+	    "Time": "time", 
+	    "Disks": [["file system", "mount point", "type", "size", "free", "used", "used%", "inodes", "inodes free", "inodes used", "inodes used%"]]
 	}
 ```
 * `/network`
     * Return disk info/usage
 ```json
 	{
-	    Time: "time", 
-	    Networks: [["ip", "interface", "rx", "tx"]]
+	    "Time": "time", 
+	    "Networks": [["ip", "interface", "rx", "tx"]]
 	}
 ```
 * `/processes`
@@ -97,12 +101,12 @@ This can be automated using a cron or a script
 ```json
 
     {
-        CPU: [
+        "CPU": [
             ["pid", "cpu", "mem", "command"],
             ["pid", "cpu", "mem", "command"]
         ],
         
-        Memory: [
+        "Memory": [
             ["pid", "cpu", "mem", "command"],
             ["pid", "cpu", "mem", "command"]
         ]
@@ -126,7 +130,7 @@ This can be automated using a cron or a script
 * `/custom-metric-names`
     * Names of custom metrics
 ```json
-    {CustomMetrics: ["active-http-requests",]}
+    {"CustomMetrics": ["active-http-requests",]}
 ```
 * `/custom?custom-metric=name`
     * Custom metric values
@@ -138,13 +142,6 @@ This can be automated using a cron or a script
 * Optional GET parameters
     * `from=[unix timestamp]&to=[unix timestamp]` values within a time range
     * `time=[unix timestamp]` value(s) at a certain time (depends on availability of data)
-
-#### API Authenticatication 
-* Client app
-    * Since the API call authentication is handled through the client app, API calls via the client app can be used without any authentication. 
-
-* Collector app
-    * To use with collector app, API calls must have JWT in header derived from the key file. 
 
 ## Todo
 * Disk I/O graphs

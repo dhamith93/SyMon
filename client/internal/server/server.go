@@ -1,15 +1,23 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"time"
 
+	"github.com/dhamith93/SyMon/internal/api"
+	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/dhamith93/SyMon/internal/send"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type Agents struct {
@@ -54,81 +62,199 @@ func handleRequests(port string) {
 }
 
 func returnAgents(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/agents"
-	handleRequest(url, w)
+	handleRequestForMeta("agents", w, r)
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/system?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("system", w, r)
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/memory?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("memory", w, r)
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/swap?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("swap", w, r)
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/disks?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("disks", w, r)
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/proc?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("processor", w, r)
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/network?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("networks", w, r)
 }
 
 func returnProcesses(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/processes?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("processes", w, r)
 }
 
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/processor-usage-historical?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("procUsage", w, r)
 }
 
 func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/memory-historical?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("memory-historical", w, r)
 }
 
 func returnServices(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/services?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequest("services", w, r)
 }
 
 func returnCustom(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/custom?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	customMetricName, _ := parseGETForCustomMetricName(r)
+	handleRequest(customMetricName, w, r)
 }
 
 func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
-	url := config.GetConfig("config.json").MonitorEndpoint + "/custom-metric-names?" + r.URL.Query().Encode()
-	handleRequest(url, w)
+	handleRequestForMeta("customMetricNames", w, r)
 }
 
-func handleRequest(url string, w http.ResponseWriter) {
+func handleRequest(logType string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	config := config.GetConfig("config.json")
+	serverName, _ := parseGETForServerName(r)
+	time, _ := parseGETForTime(r)
+	from, to, _ := parseGETForDates(r)
+	received, err := getMonitorData(serverName, logType, from, to, time, &config)
 	var data interface{}
-	res, _, str := send.SendGet(url)
 	var out output
-	if res {
-		out.Status = "OK"
-	} else {
+	out.Status = "OK"
+	if err != nil {
 		out.Status = "ERR"
+		json.NewEncoder(w).Encode(&out)
+		return
 	}
-	_ = json.Unmarshal([]byte(str), &data)
+	_ = json.Unmarshal([]byte(received), &data)
 	out.Data = data
 	json.NewEncoder(w).Encode(&out)
+}
+
+func handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	config := config.GetConfig("config.json")
+	var out output
+	out.Status = "OK"
+	conn, c, ctx, cancel := createClient(&config)
+	defer conn.Close()
+	defer cancel()
+
+	var meta *api.Message
+	var err error
+
+	switch metaType {
+	case "agents":
+		meta, err = c.HandleAgentIdsRequest(ctx, &api.Void{})
+	case "customMetricNames":
+		serverName, _ := parseGETForServerName(r)
+		meta, err = c.HandleCustomMetricNameRequest(ctx, &api.ServerInfo{ServerName: serverName})
+	default:
+		break
+	}
+
+	if err != nil {
+		out.Status = "ERR"
+		out.Data = err.Error()
+		json.NewEncoder(w).Encode(&out)
+		return
+	}
+
+	var data interface{}
+	_ = json.Unmarshal([]byte(meta.Body), &data)
+	out.Data = data
+	json.NewEncoder(w).Encode(&out)
+}
+
+func generateToken() string {
+	token, err := auth.GenerateJWT()
+	if err != nil {
+		logger.Log("error", "error generating token: "+err.Error())
+		os.Exit(1)
+	}
+	return token
+}
+
+func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
+	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithInsecure())
+	if err != nil {
+		logger.Log("error", "connection error: "+err.Error())
+		os.Exit(1)
+	}
+	c := api.NewMonitorDataServiceClient(conn)
+	token := generateToken()
+	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*1)
+	return conn, c, ctx, cancel
+}
+
+func getMonitorData(serverName string, logType string, from int64, to int64, time int64, config *config.Config) (string, error) {
+	conn, c, ctx, cancel := createClient(config)
+	defer conn.Close()
+	defer cancel()
+	monitorData, err := c.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: time})
+	if err != nil {
+		logger.Log("error", "error sending data: "+err.Error())
+		return "", err
+	}
+	return monitorData.MonitorData, nil
+}
+
+func parseGETForTime(r *http.Request) (int64, error) {
+	timeArr, ok := r.URL.Query()["time"]
+
+	if !ok {
+		return 0, fmt.Errorf("error parsing get vars")
+	}
+
+	timeInt, err := strconv.ParseInt(timeArr[0], 10, 64)
+
+	if err != nil {
+		return 0, fmt.Errorf("error parsing get vars")
+	}
+
+	return timeInt, nil
+}
+
+func parseGETForDates(r *http.Request) (int64, int64, error) {
+	from, okFrom := r.URL.Query()["from"]
+	to, okTo := r.URL.Query()["to"]
+
+	if !okFrom || !okTo {
+		return 0, 0, fmt.Errorf("error parsing get vars")
+	}
+
+	fromTime, err1 := strconv.ParseInt(from[0], 10, 64)
+	toTime, err2 := strconv.ParseInt(to[0], 10, 64)
+
+	if err1 != nil || err2 != nil {
+		return 0, 0, fmt.Errorf("error parsing get vars")
+	}
+
+	return fromTime, toTime, nil
+}
+
+func parseGETForServerName(r *http.Request) (string, error) {
+	serverIdArr, ok := r.URL.Query()["serverId"]
+	if !ok || len(serverIdArr) == 0 {
+		logger.Log("ERROR", "cannot parse for server ID")
+		return "", fmt.Errorf("cannot parse for server id")
+	}
+	return serverIdArr[0], nil
+}
+
+func parseGETForCustomMetricName(r *http.Request) (string, error) {
+	customMetricNameArr, ok := r.URL.Query()["custom-metric"]
+
+	if !ok {
+		return "", fmt.Errorf("error parsing get vars")
+	}
+
+	if len(customMetricNameArr) == 0 {
+		return "", fmt.Errorf("error parsing get vars")
+	}
+
+	return customMetricNameArr[0], nil
 }
