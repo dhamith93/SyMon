@@ -179,7 +179,7 @@ func getMonitorLogs(serverName string, logType string, from int64, to int64, tim
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
-	if convertToJsonArr || (to != 0 && from != 0) {
+	if (convertToJsonArr || (to != 0 && from != 0)) && logType != "system" {
 		return stringops.StringArrToJSONArr(data)
 	} else {
 		return data[0]
