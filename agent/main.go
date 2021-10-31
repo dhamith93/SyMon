@@ -78,8 +78,8 @@ func initAgent(config *config.Config) {
 	defer conn.Close()
 	defer cancel()
 	response, err := c.InitAgent(ctx, &api.ServerInfo{
-		ServerId: config.ServerId,
-		Timezone: monitor.GetSystem().TimeZone,
+		ServerName: config.ServerId,
+		Timezone:   monitor.GetSystem().TimeZone,
 	})
 	if err != nil {
 		logger.Log("error", "error adding agent: "+err.Error())
