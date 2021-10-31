@@ -1,6 +1,6 @@
 {
     "ServerId": "unique-id",
-    "MonitorEndpoint": "http://localhost:9900/collect",
+    "MonitorEndpoint": "localhost:9900",
     "LogFileEnabled": false,
     "LogFilePath": "",
     "SQLiteDBLoggingEnabled": false,

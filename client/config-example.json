@@ -1,6 +1,6 @@
 {
     "Port": "9000",
-    "MonitorEndpoint": "http://localhost:9900/",
+    "MonitorEndpoint": "localhost:9900",
     "LogFileEnabled": true,
     "LogFilePath": "/home/dhamith93/tmp/symon_collector.log"
 }
