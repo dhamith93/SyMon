@@ -3,12 +3,16 @@ syntax = "proto3";
 package api;
 option go_package = "./api";
 
+message Void {
+
+}
+
 message Message {
     string body = 1;
 }
 
 message ServerInfo {
-    string serverId = 1;
+    string serverName = 1;
     string timezone = 2;
 }
 
@@ -16,8 +20,19 @@ message MonitorData {
     string monitorData = 1; 
 }
 
+message MonitorDataRequest {
+    string serverName = 1;
+    string logType = 2;
+    int64 from = 3;
+    int64 to = 4;
+    int64 time = 5;
+}
+
 service MonitorDataService {
     rpc InitAgent(ServerInfo) returns (Message) {}
     rpc HandleMonitorData(MonitorData) returns (Message) {}
     rpc HandleCustomMonitorData(MonitorData) returns (Message) {}
+    rpc HandleMonitorDataRequest(MonitorDataRequest) returns (MonitorData) {}
+    rpc HandleCustomMetricNameRequest(ServerInfo) returns (Message) {}
+    rpc HandleAgentIdsRequest(Void) returns (Message) {}
 }

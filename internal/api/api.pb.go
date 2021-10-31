@@ -24,6 +24,44 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Void struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *Void) Reset() {
+	*x = Void{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_api_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Void) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Void) ProtoMessage() {}
+
+func (x *Void) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Void.ProtoReflect.Descriptor instead.
+func (*Void) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{0}
+}
+
 type Message struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -35,7 +73,7 @@ type Message struct {
 func (x *Message) Reset() {
 	*x = Message{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_api_proto_msgTypes[0]
+		mi := &file_api_api_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -48,7 +86,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[0]
+	mi := &file_api_api_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +99,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{0}
+	return file_api_api_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Message) GetBody() string {
@@ -76,14 +114,14 @@ type ServerInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ServerId string `protobuf:"bytes,1,opt,name=serverId,proto3" json:"serverId,omitempty"`
-	Timezone string `protobuf:"bytes,2,opt,name=timezone,proto3" json:"timezone,omitempty"`
+	ServerName string `protobuf:"bytes,1,opt,name=serverName,proto3" json:"serverName,omitempty"`
+	Timezone   string `protobuf:"bytes,2,opt,name=timezone,proto3" json:"timezone,omitempty"`
 }
 
 func (x *ServerInfo) Reset() {
 	*x = ServerInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_api_proto_msgTypes[1]
+		mi := &file_api_api_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -96,7 +134,7 @@ func (x *ServerInfo) String() string {
 func (*ServerInfo) ProtoMessage() {}
 
 func (x *ServerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[1]
+	mi := &file_api_api_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,12 +147,12 @@ func (x *ServerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerInfo.ProtoReflect.Descriptor instead.
 func (*ServerInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{1}
+	return file_api_api_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ServerInfo) GetServerId() string {
+func (x *ServerInfo) GetServerName() string {
 	if x != nil {
-		return x.ServerId
+		return x.ServerName
 	}
 	return ""
 }
@@ -137,7 +175,7 @@ type MonitorData struct {
 func (x *MonitorData) Reset() {
 	*x = MonitorData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_api_proto_msgTypes[2]
+		mi := &file_api_api_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -150,7 +188,7 @@ func (x *MonitorData) String() string {
 func (*MonitorData) ProtoMessage() {}
 
 func (x *MonitorData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[2]
+	mi := &file_api_api_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +201,7 @@ func (x *MonitorData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MonitorData.ProtoReflect.Descriptor instead.
 func (*MonitorData) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{2}
+	return file_api_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MonitorData) GetMonitorData() string {
@@ -173,33 +211,133 @@ func (x *MonitorData) GetMonitorData() string {
 	return ""
 }
 
+type MonitorDataRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ServerName string `protobuf:"bytes,1,opt,name=serverName,proto3" json:"serverName,omitempty"`
+	LogType    string `protobuf:"bytes,2,opt,name=logType,proto3" json:"logType,omitempty"`
+	From       int64  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
+	To         int64  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
+	Time       int64  `protobuf:"varint,5,opt,name=time,proto3" json:"time,omitempty"`
+}
+
+func (x *MonitorDataRequest) Reset() {
+	*x = MonitorDataRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_api_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MonitorDataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MonitorDataRequest) ProtoMessage() {}
+
+func (x *MonitorDataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MonitorDataRequest.ProtoReflect.Descriptor instead.
+func (*MonitorDataRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *MonitorDataRequest) GetServerName() string {
+	if x != nil {
+		return x.ServerName
+	}
+	return ""
+}
+
+func (x *MonitorDataRequest) GetLogType() string {
+	if x != nil {
+		return x.LogType
+	}
+	return ""
+}
+
+func (x *MonitorDataRequest) GetFrom() int64 {
+	if x != nil {
+		return x.From
+	}
+	return 0
+}
+
+func (x *MonitorDataRequest) GetTo() int64 {
+	if x != nil {
+		return x.To
+	}
+	return 0
+}
+
+func (x *MonitorDataRequest) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
 var File_api_api_proto protoreflect.FileDescriptor
 
 var file_api_api_proto_rawDesc = []byte{
 	0x0a, 0x0d, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x70, 0x69, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x03, 0x61, 0x70, 0x69, 0x22, 0x1d, 0x0a, 0x07, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12,
-	0x12, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62,
-	0x6f, 0x64, 0x79, 0x22, 0x44, 0x0a, 0x0a, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x6e, 0x66,
-	0x6f, 0x12, 0x1a, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1a, 0x0a,
-	0x08, 0x74, 0x69, 0x6d, 0x65, 0x7a, 0x6f, 0x6e, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x08, 0x74, 0x69, 0x6d, 0x65, 0x7a, 0x6f, 0x6e, 0x65, 0x22, 0x2f, 0x0a, 0x0b, 0x4d, 0x6f, 0x6e,
-	0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x12, 0x20, 0x0a, 0x0b, 0x6d, 0x6f, 0x6e, 0x69,
-	0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6d,
-	0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x32, 0xb6, 0x01, 0x0a, 0x12, 0x4d,
-	0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x12, 0x2c, 0x0a, 0x09, 0x49, 0x6e, 0x69, 0x74, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x0f,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x1a,
-	0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x12,
-	0x35, 0x0a, 0x11, 0x48, 0x61, 0x6e, 0x64, 0x6c, 0x65, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72,
-	0x44, 0x61, 0x74, 0x61, 0x12, 0x10, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x6f, 0x6e, 0x69, 0x74,
-	0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x65, 0x73,
-	0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x17, 0x48, 0x61, 0x6e, 0x64, 0x6c, 0x65,
-	0x43, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74,
-	0x61, 0x12, 0x10, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44,
-	0x61, 0x74, 0x61, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
-	0x65, 0x22, 0x00, 0x42, 0x07, 0x5a, 0x05, 0x2e, 0x2f, 0x61, 0x70, 0x69, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x03, 0x61, 0x70, 0x69, 0x22, 0x06, 0x0a, 0x04, 0x56, 0x6f, 0x69, 0x64, 0x22, 0x1d, 0x0a, 0x07,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62, 0x6f, 0x64, 0x79, 0x22, 0x48, 0x0a, 0x0a, 0x53,
+	0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x65, 0x72,
+	0x76, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73,
+	0x65, 0x72, 0x76, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x74, 0x69, 0x6d,
+	0x65, 0x7a, 0x6f, 0x6e, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x69, 0x6d,
+	0x65, 0x7a, 0x6f, 0x6e, 0x65, 0x22, 0x2f, 0x0a, 0x0b, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72,
+	0x44, 0x61, 0x74, 0x61, 0x12, 0x20, 0x0a, 0x0b, 0x6d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44,
+	0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6d, 0x6f, 0x6e, 0x69, 0x74,
+	0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x22, 0x86, 0x01, 0x0a, 0x12, 0x4d, 0x6f, 0x6e, 0x69, 0x74,
+	0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a,
+	0x0a, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a,
+	0x07, 0x6c, 0x6f, 0x67, 0x54, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x6c, 0x6f, 0x67, 0x54, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x66, 0x72, 0x6f, 0x6d, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x66, 0x72, 0x6f, 0x6d, 0x12, 0x0e, 0x0a, 0x02, 0x74,
+	0x6f, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x74, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x69, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x32,
+	0xf5, 0x02, 0x0a, 0x12, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x2c, 0x0a, 0x09, 0x49, 0x6e, 0x69, 0x74, 0x41, 0x67,
+	0x65, 0x6e, 0x74, 0x12, 0x0f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x49, 0x6e, 0x66, 0x6f, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x22, 0x00, 0x12, 0x35, 0x0a, 0x11, 0x48, 0x61, 0x6e, 0x64, 0x6c, 0x65, 0x4d, 0x6f,
+	0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x12, 0x10, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x1a, 0x0c, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x17, 0x48,
+	0x61, 0x6e, 0x64, 0x6c, 0x65, 0x43, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x4d, 0x6f, 0x6e, 0x69, 0x74,
+	0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x12, 0x10, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x6f, 0x6e,
+	0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x12, 0x47, 0x0a, 0x18, 0x48, 0x61, 0x6e, 0x64,
+	0x6c, 0x65, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x12, 0x17, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x6f, 0x6e, 0x69, 0x74,
+	0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x10, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x4d, 0x6f, 0x6e, 0x69, 0x74, 0x6f, 0x72, 0x44, 0x61, 0x74, 0x61, 0x22,
+	0x00, 0x12, 0x40, 0x0a, 0x1d, 0x48, 0x61, 0x6e, 0x64, 0x6c, 0x65, 0x43, 0x75, 0x73, 0x74, 0x6f,
+	0x6d, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x0f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49,
+	0x6e, 0x66, 0x6f, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x22, 0x00, 0x12, 0x32, 0x0a, 0x15, 0x48, 0x61, 0x6e, 0x64, 0x6c, 0x65, 0x41, 0x67, 0x65,
+	0x6e, 0x74, 0x49, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x09, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x56, 0x6f, 0x69, 0x64, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x42, 0x07, 0x5a, 0x05, 0x2e, 0x2f, 0x61, 0x70, 0x69,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -214,21 +352,29 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_api_proto_goTypes = []interface{}{
-	(*Message)(nil),     // 0: api.Message
-	(*ServerInfo)(nil),  // 1: api.ServerInfo
-	(*MonitorData)(nil), // 2: api.MonitorData
+	(*Void)(nil),               // 0: api.Void
+	(*Message)(nil),            // 1: api.Message
+	(*ServerInfo)(nil),         // 2: api.ServerInfo
+	(*MonitorData)(nil),        // 3: api.MonitorData
+	(*MonitorDataRequest)(nil), // 4: api.MonitorDataRequest
 }
 var file_api_api_proto_depIdxs = []int32{
-	1, // 0: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	2, // 1: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	2, // 2: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0, // 3: api.MonitorDataService.InitAgent:output_type -> api.Message
-	0, // 4: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	0, // 5: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	2, // 0: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	3, // 1: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	3, // 2: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	4, // 3: api.MonitorDataService.HandleMonitorDataRequest:input_type -> api.MonitorDataRequest
+	2, // 4: api.MonitorDataService.HandleCustomMetricNameRequest:input_type -> api.ServerInfo
+	0, // 5: api.MonitorDataService.HandleAgentIdsRequest:input_type -> api.Void
+	1, // 6: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1, // 7: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1, // 8: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	3, // 9: api.MonitorDataService.HandleMonitorDataRequest:output_type -> api.MonitorData
+	1, // 10: api.MonitorDataService.HandleCustomMetricNameRequest:output_type -> api.Message
+	1, // 11: api.MonitorDataService.HandleAgentIdsRequest:output_type -> api.Message
+	6, // [6:12] is the sub-list for method output_type
+	0, // [0:6] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -241,7 +387,7 @@ func file_api_api_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_api_api_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Message); i {
+			switch v := v.(*Void); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -253,7 +399,7 @@ func file_api_api_proto_init() {
 			}
 		}
 		file_api_api_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ServerInfo); i {
+			switch v := v.(*Message); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -265,7 +411,31 @@ func file_api_api_proto_init() {
 			}
 		}
 		file_api_api_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServerInfo); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_api_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MonitorData); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_api_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MonitorDataRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -283,7 +453,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_api_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -312,6 +482,9 @@ type MonitorDataServiceClient interface {
 	InitAgent(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
 	HandleMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
 	HandleCustomMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
+	HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest, opts ...grpc.CallOption) (*MonitorData, error)
+	HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
+	HandleAgentIdsRequest(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error)
 }
 
 type monitorDataServiceClient struct {
@@ -349,11 +522,41 @@ func (c *monitorDataServiceClient) HandleCustomMonitorData(ctx context.Context, 
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest, opts ...grpc.CallOption) (*MonitorData, error) {
+	out := new(MonitorData)
+	err := c.cc.Invoke(ctx, "/api.MonitorDataService/HandleMonitorDataRequest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error) {
+	out := new(Message)
+	err := c.cc.Invoke(ctx, "/api.MonitorDataService/HandleCustomMetricNameRequest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) HandleAgentIdsRequest(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error) {
+	out := new(Message)
+	err := c.cc.Invoke(ctx, "/api.MonitorDataService/HandleAgentIdsRequest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 type MonitorDataServiceServer interface {
 	InitAgent(context.Context, *ServerInfo) (*Message, error)
 	HandleMonitorData(context.Context, *MonitorData) (*Message, error)
 	HandleCustomMonitorData(context.Context, *MonitorData) (*Message, error)
+	HandleMonitorDataRequest(context.Context, *MonitorDataRequest) (*MonitorData, error)
+	HandleCustomMetricNameRequest(context.Context, *ServerInfo) (*Message, error)
+	HandleAgentIdsRequest(context.Context, *Void) (*Message, error)
 }
 
 // UnimplementedMonitorDataServiceServer can be embedded to have forward compatible implementations.
@@ -368,6 +571,15 @@ func (*UnimplementedMonitorDataServiceServer) HandleMonitorData(context.Context,
 }
 func (*UnimplementedMonitorDataServiceServer) HandleCustomMonitorData(context.Context, *MonitorData) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleCustomMonitorData not implemented")
+}
+func (*UnimplementedMonitorDataServiceServer) HandleMonitorDataRequest(context.Context, *MonitorDataRequest) (*MonitorData, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandleMonitorDataRequest not implemented")
+}
+func (*UnimplementedMonitorDataServiceServer) HandleCustomMetricNameRequest(context.Context, *ServerInfo) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandleCustomMetricNameRequest not implemented")
+}
+func (*UnimplementedMonitorDataServiceServer) HandleAgentIdsRequest(context.Context, *Void) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HandleAgentIdsRequest not implemented")
 }
 
 func RegisterMonitorDataServiceServer(s *grpc.Server, srv MonitorDataServiceServer) {
@@ -428,6 +640,60 @@ func _MonitorDataService_HandleCustomMonitorData_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_HandleMonitorDataRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MonitorDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).HandleMonitorDataRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.MonitorDataService/HandleMonitorDataRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).HandleMonitorDataRequest(ctx, req.(*MonitorDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_HandleCustomMetricNameRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).HandleCustomMetricNameRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.MonitorDataService/HandleCustomMetricNameRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).HandleCustomMetricNameRequest(ctx, req.(*ServerInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_HandleAgentIdsRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).HandleAgentIdsRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.MonitorDataService/HandleAgentIdsRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).HandleAgentIdsRequest(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _MonitorDataService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.MonitorDataService",
 	HandlerType: (*MonitorDataServiceServer)(nil),
@@ -443,6 +709,18 @@ var _MonitorDataService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleCustomMonitorData",
 			Handler:    _MonitorDataService_HandleCustomMonitorData_Handler,
+		},
+		{
+			MethodName: "HandleMonitorDataRequest",
+			Handler:    _MonitorDataService_HandleMonitorDataRequest_Handler,
+		},
+		{
+			MethodName: "HandleCustomMetricNameRequest",
+			Handler:    _MonitorDataService_HandleCustomMetricNameRequest_Handler,
+		},
+		{
+			MethodName: "HandleAgentIdsRequest",
+			Handler:    _MonitorDataService_HandleAgentIdsRequest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
