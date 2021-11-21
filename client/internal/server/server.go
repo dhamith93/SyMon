@@ -186,7 +186,7 @@ func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServi
 	}
 	c := api.NewMonitorDataServiceClient(conn)
 	token := generateToken()
-	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*1)
+	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
 	return conn, c, ctx, cancel
 }
 
