@@ -23,6 +23,7 @@ type Config struct {
 	CPUThreshold           int
 	MemoryThreshold        int
 	DiskUsageThreshold     int
+	MonitorIntervalSeconds int
 	DisksToIgnore          string
 	WarnAfterSecs          int
 	ServerId               string

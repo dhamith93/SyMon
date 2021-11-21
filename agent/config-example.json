@@ -5,6 +5,7 @@
     "LogFilePath": "",
     "SQLiteDBLoggingEnabled": false,
     "SQLiteDBPath": "",
+    "MonitorIntervalSeconds": 15,
     "DisksToIgnore": "/dev/loop0,/dev/loop1,/dev/loop2,/dev/loop3",
     "Services": [
         {

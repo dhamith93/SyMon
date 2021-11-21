@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const customMetricsDiv = document.getElementById('custom-metrics');
     const customMetricsDisplayArea = document.getElementById('custom-metrics-display-area');
     const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
+    const monitorInterval = 15;
     let timeZone = '';
     let toTime = 0;
     let fromTime = 0;
@@ -407,8 +408,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 let iface = row.Networks[0];
                 let newRx = parseInt(iface[2], 10);
                 let newTx = parseInt(iface[3], 10);
-                let diffRateRx = (newRx - orgRx) / 60;
-                let diffRateTx = (newTx - orgTx) / 60;
+                let diffRateRx = (newRx - orgRx) / monitorInterval;
+                let diffRateTx = (newTx - orgTx) / monitorInterval;
                 orgRx = newRx;
                 orgTx = newTx;
                 labels.push(new Date(row['Time'] * 1000));
@@ -515,8 +516,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (data && chart != null) {
             let newRx = parseInt(data.Networks[0][2], 10);
             let newTx = parseInt(data.Networks[0][3], 10);
-            let diffRateRx = (newRx - orgRx) / 60;
-            let diffRateTx = (newTx - orgTx) / 60;
+            let diffRateRx = (newRx - orgRx) / monitorInterval;
+            let diffRateTx = (newTx - orgTx) / monitorInterval;
             orgRx = newRx;
             orgTx = newTx;
             chart.data.datasets[0].data.shift()
@@ -803,5 +804,5 @@ document.addEventListener('DOMContentLoaded', ()=> {
     setInterval(() => {
         if (!loadingFromCustomRange && !loadingPoinInTime)
             loadSysInfo();
-    }, 60000);
+    }, monitorInterval * 1000);
 });
