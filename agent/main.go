@@ -75,6 +75,10 @@ func main() {
 
 func initAgent(config *config.Config) {
 	conn, c, ctx, cancel := createClient(config)
+	if conn == nil {
+		logger.Log("error", "error creating connection")
+		return
+	}
 	defer conn.Close()
 	defer cancel()
 	response, err := c.InitAgent(ctx, &api.ServerInfo{
@@ -90,12 +94,15 @@ func initAgent(config *config.Config) {
 
 func sendMonitorData(monitorData string, config *config.Config) {
 	conn, c, ctx, cancel := createClient(config)
+	if conn == nil {
+		logger.Log("error", "error creating connection")
+		return
+	}
 	defer conn.Close()
 	defer cancel()
 	_, err := c.HandleMonitorData(ctx, &api.MonitorData{MonitorData: monitorData})
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
-		os.Exit(1)
 	}
 }
 
@@ -113,6 +120,10 @@ func sendCustomMetric(name string, unit string, value string, config *config.Con
 		return
 	}
 	conn, c, ctx, cancel := createClient(config)
+	if conn == nil {
+		logger.Log("error", "error creating connection")
+		return
+	}
 	defer conn.Close()
 	defer cancel()
 	_, err = c.HandleCustomMonitorData(ctx, &api.MonitorData{MonitorData: string(jsonData)})
@@ -135,7 +146,7 @@ func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServi
 	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithInsecure())
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
-		os.Exit(1)
+		return nil, nil, nil, nil
 	}
 	c := api.NewMonitorDataServiceClient(conn)
 	token := generateToken()
