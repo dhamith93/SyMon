@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -20,7 +21,17 @@ import (
 )
 
 func main() {
-	config := config.GetConfig("config.json")
+	var removeAgentVal, configPath string
+	initPtr := flag.Bool("init", false, "Initialize the collector")
+	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
+	flag.StringVar(&configPath, "config", "", "Path to config.json.")
+	flag.Parse()
+
+	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
+		log.Fatalf("cannot load config.json: %v", err)
+	}
+
+	config := config.GetConfig(configPath)
 	if config.LogFileEnabled {
 		file, err := os.OpenFile(config.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
@@ -29,11 +40,6 @@ func main() {
 		defer file.Close()
 		log.SetOutput(file)
 	}
-
-	var removeAgentVal string
-	initPtr := flag.Bool("init", false, "Initialize the collector")
-	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
-	flag.Parse()
 
 	if *initPtr {
 		initCollector(&config)
