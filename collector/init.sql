@@ -140,3 +140,5 @@ ALTER TABLE `alert_notification` ADD FOREIGN KEY (`notification_id`) REFERENCES 
 ALTER TABLE `notification_template` ADD FOREIGN KEY (`type`) REFERENCES `notification_type` (`id`);
 
 ALTER TABLE `notification_template` ADD FOREIGN KEY (`channel`) REFERENCES `notification_channel` (`id`);
+
+CREATE INDEX `log_time` ON `monitor_log`(`log_time`);
