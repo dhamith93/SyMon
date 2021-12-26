@@ -1,0 +1,22 @@
+[
+    {
+        "Servers": ["webtools", "dhamith.me"],
+        "Name": "CPU Usage",
+        "Description": "",
+        "MetricName": "procUsage",
+        "WarnThreshold": 80,
+        "CriticalThreshold": 95,
+        "Operand": "gt",
+        "TriggerIntveral": 300
+    },
+    {
+        "Servers": ["webtools", "dhamith.me"],
+        "Name": "Memory Usage",
+        "Description": "",
+        "MetricName": "memory",
+        "WarnThreshold": 75,
+        "CriticalThreshold": 90,
+        "Operand": "gt",
+        "TriggerIntveral": 300
+    }
+]

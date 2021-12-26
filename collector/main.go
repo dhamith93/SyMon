@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/dhamith93/SyMon/collector/internal/config"
+	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
@@ -21,10 +22,12 @@ import (
 )
 
 func main() {
-	var removeAgentVal, configPath string
+	var removeAgentVal, configPath, alertConfigPath string
+	var alertConfig []alerts.AlertConfig
 	initPtr := flag.Bool("init", false, "Initialize the collector")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
 	flag.StringVar(&configPath, "config", "", "Path to config.json.")
+	flag.StringVar(&alertConfigPath, "alerts", "", "Path to alerts json file.")
 	flag.Parse()
 
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
@@ -40,6 +43,15 @@ func main() {
 		defer file.Close()
 		log.SetOutput(file)
 	}
+
+	if len(alertConfigPath) > 0 {
+		if _, err := os.Stat(alertConfigPath); errors.Is(err, os.ErrNotExist) {
+			logger.Log("cannot load alert config: ", err.Error())
+		}
+		alertConfig = alerts.GetAlertConfig(alertConfigPath)
+	}
+
+	fmt.Println(alertConfig)
 
 	if *initPtr {
 		initCollector(&config)
