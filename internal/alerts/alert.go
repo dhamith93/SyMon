@@ -9,11 +9,26 @@ type AlertConfig struct {
 	Name              string
 	Description       string
 	MetricName        string
-	Operand           string
+	Op                string
+	Template          string
 	WarnThreshold     int
 	CriticalThreshold int
 	TriggerIntveral   int
 	Servers           []string
+	Disks             []string
+}
+
+type Alert struct {
+	ServerName        string
+	Name              string
+	Template          string
+	MetricName        string
+	Op                string
+	Timestamp         string
+	Value             float32
+	WarnThreshold     int
+	CriticalThreshold int
+	TriggerIntveral   int
 }
 
 func GetAlertConfig(path string) []AlertConfig {
