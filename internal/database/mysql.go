@@ -3,9 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strconv"
 
+	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/fileops"
 	"github.com/dhamith93/SyMon/internal/logger"
 	_ "github.com/go-sql-driver/mysql"
@@ -32,7 +32,8 @@ func (mysql *MySql) Connect(user string, password string, host string, database 
 	mysql.SqlErr = mysql.DB.Ping()
 	if mysql.SqlErr != nil {
 		mysql.Connected = false
-		log.Fatalf("cannot connect to mysql database %v", mysql.SqlErr)
+		logger.Log("error", "cannot connect to mysql database "+mysql.SqlErr.Error())
+		return
 	}
 	mysql.Connected = true
 }
@@ -217,6 +218,23 @@ func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, 
 	}
 }
 
+func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, from int64, to int64) []string {
+	serverId := mysql.getServerId(serverName)
+	if from > 0 && to > 0 {
+		res, _ := mysql.Select(
+			"SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? ORDER BY log_time",
+			serverId, logType, from, to,
+		)
+		return res.Data[0]
+	} else {
+		res, _ := mysql.Select(
+			"SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT 1",
+			serverId, logType,
+		)
+		return res.Data[0]
+	}
+}
+
 func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from int64, to int64) []string {
 	query := "SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ?"
 	// diff := to - from
@@ -236,4 +254,130 @@ func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from in
 
 func (mysql *MySql) getLogFromDBAt(serverId string, logType string, time int64) []string {
 	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time = ?", serverId, logType, time)
+}
+
+func (mysql *MySql) GetAlertByStartEvent(logId string) []string {
+	t, err := mysql.Select("SELECT * FROM alert WHERE start_log_id = ?", logId)
+	if err != nil {
+		logger.Log("error", err.Error())
+	}
+	if len(t.Data) == 0 {
+		return nil
+	}
+	return t.Data[0]
+}
+
+func (mysql *MySql) AddAlert(alertStatus *alertstatus.AlertStatus) error {
+	serverId := mysql.getServerId(alertStatus.Server)
+
+	if len(serverId) == 0 {
+		err := fmt.Errorf("server %s not registered", alertStatus.Server)
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	stmt, err := mysql.DB.Prepare("INSERT INTO alert (server_id, type, expected, actual, time, start_log_id) VALUES (?, ?, ?, ?, ?, ?);")
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	defer stmt.Close()
+
+	expectedValue := alertStatus.Alert.WarnThreshold
+
+	if alertStatus.Type == alertstatus.Critical {
+		expectedValue = alertStatus.Alert.CriticalThreshold
+	}
+
+	_, err = stmt.Exec(serverId, alertStatus.Type, expectedValue, alertStatus.Value, alertStatus.UnixTime, alertStatus.StartEvent)
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (mysql *MySql) SetAlertEndLog(alertStatus *alertstatus.AlertStatus, startEventId string) error {
+	serverId := mysql.getServerId(alertStatus.Server)
+
+	if len(serverId) == 0 {
+		err := fmt.Errorf("server %s not registered", alertStatus.Server)
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	stmt, err := mysql.DB.Prepare("UPDATE alert SET end_log_id = ? WHERE server_id = ? AND start_log_id = ?;")
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(alertStatus.StartEvent, serverId, startEventId)
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (mysql *MySql) UpdateAlert(alertStatus *alertstatus.AlertStatus, startEventId string) error {
+	serverId := mysql.getServerId(alertStatus.Server)
+
+	if len(serverId) == 0 {
+		err := fmt.Errorf("server %s not registered", alertStatus.Server)
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	stmt, err := mysql.DB.Prepare("UPDATE alert SET type = ?, expected = ?, actual = ? WHERE server_id = ? AND start_log_id = ?;")
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	defer stmt.Close()
+
+	expectedValue := alertStatus.Alert.WarnThreshold
+
+	if alertStatus.Type == alertstatus.Critical {
+		expectedValue = alertStatus.Alert.CriticalThreshold
+	}
+
+	_, err = stmt.Exec(alertStatus.Type, expectedValue, alertStatus.Value, serverId, startEventId)
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) []string {
+	serverId := mysql.getServerId(alertStatus.Server)
+	q := "SELECT * FROM alert AS a JOIN monitor_log AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?;"
+	t, err := mysql.Select(q, alertStatus.UnixTime, serverId, alertStatus.Alert.MetricName)
+	if err != nil {
+		logger.Log("error", "GetPreviousOpenAlert"+err.Error())
+	}
+	if len(t.Data) == 0 {
+		return nil
+	}
+	return t.Data[0]
 }
