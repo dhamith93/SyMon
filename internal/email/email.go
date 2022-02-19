@@ -1,6 +1,14 @@
 package email
 
-import "strings"
+import (
+	"fmt"
+	"net/smtp"
+	"os"
+	"strings"
+	"time"
+	// "github.com/dhamith93/SyMon/internal/logger"
+	// "github.com/joho/godotenv"
+)
 
 // import (
 // "fmt"
@@ -14,31 +22,36 @@ import "strings"
 // )
 
 // Need to rewrite this to fit the new arch.
-// func SendEmail(subject string, emailBody string) error {
-// 	err := godotenv.Load()
-// 	if err != nil {
-// 		logger.Log("Error", "Error loading .env file")
-// 		return err
-// 	}
-// 	emailUser := os.Getenv("EMAIL_USER")
-// 	emailPassword := os.Getenv("EMAIL_PASSWORD")
-// 	emailAuth := smtp.PlainAuth("", emailUser, emailPassword, config.GetConfig().EmailHost)
+func SendEmail(subject string, emailBody string) error {
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	logger.Log("Error", "Error loading .env file")
+	// 	return err
+	// }
 
-// 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-// 	header := "From: " + config.GetConfig().EmailFrom + "\r\n" +
-// 		"To: " + config.GetConfig().EmailTo + "\r\n" +
-// 		"Date: " + time.Now().UTC().Format("Mon Jan 02 15:04:05 -0700 2006") + "\r\n" +
-// 		"Subject: " + subject + "\r\n" +
-// 		mime + "\r\n"
-// 	msg := []byte(header + "\n" + emailBody)
-// 	addr := fmt.Sprintf("%s:%s", config.GetConfig().EmailHost, config.GetConfig().EmailPort)
-// 	to := strings.Split(config.GetConfig().EmailTo, ",")
+	emailUser := os.Getenv("EMAIL_USER")
+	emailPassword := os.Getenv("EMAIL_PASSWORD")
+	emailHost := os.Getenv("EMAIL_HOST")
+	emailPort := os.Getenv("EMAIL_PORT")
+	emailTo := "t123@email.com,test.test.com"
+	emailFrom := "t123@email.com"
+	emailAuth := smtp.PlainAuth("", emailUser, emailPassword, emailHost)
 
-// 	if err := smtp.SendMail(addr, emailAuth, config.GetConfig().EmailFrom, to, msg); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	header := "From: " + emailFrom + "\r\n" +
+		"To: " + emailTo + "\r\n" +
+		"Date: " + time.Now().UTC().Format("Mon Jan 02 15:04:05 -0700 2006") + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		mime + "\r\n"
+	msg := []byte(header + "\n" + "<pre>" + emailBody + "</pre>")
+	addr := fmt.Sprintf("%s:%s", emailHost, emailPort)
+	to := strings.Split(emailTo, ",")
+
+	if err := smtp.SendMail(addr, emailAuth, emailFrom, to, msg); err != nil {
+		return err
+	}
+	return nil
+}
 
 // GetOpeningEmail return opening email
 func GetOpeningEmail(usageType string, usage string, timeDiff string, hostName string, serverTime string) string {
