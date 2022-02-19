@@ -1,22 +1,24 @@
 [
     {
-        "Servers": ["webtools", "dhamith.me"],
+        "Servers": ["test"],
         "Name": "CPU Usage",
         "Description": "",
         "MetricName": "procUsage",
-        "WarnThreshold": 80,
-        "CriticalThreshold": 95,
-        "Operand": "gt",
-        "TriggerIntveral": 300
+        "WarnThreshold": 50,
+        "CriticalThreshold": 65,
+        "Op": ">",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
     },
     {
-        "Servers": ["webtools", "dhamith.me"],
+        "Servers": ["test"],
         "Name": "Memory Usage",
         "Description": "",
         "MetricName": "memory",
-        "WarnThreshold": 75,
-        "CriticalThreshold": 90,
-        "Operand": "gt",
-        "TriggerIntveral": 300
+        "WarnThreshold": 10,
+        "CriticalThreshold": 60,
+        "Op": ">",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
     }
 ]

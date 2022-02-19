@@ -82,6 +82,9 @@ CREATE TABLE `alert` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `server_id` int,
   `type` int,
+  `expected` varchar(50),
+  `actual` varchar(50),
+  `time` bigint(20),
   `start_log_id` int,
   `end_log_id` int
 );

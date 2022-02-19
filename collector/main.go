@@ -51,13 +51,18 @@ func main() {
 		alertConfig = alerts.GetAlertConfig(alertConfigPath)
 	}
 
-	fmt.Println(alertConfig)
-
 	if *initPtr {
 		initCollector(&config)
 	} else if len(removeAgentVal) > 0 {
 		removeAgent(removeAgentVal, config)
 	} else {
+
+		if alertConfig != nil {
+			mysql := getMySQLConnection(&config)
+			defer mysql.Close()
+			go handleAlerts(alertConfig, &config, &mysql)
+		}
+
 		lis, err := net.Listen("tcp", ":"+config.Port)
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
