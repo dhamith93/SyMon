@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package alertapi;
+option go_package = "./alertapi";
+
+message Void {
+
+}
+
+message Response {
+    bool success = 1; 
+    string msg = 2;
+}
+
+message Alert {
+    string serverName = 1;
+    string metricName = 2;
+    int64 logId = 3;
+    int32 status = 4;
+    string subject = 5;
+    string content = 6;
+    string timestamp = 7;
+    bool resolved = 8;
+}
+
+message Request {
+    string serverName = 1;
+}
+
+message AlertArray {
+    repeated Alert alerts = 1;
+}
+
+service AlertService {
+    rpc HandleAlerts(Alert) returns (Response) {}
+    rpc AlertRequest(Request) returns (AlertArray) {}
+}
