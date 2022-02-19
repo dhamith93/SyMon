@@ -1,0 +1,5 @@
+{
+    "Port": "5999",
+    "LogFileEnabled": true,
+    "LogFilePath": "/home/dhamith93/tmp/symon_alert_proc.log"
+}

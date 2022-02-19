@@ -1,0 +1,15 @@
+[
+    {
+        "Type": "email",
+        "Recipients": [
+            {
+                "Name": "",
+                "Email": ""
+            },
+            {
+                "Name": "",
+                "Email": ""
+            }
+        ]
+    }
+]
