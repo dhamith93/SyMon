@@ -15,7 +15,7 @@ type AlertConfig struct {
 	CriticalThreshold int
 	TriggerIntveral   int
 	Servers           []string
-	Disks             []string
+	Disk              string
 }
 
 type Alert struct {

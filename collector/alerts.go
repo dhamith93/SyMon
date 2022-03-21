@@ -17,6 +17,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -187,7 +188,26 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.Value = float32(val)
 		alertStatus.Type = getAlertType(alert, val)
 	case "disks":
-		fmt.Println(metricLogs)
+		var diskLog monitor.Disk
+		err := json.Unmarshal([]byte(metricLogs[1]), &diskLog)
+		if err != nil {
+			logger.Log("error", err.Error())
+			return alertStatus
+		}
+
+		alertStatus.UnixTime = diskLog.Time
+		for _, disk := range diskLog.Disks {
+			if disk[0] == alert.Disk {
+				valStr := strings.Replace(disk[6], "%", "", -1)
+				val, err := strconv.ParseFloat(valStr, 32)
+				if err != nil {
+					logger.Log("error", err.Error())
+					return alertStatus
+				}
+				alertStatus.Value = float32(val)
+				alertStatus.Type = getAlertType(alert, val)
+			}
+		}
 	}
 	logIdInt, err := strconv.ParseInt(logId, 10, 64)
 	if err != nil {

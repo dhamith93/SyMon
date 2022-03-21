@@ -20,5 +20,29 @@
         "Op": ">",
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Disk Usage - disk1",
+        "Description": "",
+        "MetricName": "disks",
+        "Disk": "/dev/sdb1",
+        "WarnThreshold": 88,
+        "CriticalThreshold": 90,
+        "Op": ">",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Disk Usage - disk2",
+        "Description": "",
+        "MetricName": "disks",
+        "Disk":  "/dev/sdd2",
+        "WarnThreshold": 75,
+        "CriticalThreshold": 90,
+        "Op": ">",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
     }
 ]
