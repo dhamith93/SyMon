@@ -17,8 +17,8 @@ import (
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/pkg/memdb"
+	"github.com/dhamith93/systats"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -170,35 +170,48 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 	alertStatus.Type = alertstatus.Normal
 
 	switch alert.MetricName {
-	case "procUsage", "memory", "swap":
-		var v []string
-		err := json.Unmarshal([]byte(metricLogs[1]), &v)
+	case "procUsage":
+		var cpu systats.CPU
+		err := json.Unmarshal([]byte(metricLogs[1]), &cpu)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
 		}
-		alertStatus.UnixTime = v[0]
-		valStr := strings.Replace(v[1], "%", "", -1)
-		val, err := strconv.ParseFloat(valStr, 32)
+		alertStatus.UnixTime = strconv.FormatInt(cpu.Time, 10)
+		alertStatus.Value = float32(cpu.LoadAvg)
+		alertStatus.Type = getAlertType(alert, float64(cpu.LoadAvg))
+	case "memory":
+		var mem systats.Memory
+		err := json.Unmarshal([]byte(metricLogs[1]), &mem)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
 		}
-
-		alertStatus.Value = float32(val)
-		alertStatus.Type = getAlertType(alert, val)
+		alertStatus.UnixTime = strconv.FormatInt(mem.Time, 10)
+		alertStatus.Value = float32(mem.PercentageUsed)
+		alertStatus.Type = getAlertType(alert, mem.PercentageUsed)
+	case "swap":
+		var swap systats.Swap
+		err := json.Unmarshal([]byte(metricLogs[1]), &swap)
+		if err != nil {
+			logger.Log("error", err.Error())
+			return alertStatus
+		}
+		alertStatus.UnixTime = strconv.FormatInt(swap.Time, 10)
+		alertStatus.Value = float32(swap.PercentageUsed)
+		alertStatus.Type = getAlertType(alert, swap.PercentageUsed)
 	case "disks":
-		var diskLog monitor.Disk
+		var diskLog []systats.Disk
 		err := json.Unmarshal([]byte(metricLogs[1]), &diskLog)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
 		}
 
-		alertStatus.UnixTime = diskLog.Time
-		for _, disk := range diskLog.Disks {
-			if disk[0] == alert.Disk {
-				valStr := strings.Replace(disk[6], "%", "", -1)
+		alertStatus.UnixTime = metricLogs[0]
+		for _, disk := range diskLog {
+			if disk.FileSystem == alert.Disk {
+				valStr := strings.Replace(disk.Usage.Usage, "%", "", -1)
 				val, err := strconv.ParseFloat(valStr, 32)
 				if err != nil {
 					logger.Log("error", err.Error())

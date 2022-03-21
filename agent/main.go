@@ -16,6 +16,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/systats"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -81,9 +82,10 @@ func initAgent(config *config.Config) {
 	}
 	defer conn.Close()
 	defer cancel()
+	syStats := systats.New()
 	response, err := c.InitAgent(ctx, &api.ServerInfo{
 		ServerName: config.ServerId,
-		Timezone:   monitor.GetSystem().TimeZone,
+		Timezone:   monitor.GetSystem(&syStats).TimeZone,
 	})
 	if err != nil {
 		logger.Log("error", "error adding agent: "+err.Error())
