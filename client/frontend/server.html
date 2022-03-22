@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/css/materialize.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> -->
+    <link rel="stylesheet" href="/css/server.css">
+    <title>SyMon - Web</title>
+</head>
+<body>
+
+    <header>
+		<div class="container">
+            <button class="hamburger">
+                <div class="bar"></div>
+			</button>
+            <h2 class="page-title">SyMon - Web : <span class="server-name"></span></h2>
+		</div>
+	</header>
+    <nav class="nav-menu">
+		<a href="#" class="nav-link link-active" id="overview-link">Overview</a>
+		<a href="#" class="nav-link" id="cpu-link">CPU</a>
+		<a href="#" class="nav-link" id="memory-link">Memory/SWAP</a>
+		<a href="#" class="nav-link" id="disks-link">Disks</a>
+        <a href="#" class="nav-link" id="networking-link">Networking</a>
+	</nav>
+
+    <div class="main">
+        <div class="section" id="overview-section">
+            
+            <div class="sub-section" id="system-info">
+                <p>System Information</p>
+                <table class="data-table" id="system-table"></table>
+            </div>
+
+            <div class="sub-section" id="cpu-usage">
+                <p>CPU Utilization</p>
+                <div class="gauge">
+                    <div class="outer">
+                        <div class="inner">
+                            <div id="cpu-load-avg">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="160px" height="160px">
+                            <defs>
+                            <linearGradient id="GradientColor">
+                                <stop offset="0%" stop-color="#e91e63" />
+                                <stop offset="100%" stop-color="#673ab7" />
+                            </linearGradient>
+                            </defs>
+                            <circle id="cpu-circle" cx="80" cy="80" r="70" stroke-linecap="butt" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="sub-section" id="mem-usage">
+                <p>Memory Utilization</p>
+                <div class="gauge">
+                    <div class="outer">
+                        <div class="inner">
+                            <div id="memory-load">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="160px" height="160px">
+                            <defs>
+                            <linearGradient id="GradientColor">
+                                <stop offset="0%" stop-color="#e91e63" />
+                                <stop offset="100%" stop-color="#673ab7" />
+                            </linearGradient>
+                            </defs>
+                            <circle id="memory-circle" cx="80" cy="80" r="70" stroke-linecap="butt" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="sub-section" id="service-list">
+                <p>Services</p>
+                <table class="data-table" id="services-table"></table>
+            </div>
+
+            <div class="sub-section" id="proc-list-cpu">
+                <p>Top 10 processes (CPU Utilization)</p>
+                <table class="data-table" id="proc-cpu-table"></table>
+            </div>
+
+            <div class="sub-section" id="proc-list-memory">
+                <p>Top 10 processes (Memory Utilization)</p>
+                <table class="data-table" id="proc-memory-table"></table>
+            </div>            
+
+        </div>
+    </div>
+
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/js/materialize.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" integrity="sha512-UXumZrZNiOwnTcZSHLOfcTs0aos2MzBWHXOHOuB0J/R44QB0dwY5JgfbvljXcklVf65Gc4El6RjZ+lnwd2az2g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.1.1/chartjs-plugin-zoom.min.js" integrity="sha512-NxlWEbNbTV6acWnTsWRLIiwzOw0IwHQOYUCKBiu/NqZ+5jSy7gjMbpYI+/4KvaNuZ1qolbw+Vnd76pbIUYEG8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-timezone@0.5.17/builds/moment-timezone-with-data.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>    
+    <script src="/scripts/util.js"></script>
+    <script src="/scripts/server.js"></script>
+</body>
+</html>
+

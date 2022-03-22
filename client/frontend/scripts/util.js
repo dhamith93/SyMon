@@ -79,7 +79,7 @@ async function clearElement(element){
 function populateTable(table, data) {
     if (data) {
         clearElement(table).then(() => {
-            for (let key in data) {
+            for (let key in data) {                
                 if (data.hasOwnProperty(key) && key !== 'Time') {
                     let row = table.insertRow(-1);
                     let cell1 = row.insertCell(-1);
