@@ -21,15 +21,15 @@
 		</div>
 	</header>
     <nav class="nav-menu">
-		<a href="#" class="nav-link link-active" id="overview-link">Overview</a>
-		<a href="#" class="nav-link" id="cpu-link">CPU</a>
-		<a href="#" class="nav-link" id="memory-link">Memory/SWAP</a>
-		<a href="#" class="nav-link" id="disks-link">Disks</a>
-        <a href="#" class="nav-link" id="networking-link">Networking</a>
+		<a href="#" data-section="overview-section" class="nav-link link-active" id="overview-link">Overview</a>
+		<a href="#" data-section="cpu-section" class="nav-link" id="cpu-link">CPU</a>
+		<a href="#" data-section="memory-section" class="nav-link" id="memory-link">Memory/SWAP</a>
+		<a href="#" data-section="disks-section" class="nav-link" id="disks-link">Disks</a>
+        <a href="#" data-section="networking-section" class="nav-link" id="networking-link">Networking</a>
 	</nav>
 
     <div class="main">
-        <div class="section" id="overview-section">
+        <div class="section section-active" id="overview-section">
             
             <div class="sub-section" id="system-info">
                 <p>System Information</p>
@@ -96,6 +96,48 @@
             </div>            
 
         </div>
+
+        <div class="section" id="cpu-section">
+            
+            <div class="sub-section" id="cpu-info">
+                <p>CPU Information</p>
+                <table class="data-table" id="cpu-table"></table>
+            </div>
+
+            <div class="sub-section" id="cpu-chart">
+                <p>CPU Utilization</p>
+                <canvas id="cpu-usage-chart" width="800px"></canvas>
+                <br>
+                <a class="btn" id="cpu-chart-reset">Reset Zoom</a>
+            </div>
+
+            <div class="sub-section" id="proc-list-cpu-2">
+                <p>Top 10 processes (CPU Utilization)</p>
+                <table class="data-table" id="proc-cpu-table-2"></table>
+            </div>
+
+        </div>
+
+        <div class="section" id="memory-section">
+            
+            <div class="sub-section" id="memory-info">
+                <p>Memory Information</p>
+                <table class="data-table" id="memory-table"></table>
+            </div>
+
+            <div class="sub-section" id="memory-chart">
+                <p>Memory Utilization</p>
+                <canvas id="memory-usage-chart" width="800px"></canvas>
+                <br>
+                <a class="btn" id="mem-chart-reset">Reset Zoom</a>
+            </div>
+
+            <div class="sub-section" id="proc-list-memory-2">
+                <p>Top 10 processes (Memory Utilization)</p>
+                <table class="data-table" id="proc-memory-table-2"></table>
+            </div> 
+
+        </div>
     </div>
 
 
@@ -109,6 +151,7 @@
     <script src="https://cdn.jsdelivr.net/npm/moment-timezone@0.5.17/builds/moment-timezone-with-data.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>    
     <script src="/scripts/util.js"></script>
+    <script src="/scripts/chartjs_helpers.js"></script>
     <script src="/scripts/server.js"></script>
 </body>
 </html>

@@ -24,6 +24,17 @@ nav a {
     text-decoration: none;
 }
 
+td {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+canvas {
+    background-color: #3B4D5E;
+}
+
 header .container {
     height: 75px;
     display: flex;
@@ -95,8 +106,23 @@ header .container {
 	background-color: #455e77;
 }
 
+.btn {
+    margin: 20px;
+    padding: 10px;
+    color: #fff;
+    height: 50px; 
+    border: 2px solid #fff;
+    text-align: center;
+    background-color: #515d69;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #3f474e;
+}
+
 .section {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     justify-content: space-around;
 }
@@ -108,6 +134,10 @@ header .container {
 .sub-section p {
     text-align: center;
     font-weight: 600;
+}
+
+.section-active {
+    display: flex;
 }
 
 .gauge {
@@ -163,12 +193,4 @@ header .container {
 
 .gauge p {
     text-align: center;
-}
-
-td
-{
-    max-width: 400px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
