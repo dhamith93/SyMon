@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const memoryLoadElem = document.querySelector('#memory-load');
     const cpuTable = document.querySelector('#cpu-table');
     const memoryTable = document.querySelector('#memory-table');
+    const swapTable = document.querySelector('#swap-table');
     const circleStrokeDashOffset = 472;
     const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
     let selectedSection = 'overview-section';
@@ -119,23 +120,43 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         axios.get(url).then((response) => {
             if (response.data.Status == 'OK') {
-                memory = response.data.Data;
-                // memoryUsage = (memory.PercentageUsed).toFixed(2);
+                let memory = response.data.Data;
                 memory.PercentageUsed = (memory.PercentageUsed).toFixed(2);
 
                 if (selectedSection == 'overview-section') {
                     memoryCircle.style.strokeDashoffset = circleStrokeDashOffset - circleStrokeDashOffset * (memory.PercentageUsed / 100);
                     memoryLoadElem.innerHTML = `${memory.PercentageUsed}%`;
                 }
+
+                memory.Usage = `${memory.PercentageUsed}%`;
+                memory.Available = `${memory.Available} ${memory.Unit}`;
+                memory.Free = `${memory.Free} ${memory.Unit}`;
+                memory.Total = `${memory.Total} ${memory.Unit}`;
+                memory.Used = `${memory.Used} ${memory.Unit}`;
+                delete memory.Unit;
+                delete memory.PercentageUsed;
+                populateTable(memoryTable, memory);
             }
-            memory.Usage = `${memory.PercentageUsed}%`;
-            memory.Available = `${memory.Available} ${memory.Unit}`;
-            memory.Free = `${memory.Free} ${memory.Unit}`;
-            memory.Total = `${memory.Total} ${memory.Unit}`;
-            memory.Used = `${memory.Used} ${memory.Unit}`;
-            delete memory.Unit;
-            delete memory.PercentageUsed;
-            populateTable(memoryTable, memory);
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    loadSwap = (time = null) => {
+        let url = '/swap?serverId='+serverName;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
+            let swap = response.data.Data;
+            swap.PercentageUsed = (swap.PercentageUsed).toFixed(2);
+            swap.Usage = `${swap.PercentageUsed}%`;
+            swap.Free = `${swap.Free} ${swap.Unit}`;
+            swap.Total = `${swap.Total} ${swap.Unit}`;
+            swap.Used = `${swap.Used} ${swap.Unit}`;
+            delete swap.Unit;
+            delete swap.PercentageUsed;
+            populateTable(swapTable, swap);
         }, (error) => {
             console.error(error);
         }); 
@@ -148,8 +169,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         axios.get(url).then((response) => {
             if (response.data.Data.CPU && response.data.Data.Memory) {
-                cpuArr = [];
-                memArr = [];
+                let cpuArr = [];
+                let memArr = [];
 
                 response.data.Data.CPU.forEach(row => {
                     cpuArr.push([row.Pid, row.CPUUsage, row.MemUsage, row.ExecPath]);
@@ -286,8 +307,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (selectedSection == 'memory-section') {
             loadProcesses();
-            loadMemoryUsage()
+            loadMemoryUsage();
             loadMemory();
+            loadSwap();
         }
     }
 
