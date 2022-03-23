@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     section.classList.remove('section-active');
                 }
             });
+            loadData();
             menuBtn.classList.toggle('is-active');
             navMenu.classList.toggle('is-active');
         });
@@ -270,14 +271,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
-    loadSystem();
-    loadCPU();
-    loadMemory();
-    loadProcesses();
-    loadServices();    
-
-    setInterval(() => {
-        firstTime = false;
+    loadData = () => {
         if (selectedSection == 'overview-section') {
             loadMemory();
             loadCPU();
@@ -295,7 +289,17 @@ document.addEventListener('DOMContentLoaded', ()=> {
             loadMemoryUsage()
             loadMemory();
         }
+    }
 
+    loadSystem();
+    loadCPU();
+    loadMemory();
+    loadProcesses();
+    loadServices();    
+
+    setInterval(() => {
+        firstTime = false;
+        loadData();
     }, 15000);
 
 });
