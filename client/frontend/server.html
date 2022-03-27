@@ -5,8 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/css/materialize.min.css"> -->
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="/css/server.css">
     <title>SyMon - Web</title>
 </head>
@@ -29,6 +28,17 @@
 	</nav>
 
     <div class="main">
+        <div class="datepicker" id="datepicker-section">
+            <div>
+                <label for="from-datetime" class="active">From </label>
+                <input type="datetime" id="from-datetime">
+                <label for="to-datetime" class="active">To </label>
+                <input type="datetime" id="to-datetime">
+                <a class="btn" id="get-btn">Get</a>
+                <a class="btn danger" id="reset-btn">Reset</a>
+            </div>
+        </div>
+        <br>
         <div class="section section-active" id="overview-section">
             
             <div class="sub-section" id="system-info">
@@ -112,7 +122,7 @@
             </div>
 
             <div class="sub-section" id="proc-list-cpu-2">
-                <p>Top 10 processes (CPU Utilization)</p>
+                <p>Top 10 processes (CPU Utilization) <span id="cpu-proc-list-time"></span></p>
                 <table class="data-table" id="proc-cpu-table-2"></table>
             </div>
 
@@ -136,7 +146,7 @@
             </div>
 
             <div class="sub-section" id="proc-list-memory-2">
-                <p>Top 10 processes (Memory Utilization)</p>
+                <p>Top 10 processes (Memory Utilization) <span id="mem-proc-list-time"></span></p>
                 <table class="data-table" id="proc-memory-table-2"></table>
             </div> 
 
@@ -178,7 +188,6 @@
     </div>
 
 
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.1.0-alpha/dist/js/materialize.min.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
