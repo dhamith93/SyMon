@@ -1,5 +1,5 @@
 # SyMon
-A simple system monitoring tool to monitor server HW stats. 
+A system monitoring tool to monitor server HW stats. 
 
 [![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dhamith93/SyMon)](https://goreportcard.com/report/github.com/dhamith93/SyMon)
 
@@ -14,8 +14,24 @@ A simple system monitoring tool to monitor server HW stats.
 * Services Active/Inactive
 * 10 most CPU/Memory using processes
 * Custom timeseries metrics
-* Search metrics by date range
-* Point-in-time metrics loading
+* Search metrics by date range (planned)
+* Point-in-time metrics loading (planned)
+
+## Components
+* Agent
+    * Collects system metrics and pushes to the collector
+* Collector
+    * Collects system metrics from agents and stores them in MySQL/MariaDB database
+    * Monitors the metrics for alerts. Sends alerts to alertprocessor
+* Alertprocessor
+    * Handles incoming alerts from collector
+        * Sends alert to
+            * Email addresses
+            * PagerDuty (planned)
+* Client
+    * The user interface of the SyMon
+    * Displays monitoring data through a web UI
+    * Provides an API to get the server metrics
 
 ## Usage
 
@@ -71,72 +87,25 @@ This can be automated using a cron or a script
 * `/system`
     * Returns system info
 * `/memory`
-    * Returns memory info/usage as an array
-```json
-    ["timestamp", "used%", "total", "used", "free"]
-```
+    * Returns memory info/usage
 * `/swap`
-    * Returns swap info/usage as an array
-```json
-    ["timestamp", "used%", "total", "used", "free"]
-```
+    * Returns swap info/usage
 * `/disks`
-    * Return disk info/usage
-```json
-	{
-	    "Time": "time", 
-	    "Disks": [["file system", "mount point", "type", "size", "free", "used", "used%", "inodes", "inodes free", "inodes used", "inodes used%"]]
-	}
-```
+    * Return disk info/usage per disk
 * `/network`
-    * Return disk info/usage
-```json
-	{
-	    "Time": "time", 
-	    "Networks": [["ip", "interface", "rx", "tx"]]
-	}
-```
+    * Return disk info/usage per interface
 * `/processes`
-    * Returns list of processes using most CPU/RAM (10 each)
-```json
-
-    {
-        "CPU": [
-            ["pid", "cpu", "mem", "command"],
-            ["pid", "cpu", "mem", "command"]
-        ],
-        
-        "Memory": [
-            ["pid", "cpu", "mem", "command"],
-            ["pid", "cpu", "mem", "command"]
-        ]
-    }
-```
+    * Returns list of processes using most CPU/RAM 
 * `/processor-usage-historical`
     * CPU load avg
-```json
-    ["timestamp", "load%"]
-```
 * `/memory-historical`
     * Memory usage
-```json
-    ["timestamp", "used%", "total", "used", "free"]
-```
 * `/services`
     * List of services enabled to monitor in agent's config.json
-```json
-    [{"Name":"name","Running":true,"Time":"1632680550"},]
-```
 * `/custom-metric-names`
     * Names of custom metrics
-```json
-    {"CustomMetrics": ["active-http-requests",]}
-```
 * `/custom?custom-metric=name`
     * Custom metric values
-```json
-    [{"Name":"active-http-requests","ServerId":"id","Time":"time","Unit":"unit","Value":"x"},]
-```
 * Required GET parameters
     * `serverId=` ID of the server
 * Optional GET parameters
@@ -144,7 +113,5 @@ This can be automated using a cron or a script
     * `time=[unix timestamp]` value(s) at a certain time (depends on availability of data)
 
 ## Todo
-* Disk I/O graphs
 * Alerts
-* Dark mode
 * Automatic data deletion past retention period
