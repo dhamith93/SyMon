@@ -36,6 +36,8 @@ let convertTo = (amount, unit, outUnit) => {
                 out = (amount / 1024) / 1024;
             } else if (outUnit === 'K') {
                 out = amount / 1024;
+            } else if (outUnit === 'G') {
+                out = (amount / 1024) / 1024 / 1024;
             }
             break;
         case 'M':
@@ -90,4 +92,13 @@ function populateTable(table, data) {
             }
         });
     }
+}
+
+function getRandomColor() {
+    var letters = 'BCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * letters.length)];
+    }
+    return color;
 }
