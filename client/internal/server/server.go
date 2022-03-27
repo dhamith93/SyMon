@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dhamith93/SyMon/internal/alertapi"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
@@ -47,10 +48,12 @@ func handleRequests(port string) {
 	router.HandleFunc("/processes", returnProcesses)
 	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
 	router.HandleFunc("/memory-historical", returnMemoryHistorical)
+	router.HandleFunc("/disks-historical", returnDisksHistorical)
 	router.HandleFunc("/services", returnServices)
 	router.HandleFunc("/custom", returnCustom)
 	router.HandleFunc("/custom-metric-names", returnCustomMetricNames)
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
+	router.HandleFunc("/alerts", returnAlerts)
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./frontend/")))
 
 	server := http.Server{}
 	server.Addr = port
@@ -82,7 +85,7 @@ func returnDisks(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
-	handleRequest("processor", w, r)
+	handleRequest("procUsage", w, r)
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +104,10 @@ func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
 	handleRequest("memory-historical", w, r)
 }
 
+func returnDisksHistorical(w http.ResponseWriter, r *http.Request) {
+	handleRequest("disks", w, r)
+}
+
 func returnServices(w http.ResponseWriter, r *http.Request) {
 	handleRequest("services", w, r)
 }
@@ -112,6 +119,25 @@ func returnCustom(w http.ResponseWriter, r *http.Request) {
 
 func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
 	handleRequestForMeta("customMetricNames", w, r)
+}
+
+func returnAlerts(w http.ResponseWriter, r *http.Request) {
+	// handleRequestForMeta("customMetricNames", w, r)
+	config := config.GetConfig("config.json")
+	serverName, _ := parseGETForServerName(r)
+	received, _ := getActiveAlerts(serverName, &config)
+	alertData, err := json.Marshal(received)
+	var data interface{}
+	var out output
+	if err != nil {
+		out.Status = "ERR"
+		json.NewEncoder(w).Encode(&out)
+		return
+	}
+	out.Status = "OK"
+	_ = json.Unmarshal(alertData, &data)
+	out.Data = data
+	json.NewEncoder(w).Encode(&out)
 }
 
 func handleRequest(logType string, w http.ResponseWriter, r *http.Request) {
@@ -200,6 +226,28 @@ func getMonitorData(serverName string, logType string, from int64, to int64, tim
 		return "", err
 	}
 	return monitorData.MonitorData, nil
+}
+
+func getActiveAlerts(serverName string, config *config.Config) (alertapi.AlertArray, error) {
+	conn, err := grpc.Dial("localhost:5999", grpc.WithInsecure())
+	if err != nil {
+		logger.Log("error", "connection error: "+err.Error())
+		os.Exit(1)
+	}
+	token := generateToken()
+	c := alertapi.NewAlertServiceClient(conn)
+	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
+	defer conn.Close()
+	defer cancel()
+
+	alerts, err := c.AlertRequest(ctx, &alertapi.Request{ServerName: serverName})
+
+	fmt.Println(alerts)
+	if err != nil {
+		logger.Log("error", "error sending data: "+err.Error())
+		return alertapi.AlertArray{}, err
+	}
+	return *alerts, nil
 }
 
 func parseGETForTime(r *http.Request) (int64, error) {
