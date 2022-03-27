@@ -14,8 +14,8 @@ A system monitoring tool to monitor server HW stats.
 * Services Active/Inactive
 * 10 most CPU/Memory using processes
 * Custom timeseries metrics
-* Search metrics by date range (planned)
-* Point-in-time metrics loading (planned)
+* Search metrics by date range
+* Point-in-time metrics loading
 
 ## Components
 * Agent
