@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', ()=> {
-    const CPU_COLOR = '#FF6B6B';
-    const MEM_COLOR = '#5AD6A9';
     const menuBtn = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
     const serverNameElems = document.querySelectorAll('.server-name');
@@ -14,6 +12,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const procCPUTable2 = document.querySelector('#proc-cpu-table-2');
     const procMemTable2 = document.querySelector('#proc-memory-table-2');
     const servicesTable = document.querySelector('#services-table');
+    const diskTable = document.querySelector('#disk-table');
     const cpuCircle = document.querySelector('#cpu-circle');
     const cpuLoadAvgElem = document.querySelector('#cpu-load-avg');
     const memoryCircle = document.querySelector('#memory-circle');
@@ -27,8 +26,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let firstTime = true;
     let isCPUFirstTime = true;
     let isMemFirstTime = true;
+    let isDisksFirstTime = true;
     let cpuChart = null;
     let memChart = null;
+    let diskPercentageChart = null;
     let toTime = 0;
     let fromTime = 0;
 
@@ -51,12 +52,33 @@ document.addEventListener('DOMContentLoaded', ()=> {
             selectedSection = link.dataset.section;
             
             sections.forEach(section => { 
-                if (section.id == link.dataset.section) {
+                if (section.id === link.dataset.section) {
                     section.classList.add('section-active');    
                 } else {
                     section.classList.remove('section-active');
                 }
             });
+            if (link.dataset.section !== 'cpu-section') {
+                isCPUFirstTime = true;
+                if (cpuChart !== null) {
+                    cpuChart.destroy();
+                    cpuChart = null;
+                }
+            }
+            if (link.dataset.section !== 'memory-section') {
+                isMemFirstTime = true;
+                if (memChart !== null) {
+                    memChart.destroy();
+                    memChart = null;
+                }
+            }
+            if (link.dataset.section !== 'disks-section') {
+                isDisksFirstTime = true;
+                if (diskPercentageChart !== null) {
+                    diskPercentageChart.destroy();
+                    diskPercentageChart = null;
+                }
+            }
             loadData();
             menuBtn.classList.toggle('is-active');
             navMenu.classList.toggle('is-active');
@@ -74,10 +96,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
             memChart.resetZoom();
         }
     });
+
+    document.getElementById('disks-percentage-chart-reset').addEventListener('click', () => {
+        if (diskPercentageChart !== null) {
+            diskPercentageChart.resetZoom();
+        }
+    });
     
     loadSystem = () => {
         axios.get('/system?serverId='+serverName).then((response) => {
-            if (response.data.Status == 'OK') {
+            if (response.data.Status === 'OK') {
                 let system = response.data.Data;
                 toTime = system.Time;
                 fromTime = toTime - 3600;
@@ -95,9 +123,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = url + '&time=' + time;
         }
         axios.get(url).then((response) => {
-            if (response.data.Status == 'OK') {
+            if (response.data.Status === 'OK') {
                 cpu = response.data.Data[0];
-                if (selectedSection == 'overview-section') {
+                if (selectedSection === 'overview-section') {
                     cpuCircle.style.strokeDashoffset = circleStrokeDashOffset - circleStrokeDashOffset * (cpu.LoadAvg / 100);
                     cpuLoadAvgElem.innerHTML = `${cpu.LoadAvg}%`;
                 }
@@ -119,11 +147,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = url + '&time=' + time;
         }
         axios.get(url).then((response) => {
-            if (response.data.Status == 'OK') {
+            if (response.data.Status === 'OK') {
                 let memory = response.data.Data;
                 memory.PercentageUsed = (memory.PercentageUsed).toFixed(2);
 
-                if (selectedSection == 'overview-section') {
+                if (selectedSection === 'overview-section') {
                     memoryCircle.style.strokeDashoffset = circleStrokeDashOffset - circleStrokeDashOffset * (memory.PercentageUsed / 100);
                     memoryLoadElem.innerHTML = `${memory.PercentageUsed}%`;
                 }
@@ -221,7 +249,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             }
             isCPUFirstTime = false;
             if (cpuChart !== null) cpuChart.destroy();
-            cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage-chart'), 'CPU', CPU_COLOR, context => context.parsed.y + '%');
+            cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage-chart'), 'CPU', context => context.parsed.y + '%');
         }, (error) => {
             console.error(error);
         }); 
@@ -240,7 +268,41 @@ document.addEventListener('DOMContentLoaded', ()=> {
             }
             isMemFirstTime = false;
             if (memChart !== null) memChart.destroy();
-            memChart = generateUsageChart(processedData, document.getElementById('memory-usage-chart'), 'MEM', MEM_COLOR, context => context.parsed.y + '%');
+            memChart = generateUsageChart(processedData, document.getElementById('memory-usage-chart'), 'MEM', context => context.parsed.y + '%');
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    loadDisks = (time = null) => {
+        let url = '/disks?serverId='+serverName;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
+            if (response.data.Status === 'OK') {
+                let disks = response.data.Data;
+                handleDiskInfoTable(disks, diskTable);
+                if (isDisksFirstTime) {
+                    loadDiskUsage();
+                }
+                if (!isDisksFirstTime && diskPercentageChart !== null) {
+                    updateChartForDisks(diskPercentageChart, response.data.Data);
+                    return;
+                }
+            }
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    loadDiskUsage = () => {
+        let url = '/disks-historical?serverId='+serverName+'&from='+fromTime+'&to='+toTime;
+        axios.get(url).then((response) => {
+            isDisksFirstTime = false;
+            let processedData = processDisksForCharts(response.data.Data);
+            if (diskPercentageChart !== null) diskPercentageChart.destroy();
+            diskPercentageChart = generateUsageChartForMultiple(processedData, document.getElementById('disks-percentage-chart'), context => context.parsed.y + '%');
         }, (error) => {
             console.error(error);
         }); 
@@ -248,7 +310,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     handleProcessList = (usage, table, tableInSection) => {
         if (usage) {
-            if (selectedSection == 'overview-section') {
+            if (selectedSection === 'overview-section') {
                 clearElement(table).then(() => {
                     table.createTHead();
                     let tr = document.createElement('tr');
@@ -269,7 +331,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 });
             }
 
-            if (selectedSection == 'cpu-section' || selectedSection == 'memory-section') {
+            if (selectedSection === 'cpu-section' || selectedSection === 'memory-section') {
                 clearElement(tableInSection).then(() => {
                     tableInSection.createTHead();
                     let tr = document.createElement('tr');
@@ -292,24 +354,64 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
+    handleDiskInfoTable = (disks, table) => {
+        let headerArray = ['Disk', 'Mounted', 'Type', 'Total', 'Used', 'Usage - space', 'Usage - inodes'];
+        let diskArray = [];
+
+        disks.forEach(disk => {
+            diskArray.push([
+                disk.FileSystem,
+                disk.MountedOn,
+                disk.Type,
+                `${convertTo(disk.Usage.Size, 'B', 'M')} MB`,
+                `${convertTo(disk.Usage.Used, 'B', 'M')} MB`,
+                disk.Usage.Usage,
+                disk.Inodes.Usage
+            ])
+        });
+
+        clearElement(table).then(() => {
+            table.createTHead();
+            let tr = document.createElement('tr');
+            headerArray.forEach(element => {
+                th = document.createElement('th');
+                th.innerHTML = element;
+                tr.appendChild(th);
+            });
+            table.tHead.appendChild(tr);
+            diskArray.forEach(row => {
+                let tableRow = table.insertRow(-1);
+                row.forEach(i => {
+                    let cell = tableRow.insertCell(-1);
+                    cell.innerHTML = i;
+                });
+            });
+        });
+    }
+
     loadData = () => {
-        if (selectedSection == 'overview-section') {
+        loadSystem();
+        if (selectedSection === 'overview-section') {
             loadMemory();
             loadCPU();
             loadProcesses();
             loadServices();
         }
 
-        if (selectedSection == 'cpu-section') {
+        if (selectedSection === 'cpu-section') {
             loadProcesses();
             loadCPUUsage();
         }
 
-        if (selectedSection == 'memory-section') {
+        if (selectedSection === 'memory-section') {
             loadProcesses();
             loadMemoryUsage();
             loadMemory();
             loadSwap();
+        }
+
+        if (selectedSection === 'disks-section') {
+            loadDisks();            
         }
     }
 
