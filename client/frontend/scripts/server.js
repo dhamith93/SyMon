@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let orgTx = 0;
     let toTime = 0;
     let fromTime = 0;
+    let loadingFromCustomRange = false;
+    let loadingPoinInTime = false;
 
     serverNameElems.forEach(elem => {
         elem.innerHTML = encodeURIComponent(urlParams.get('name'));
@@ -55,6 +57,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
             navLinks.forEach(link => {
                 link.classList.remove('link-active');
             });
+
+            loadingFromCustomRange = false;
+            loadingPoinInTime = false;
             
             link.classList.add('link-active');
             selectedSection = link.dataset.section;
@@ -66,6 +71,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     section.classList.remove('section-active');
                 }
             });
+
+            if (link.dataset.section === 'overview-section') {
+                document.querySelector('#datepicker-section').style.display = 'none';
+            } else {
+                document.querySelector('#datepicker-section').style.display = 'flex';
+            }            
+
             if (link.dataset.section !== 'cpu-section') {
                 isCPUFirstTime = true;
                 if (cpuChart !== null) {
@@ -133,15 +145,63 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         loadNetworksBandwidth();
     });
+
+    document.getElementById('get-btn').addEventListener('click', () => {
+        let from = moment(document.getElementById('from-datetime').value);
+        let to = moment(document.getElementById('to-datetime').value);
+        if (from > to) {
+            return;
+        }
+        loadingFromCustomRange = true;
+        fromTime = from.unix();
+        toTime = to.unix();
+
+        isCPUFirstTime = true;
+        isMemFirstTime = true;
+        isNetworkFirstTime = true;
+
+        let tmpFromTime = toTime - 60;
+        axios.get('/system?serverId='+serverName+'&from='+tmpFromTime+'&to='+toTime).then((response) => {
+            let data = response.data.Data;
+            populateTable(systemTable, data);
+            loadData();
+        }, (error) => {
+            console.error(error);
+        });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+        reset();
+    });
     
     loadSystem = () => {
         axios.get('/system?serverId='+serverName).then((response) => {
             if (response.data.Status === 'OK') {
                 let system = response.data.Data;
-                toTime = system.Time;
-                fromTime = toTime - 3600;
+                if (!loadingFromCustomRange) {
+                    toTime = system.Time;
+                    fromTime = toTime - 3600;
+                }
                 delete system.LoggedInUsers;
                 populateTable(systemTable, system);
+
+                if (firstTime) {
+                    // moment.tz.setDefault(system.TimeZone);
+                    flatpickr('#from-datetime', {
+                        enableTime: true,
+                        dateFormat: "Y-m-d H:i",
+                        defaultDate: new Date(fromTime * 1000),
+                        maxDate: new Date(toTime * 1000),
+                        formatDate: (date, format, locale) => { return moment(date).format('YYYY-MM-DD HH:mm:ss'); }
+                    });                
+                    flatpickr('#to-datetime', {
+                        enableTime: true,
+                        dateFormat: "Y-m-d H:i",
+                        defaultDate: new Date(toTime * 1000),
+                        maxDate: new Date(toTime * 1000),
+                        formatDate: (date, format, locale) => { return moment(date).format('YYYY-MM-DD HH:mm:ss'); }
+                    });
+                }
             }
         }, (error) => {
             console.error(error);
@@ -241,6 +301,15 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
                 handleProcessList(cpuArr, procCPUTable, procCPUTable2);
                 handleProcessList(memArr, procMemTable, procMemTable2);
+
+                if (loadingPoinInTime) {
+                    let newTime = new Date(time * 1000);
+                    document.querySelector('#cpu-proc-list-time').innerHTML = 'at ' + moment(newTime).format('YYYY-MM-DD HH:mm:ss');
+                    document.querySelector('#mem-proc-list-time').innerHTML = 'at ' + moment(newTime).format('YYYY-MM-DD HH:mm:ss');
+                } else {
+                    document.querySelector('#cpu-proc-list-time').innerHTML = '';
+                    document.querySelector('#mem-proc-list-time').innerHTML = '';
+                }
             }
         }, (error) => {
             console.error(error);
@@ -274,13 +343,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         axios.get(url).then((response) => {
             let processedData = processUsageData(response.data.Data);
-            if (!isCPUFirstTime && cpuChart !== null) {
+            if (!isCPUFirstTime && cpuChart !== null && !loadingFromCustomRange) {
                 updateChart(cpuChart, processedData['labels'], processedData['data']);
                 return;
             }
             isCPUFirstTime = false;
             if (cpuChart !== null) cpuChart.destroy();
             cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage-chart'), 'CPU', context => context.parsed.y + '%');
+            cpuChart.options.onClick = dataPointClickHandler;
         }, (error) => {
             console.error(error);
         }); 
@@ -293,13 +363,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         axios.get(url).then((response) => {            
             let processedData = processUsageData(response.data.Data, 'memory');    
-            if (!isMemFirstTime && memChart !== null) {
+            if (!isMemFirstTime && memChart !== null && !loadingFromCustomRange) {
                 updateChart(memChart, processedData['labels'], processedData['data']);
                 return;
             }
             isMemFirstTime = false;
             if (memChart !== null) memChart.destroy();
             memChart = generateUsageChart(processedData, document.getElementById('memory-usage-chart'), 'MEM', context => context.parsed.y + '%');
+            memChart.options.onClick = dataPointClickHandler;
         }, (error) => {
             console.error(error);
         }); 
@@ -314,12 +385,11 @@ document.addEventListener('DOMContentLoaded', ()=> {
             if (response.data.Status === 'OK') {
                 let disks = response.data.Data;
                 handleDiskInfoTable(disks, diskTable);
-                if (isDisksFirstTime) {
+                if (isDisksFirstTime || loadingFromCustomRange) {
                     loadDiskUsage();
                 }
-                if (!isDisksFirstTime && diskPercentageChart !== null) {
+                if (!isDisksFirstTime && diskPercentageChart !== null && !loadingFromCustomRange) {
                     updateChartForDisks(diskPercentageChart, response.data.Data);
-                    return;
                 }
             }
         }, (error) => {
@@ -352,7 +422,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     loadNetworksBandwidth();
                     handleNetworkInterfaceDropdown(networks[0], networkInterfaceDropdown);
                 }
-                if (!isNetworkFirstTime && networkChart !== null) {
+                if (!isNetworkFirstTime && networkChart !== null && !loadingFromCustomRange) {
                     result = updateChartForNetwork(networkChart, networks[0], selectedInterfaceIndex, orgRx, orgTx, monitorInterval);
                     orgRx = result[0];
                     orgTx = result[1];
@@ -505,6 +575,52 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
+    reset = () => {
+        firstTime = true;
+        isCPUFirstTime = true;
+        isMemFirstTime = true;
+        isNetworkFirstTime = true;
+        isDisksFirstTime = true;
+        loadingFromCustomRange = false;
+        loadingPoinInTime = false;
+        if (cpuChart !== null) {
+            cpuChart.destroy();
+            cpuChart = null;
+        }
+        if (memChart !== null) {
+            memChart.destroy();
+            memChart = null;
+        }
+        if (diskPercentageChart !== null) {
+            diskPercentageChart.destroy();
+            diskPercentageChart = null;
+        }
+        if (networkChart !== null) {
+            networkChart.destroy();
+            networkChart = null;
+        }
+        loadSystem();
+        loadData();
+    }
+
+    dataPointClickHandler = (e, el) => {
+        if (el.length > 0) {
+            try {
+                let time = e.chart.data.labels[el[0].index].getTime() / 1000;
+                axios.get('/system?serverId='+serverName+'&time='+time).then((response) => {
+                    if (selectedSection === 'cpu-section' || selectedSection === 'memory-section') {
+                        loadingPoinInTime = true;
+                        loadProcesses(time);
+                    }
+                }, (error) => {
+                    console.error(error);
+                });
+            } catch (e) {
+                console.log(e);
+            }
+        }
+    }
+
     loadData = () => {
         loadSystem();
         if (selectedSection === 'overview-section') {
@@ -514,12 +630,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
             loadServices();
         }
 
-        if (selectedSection === 'cpu-section') {
+        if (selectedSection === 'cpu-section' && !loadingPoinInTime) {
             loadProcesses();
             loadCPUUsage();
         }
 
-        if (selectedSection === 'memory-section') {
+        if (selectedSection === 'memory-section' && !loadingPoinInTime) {
             loadProcesses();
             loadMemoryUsage();
             loadMemory();
