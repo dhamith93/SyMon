@@ -91,7 +91,50 @@ processDisksForCharts = (data) => {
     };
 }
 
-generateUsageChart = (processedData, elem, label, callback) => {
+processNetworksForCharts = (data, index = 0, monitorInterval) => {
+    let oldest = data.pop();
+    let orgRx = parseInt(oldest[index].Usage.RxBytes, 10);
+    let orgTx = parseInt(oldest[index].Usage.TxBytes, 10);
+    let processedDataRx = [];
+    let processedDataTx = [];
+    let labels = [];
+    data.forEach(row => {
+        let newRx = parseInt(row[index].Usage.RxBytes, 10);
+        let newTx = parseInt(row[index].Usage.TxBytes, 10);
+        let diffRateRx = (newRx - orgRx) / monitorInterval;
+        let diffRateTx = (newTx - orgTx) / monitorInterval;
+        orgRx = newRx;
+        orgTx = newTx;
+        labels.push(new Date(row[index].Time * 1000));
+        processedDataRx.push(convertTo(diffRateRx, 'B', 'K'));
+        processedDataTx.push(convertTo(diffRateTx, 'B', 'K'));
+    });
+    let cData = {
+        labels: labels,
+        data: [
+            {
+                label: 'RX',
+                borderColor: getRandomColor(),
+                data: processedDataRx
+            },
+            {
+                label: 'TX',
+                borderColor: getRandomColor(),
+                data: processedDataTx
+            }
+        ],
+    };
+    return {
+        data: cData, 
+        orgRx: orgRx, 
+        orgTx: orgTx
+    }
+}
+
+generateUsageChart = (processedData, elem, label, callback, isMax100 = true) => {
+    let options = getOptions(callback);
+    if (isMax100)
+        options.scales.y.max = 100;
     return new Chart(elem.getContext('2d'), {
         type: 'line',
         data: {
@@ -102,7 +145,7 @@ generateUsageChart = (processedData, elem, label, callback) => {
                 data: processedData['data']
             }],
         },
-        options: getOptions(callback)
+        options: options
     });
 }
 
@@ -120,7 +163,6 @@ getOptions = (callback) => {
             y: {
                 display: true,
                 min: 0,
-                max: 100,
                 ticks:{
                     color: '#fff'
                 }
@@ -163,14 +205,17 @@ getOptions = (callback) => {
     }
 }
 
-generateUsageChartForMultiple = (processedData, elem, callback) => {
+generateUsageChartForMultiple = (processedData, elem, callback, isMax100 = true) => {
+    let options = getOptions(callback);
+    if (isMax100)
+        options.scales.y.max = 100;
     return new Chart(elem.getContext('2d'), {
         type: 'line',
         data: {
             labels: processedData['labels'],
             datasets: processedData['data'],
         },
-        options: getOptions(callback)
+        options: options
     });
 }
 
@@ -220,4 +265,23 @@ updateChartForDisks = (chart, data) => {
     chart.data.labels.pop();
     chart.data.labels = labels.concat(chart.data.labels);
     chart.update();
+}
+
+updateChartForNetwork = (chart, data, index = 0, orgRx, orgTx, monitorInterval) => {
+    if (data && chart != null) {
+        let newRx = parseInt(data[index].Usage.RxBytes, 10);
+        let newTx = parseInt(data[index].Usage.TxBytes, 10);
+        let diffRateRx = (newRx - orgRx) / monitorInterval;
+        let diffRateTx = (newTx - orgTx) / monitorInterval;
+        orgRx = newRx;
+        orgTx = newTx;
+        chart.data.datasets[0].data.shift()
+        chart.data.datasets[1].data.shift()
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.push(convertTo(diffRateRx, 'B', 'K'));
+        chart.data.datasets[1].data.push(convertTo(diffRateTx, 'B', 'K'));
+        chart.data.labels.push(new Date(data[index].Time * 1000));
+        chart.update();
+    }
+    return [orgRx, orgTx];
 }

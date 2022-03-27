@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const procMemTable2 = document.querySelector('#proc-memory-table-2');
     const servicesTable = document.querySelector('#services-table');
     const diskTable = document.querySelector('#disk-table');
+    const networkTable = document.querySelector('#network-table');
+    const networkInterfaceDropdown = document.querySelector('#network-interface-dropdown');
     const cpuCircle = document.querySelector('#cpu-circle');
     const cpuLoadAvgElem = document.querySelector('#cpu-load-avg');
     const memoryCircle = document.querySelector('#memory-circle');
@@ -22,14 +24,20 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const swapTable = document.querySelector('#swap-table');
     const circleStrokeDashOffset = 472;
     const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
+    const monitorInterval = 15;
     let selectedSection = 'overview-section';
     let firstTime = true;
     let isCPUFirstTime = true;
     let isMemFirstTime = true;
     let isDisksFirstTime = true;
+    let isNetworkFirstTime = true;
     let cpuChart = null;
     let memChart = null;
     let diskPercentageChart = null;
+    let networkChart = null;
+    let selectedInterfaceIndex = 0;
+    let orgRx = 0;
+    let orgTx = 0;
     let toTime = 0;
     let fromTime = 0;
 
@@ -79,6 +87,13 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     diskPercentageChart = null;
                 }
             }
+            if (link.dataset.section !== 'networking-section') {
+                isNetworkFirstTime = true;
+                if (networkChart !== null) {
+                    networkChart.destroy();
+                    networkChart = null;
+                }
+            }
             loadData();
             menuBtn.classList.toggle('is-active');
             navMenu.classList.toggle('is-active');
@@ -101,6 +116,22 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (diskPercentageChart !== null) {
             diskPercentageChart.resetZoom();
         }
+    });
+
+    document.getElementById('networks-chart-reset').addEventListener('click', () => {
+        if (networkChart !== null) {
+            networkChart.resetZoom();
+        }
+    });
+
+    networkInterfaceDropdown.addEventListener('change', e => {
+        selectedInterfaceIndex = parseInt(e.target.value, 10);
+        isNetworkFirstTime = true;
+        if (networkChart !== null) {
+            networkChart.destroy();
+            networkChart = null;
+        }
+        loadNetworksBandwidth();
     });
     
     loadSystem = () => {
@@ -308,6 +339,50 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }); 
     }
 
+    loadNetworks = (time = null) => {
+        let url = '/network?serverId='+serverName;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
+            let networks = response.data.Data;
+            if (networks[0]) {
+                handleNetworkInfoTable(networks[0], networkTable);
+                if (isNetworkFirstTime) {
+                    loadNetworksBandwidth();
+                    handleNetworkInterfaceDropdown(networks[0], networkInterfaceDropdown);
+                }
+                if (!isNetworkFirstTime && networkChart !== null) {
+                    result = updateChartForNetwork(networkChart, networks[0], selectedInterfaceIndex, orgRx, orgTx, monitorInterval);
+                    orgRx = result[0];
+                    orgTx = result[1];
+                }                
+            }
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    loadNetworksBandwidth = () => {
+        if (isNetworkFirstTime) {
+            let url = '/network?serverId='+serverName+'&from='+fromTime+'&to='+toTime;
+            axios.get(url).then((response) => {
+                let data = response.data.Data;
+                let result = processNetworksForCharts(data, selectedInterfaceIndex, monitorInterval);
+                let processedData = result['data'];
+                orgRx = result['orgRx'];
+                orgTx = result['orgTx'];
+                if (networkChart !== null) {
+                    networkChart.destroy();
+                }
+                networkChart = generateUsageChartForMultiple(processedData, document.getElementById('networks-chart'), (context) => { context.parsed.y + 'kB/s'; }, false);
+                isNetworkFirstTime = false;    
+            }, (error) => {
+                console.error(error);
+            });            
+        }
+    }
+
     handleProcessList = (usage, table, tableInSection) => {
         if (usage) {
             if (selectedSection === 'overview-section') {
@@ -389,6 +464,45 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
+    handleNetworkInfoTable = (networks, table) => {
+        let headerArray = ['Interface', 'IP', 'Rx', 'Tx'];
+        let networkArray = [];
+        networks.forEach(network => {
+            networkArray.push([
+                network.Interface,
+                network.Ip,
+                `${convertTo(network.Usage.RxBytes, 'B', 'M')} MB`,
+                `${convertTo(network.Usage.TxBytes, 'B', 'M')} MB`
+            ])
+        });
+
+        clearElement(table).then(() => {
+            table.createTHead();
+            let tr = document.createElement('tr');
+            headerArray.forEach(element => {
+                th = document.createElement('th');
+                th.innerHTML = element;
+                tr.appendChild(th);
+            });
+            table.tHead.appendChild(tr);
+            networkArray.forEach(row => {
+                let tableRow = table.insertRow(-1);
+                row.forEach(i => {
+                    let cell = tableRow.insertCell(-1);
+                    cell.innerHTML = i;
+                });
+            });
+        });
+    }
+
+    handleNetworkInterfaceDropdown = (networks, elem) => {
+        let count = 0;
+        networks.forEach(network => {
+            elem.options[elem.options.length] = new Option(network.Interface, count);
+            count += 1;
+        });
+    }
+
     loadData = () => {
         loadSystem();
         if (selectedSection === 'overview-section') {
@@ -412,6 +526,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (selectedSection === 'disks-section') {
             loadDisks();            
+        }
+
+        if (selectedSection === 'networking-section') {
+            loadNetworks();
         }
     }
 
