@@ -498,8 +498,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
     handleNetworkInterfaceDropdown = (networks, elem) => {
         let count = 0;
         networks.forEach(network => {
-            elem.options[elem.options.length] = new Option(network.Interface, count);
-            count += 1;
+            clearElement(elem).then(() => {
+                elem.options[elem.options.length] = new Option(network.Interface, count);
+                count += 1;
+            });
         });
     }
 
