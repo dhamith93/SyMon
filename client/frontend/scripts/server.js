@@ -168,7 +168,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
         axios.get('/system?serverId='+serverName+'&from='+tmpFromTime+'&to='+toTime).then((response) => {
             let data = response.data.Data;
             populateTable(systemTable, data);
-            loadData();
+            if (selectedSection === 'custom-metrics-section') {
+                enabledCustomMetrics.forEach(metric => {
+                    handleCustomMetric(metric, false);
+                    handleCustomMetric(metric);
+                });
+            } else {
+                loadData();
+            }
         }, (error) => {
             console.error(error);
         });
@@ -621,7 +628,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     canvas.setAttribute('width', '800px');
                     canvas.setAttribute('id', divId);
                     customMetricsDisplayArea.appendChild(canvas);
-                    customMetricsDisplayArea.appendChild(document.createElement('br'));
                     customMetricCharts[metric] = generateUsageChart(processedData, canvas, metric, context => context.parsed.y + ' ' + response.data.Data[0].Unit, false);
                 }
             }, (error) => {
@@ -671,7 +677,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
             networkChart = null;
         }
         loadSystem();
-        loadData();
+        if (selectedSection === 'custom-metrics-section') {
+            setTimeout(() => {
+                enabledCustomMetrics.forEach(metric => {
+                    handleCustomMetric(metric, false);
+                    handleCustomMetric(metric);
+                });
+            }, 1000);
+        } else {
+            loadData();
+        }
     }
 
     dataPointClickHandler = (e, el) => {
@@ -721,7 +736,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             loadNetworks();
         }
 
-        if (selectedSection === 'custom-metrics-section') {+
+        if (selectedSection === 'custom-metrics-section' && !loadingFromCustomRange) {
             handleCustomMetricUpdates();
         }
     }
