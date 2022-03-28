@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const cpuTable = document.querySelector('#cpu-table');
     const memoryTable = document.querySelector('#memory-table');
     const swapTable = document.querySelector('#swap-table');
+    const customMetricsTable = document.querySelector('#custom-metrics-table');
+    const customMetricsDisplayArea = document.querySelector('#custom-metrics-display-area');
     const circleStrokeDashOffset = 472;
     const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
     const monitorInterval = 15;
@@ -42,6 +44,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let fromTime = 0;
     let loadingFromCustomRange = false;
     let loadingPoinInTime = false;
+    let customMetricCharts = {};
+    let enabledCustomMetrics = [];
 
     serverNameElems.forEach(elem => {
         elem.innerHTML = encodeURIComponent(urlParams.get('name'));
@@ -453,6 +457,32 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
     }
 
+    loadCustomMetricNames = () => {
+        axios.get('/custom-metric-names?serverId='+serverName).then((response) => {
+            try {
+                if (response.data.Data.CustomMetrics) {
+                    clearElement(customMetricsTable).then(() => {
+                        response.data.Data.CustomMetrics.forEach(metric => {
+                            let row = customMetricsTable.insertRow(-1);
+                            let cell1 = row.insertCell(-1);
+                            cell1.innerHTML = metric;
+                            let cell2 = row.insertCell(-1);
+                            let chkbox = document.createElement('input');
+                            chkbox.setAttribute('type', 'checkbox');
+                            chkbox.classList.add('metric-check-boxes')
+                            chkbox.addEventListener('click', e => {
+                                handleCustomMetric(metric, e.target.checked);
+                            });
+                            cell2.appendChild(chkbox);
+                        });
+                    });                    
+                }
+            } catch (e) { }
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
     handleProcessList = (usage, table, tableInSection) => {
         if (usage) {
             if (selectedSection === 'overview-section') {
@@ -575,6 +605,47 @@ document.addEventListener('DOMContentLoaded', ()=> {
         });
     }
 
+    handleCustomMetric = (metric, enable = true) => {
+        if (customMetricCharts[metric]) {
+            customMetricCharts[metric].destroy();
+            enabledCustomMetrics = enabledCustomMetrics.filter(item => item !== metric);        
+        }
+        if (enable) {
+            enabledCustomMetrics.push(metric);
+            let url = '/custom?serverId='+serverName+'&from='+fromTime+'&to='+toTime+'&custom-metric='+metric;
+            axios.get(url).then((response) => {
+                if (response.data.Data) {
+                    let processedData = processUsageData(response.data.Data, 'custom');
+                    let divId = 'custom-data-for-' + metric;
+                    let canvas = document.createElement('canvas');
+                    canvas.setAttribute('width', '800px');
+                    canvas.setAttribute('id', divId);
+                    customMetricsDisplayArea.appendChild(canvas);
+                    customMetricsDisplayArea.appendChild(document.createElement('br'));
+                    customMetricCharts[metric] = generateUsageChart(processedData, canvas, metric, context => context.parsed.y + ' ' + response.data.Data[0].Unit, false);
+                }
+            }, (error) => {
+                console.error(error);
+            });
+        } else {
+            customMetricsDisplayArea.removeChild(document.querySelector('#custom-data-for-' + metric));
+        }
+    }
+
+    handleCustomMetricUpdates = () => {
+        enabledCustomMetrics.forEach(metric => {
+            if (customMetricCharts[metric]) {
+                let url = '/custom?serverId='+serverName+'&custom-metric='+metric;
+                axios.get(url).then((response) => {
+                    let metricData = response.data.Data;
+                    updateChart(customMetricCharts[metric], [new Date(metricData.Time * 1000)], [metricData.Value]);
+                }, (error) => {
+                    console.error(error);
+                });
+            }
+        });
+    }
+
     reset = () => {
         firstTime = true;
         isCPUFirstTime = true;
@@ -649,13 +720,18 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (selectedSection === 'networking-section') {
             loadNetworks();
         }
-    }
 
+        if (selectedSection === 'custom-metrics-section') {+
+            handleCustomMetricUpdates();
+        }
+    }
+    
     loadSystem();
     loadCPU();
     loadMemory();
     loadProcesses();
     loadServices();    
+    loadCustomMetricNames();
 
     setInterval(() => {
         firstTime = false;

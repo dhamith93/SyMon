@@ -20,11 +20,12 @@
 		</div>
 	</header>
     <nav class="nav-menu">
-		<a href="#" data-section="overview-section" class="nav-link link-active" id="overview-link">Overview</a>
-		<a href="#" data-section="cpu-section" class="nav-link" id="cpu-link">CPU</a>
-		<a href="#" data-section="memory-section" class="nav-link" id="memory-link">Memory/SWAP</a>
-		<a href="#" data-section="disks-section" class="nav-link" id="disks-link">Disks</a>
-        <a href="#" data-section="networking-section" class="nav-link" id="networking-link">Networking</a>
+		<a href="#" data-section="overview-section" class="nav-link link-active">Overview</a>
+		<a href="#" data-section="cpu-section" class="nav-link">CPU</a>
+		<a href="#" data-section="memory-section" class="nav-link">Memory/SWAP</a>
+		<a href="#" data-section="disks-section" class="nav-link">Disks</a>
+        <a href="#" data-section="networking-section" class="nav-link">Networking</a>
+        <a href="#" data-section="custom-metrics-section" class="nav-link">Custom Metrics</a>
 	</nav>
 
     <div class="main">
@@ -184,6 +185,15 @@
                 <a class="btn" id="networks-chart-reset">Reset Zoom</a>
             </div>
 
+        </div>
+
+        <div class="section" id="custom-metrics-section">
+            <div class="sub-section" id="custom-metric-charts">
+                <p>Custom Metrics</p>
+                <table class="data-table" id="custom-metrics-table"></table>
+                <br>
+                <div id="custom-metrics-display-area"></div>
+            </div>
         </div>
     </div>
 

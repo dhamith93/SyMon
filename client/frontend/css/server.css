@@ -87,7 +87,6 @@ select:focus {
     outline: 0;
 }
 
-
 select:-moz-focusring {
     color: transparent;
     text-shadow: 0 0 0 #000;
@@ -254,4 +253,8 @@ select:-moz-focusring {
 
 .gauge p {
     text-align: center;
+}
+
+#custom-metrics-table {
+    margin: auto;
 }
