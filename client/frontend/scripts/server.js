@@ -678,16 +678,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
             networkChart = null;
         }
         loadSystem();
-        if (selectedSection === 'custom-metrics-section') {
-            setTimeout(() => {
+        setTimeout(() => {
+            if (selectedSection === 'custom-metrics-section') {
                 enabledCustomMetrics.forEach(metric => {
                     handleCustomMetric(metric, false);
                     handleCustomMetric(metric);
                 });
-            }, 1000);
-        } else {
-            loadData();
-        }
+            } else {
+                loadData();
+            }
+        }, 1000);
     }
 
     dataPointClickHandler = (e, el) => {
