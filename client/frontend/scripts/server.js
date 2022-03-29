@@ -226,17 +226,22 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         axios.get(url).then((response) => {
             if (response.data.Status === 'OK') {
-                cpu = response.data.Data[0];
+                let cpu = response.data.Data[0];
+                if (selectedSection === 'cpu-section') {
+                    if (!isCPUFirstTime && cpuChart !== null && !loadingFromCustomRange) {
+                        updateChart(cpuChart, [new Date(cpu.Time * 1000)], [cpu.LoadAvg]);                        
+                    }
+
+                    delete cpu.LoadAvg;
+                    delete cpu.CoreAvg;
+                    delete cpu.Time;
+                    populateTable(cpuTable, cpu);
+                }
+
                 if (selectedSection === 'overview-section') {
                     cpuCircle.style.strokeDashoffset = circleStrokeDashOffset - circleStrokeDashOffset * (cpu.LoadAvg / 100);
                     cpuLoadAvgElem.innerHTML = `${cpu.LoadAvg}%`;
                 }
-            }
-            if (firstTime) {
-                delete cpu.LoadAvg;
-                delete cpu.CoreAvg;
-                delete cpu.Time;
-                populateTable(cpuTable, cpu);
             }
         }, (error) => {
             console.error(error);
@@ -256,6 +261,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 if (selectedSection === 'overview-section') {
                     memoryCircle.style.strokeDashoffset = circleStrokeDashOffset - circleStrokeDashOffset * (memory.PercentageUsed / 100);
                     memoryLoadElem.innerHTML = `${memory.PercentageUsed}%`;
+                }
+
+                if (selectedSection === 'memory-section' && !isMemFirstTime && memChart !== null && !loadingFromCustomRange) {
+                    updateChart(memChart, [new Date(memory.Time * 1000)], [memory.PercentageUsed]);
                 }
 
                 memory.Usage = `${memory.PercentageUsed}%`;
@@ -354,10 +363,6 @@ document.addEventListener('DOMContentLoaded', ()=> {
         }
         axios.get(url).then((response) => {
             let processedData = processUsageData(response.data.Data);
-            if (!isCPUFirstTime && cpuChart !== null && !loadingFromCustomRange) {
-                updateChart(cpuChart, processedData['labels'], processedData['data']);
-                return;
-            }
             isCPUFirstTime = false;
             if (cpuChart !== null) cpuChart.destroy();
             cpuChart = generateUsageChart(processedData, document.getElementById('cpu-usage-chart'), 'CPU', context => context.parsed.y + '%');
@@ -373,11 +378,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             url = '/memory-historical?serverId='+serverName;
         }
         axios.get(url).then((response) => {            
-            let processedData = processUsageData(response.data.Data, 'memory');    
-            if (!isMemFirstTime && memChart !== null && !loadingFromCustomRange) {
-                updateChart(memChart, processedData['labels'], processedData['data']);
-                return;
-            }
+            let processedData = processUsageData(response.data.Data, 'memory');
             isMemFirstTime = false;
             if (memChart !== null) memChart.destroy();
             memChart = generateUsageChart(processedData, document.getElementById('memory-usage-chart'), 'MEM', context => context.parsed.y + '%');
@@ -718,13 +719,18 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
         if (selectedSection === 'cpu-section' && !loadingPoinInTime) {
             loadProcesses();
-            loadCPUUsage();
+            loadCPU();
+            if (isCPUFirstTime) {
+                loadCPUUsage();
+            }
         }
 
         if (selectedSection === 'memory-section' && !loadingPoinInTime) {
             loadProcesses();
-            loadMemoryUsage();
             loadMemory();
+            if (isMemFirstTime) {
+                loadMemoryUsage();
+            }
             loadSwap();
         }
 
