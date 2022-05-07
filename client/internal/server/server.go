@@ -126,7 +126,7 @@ func returnAlerts(w http.ResponseWriter, r *http.Request) {
 	config := config.GetConfig("config.json")
 	serverName, _ := parseGETForServerName(r)
 	received, _ := getActiveAlerts(serverName, &config)
-	alertData, err := json.Marshal(received)
+	alertData, err := json.Marshal(received.Alerts)
 	var data interface{}
 	var out output
 	if err != nil {
@@ -242,7 +242,6 @@ func getActiveAlerts(serverName string, config *config.Config) (alertapi.AlertAr
 
 	alerts, err := c.AlertRequest(ctx, &alertapi.Request{ServerName: serverName})
 
-	fmt.Println(alerts)
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
 		return alertapi.AlertArray{}, err

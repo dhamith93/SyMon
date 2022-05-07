@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const memoryLoadElem = document.querySelector('#memory-load');
     const cpuTable = document.querySelector('#cpu-table');
     const memoryTable = document.querySelector('#memory-table');
+    const alertTable = document.querySelector('#alerts-table');
     const swapTable = document.querySelector('#swap-table');
     const customMetricsTable = document.querySelector('#custom-metrics-table');
     const customMetricsDisplayArea = document.querySelector('#custom-metrics-display-area');
@@ -349,6 +350,29 @@ document.addEventListener('DOMContentLoaded', ()=> {
                         data[row['Name']] = row['Running'] ? '<i class="Small material-icons">check_circle</i>' : '<i class="Small material-icons">cancel</i>';
                     });
                     populateTable(servicesTable, data)
+                }
+            } catch (e) { }
+        }, (error) => {
+            console.error(error);
+        }); 
+    }
+
+    loadAlerts = (time = null) => {
+        let url = '/alerts?serverId='+serverName;
+        if (time !== null) {
+            url = url + '&time=' + time;
+        }
+        axios.get(url).then((response) => {
+            try {
+                if (response.data.Data) {
+                    let data = {};
+                    response.data.Data.reverse();
+                    response.data.Data.forEach(alert => {
+                        data[alert.subject] = alert.resolved ? 'Resolved' : 'Ongoing';
+                    });
+                    populateTable(alertTable, data);
+                } else {
+                    clearElement(alertTable);
                 }
             } catch (e) { }
         }, (error) => {
@@ -715,6 +739,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
             loadCPU();
             loadProcesses();
             loadServices();
+            loadAlerts();
         }
 
         if (selectedSection === 'cpu-section' && !loadingPoinInTime) {
@@ -751,7 +776,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     loadCPU();
     loadMemory();
     loadProcesses();
-    loadServices();    
+    loadServices();
+    loadAlerts();
     loadCustomMetricNames();
 
     setInterval(() => {

@@ -2,7 +2,6 @@ package alertapi
 
 import (
 	context "context"
-	"fmt"
 
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/email"
@@ -15,8 +14,7 @@ type Server struct {
 }
 
 func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error) {
-	fmt.Println(s.Database.Name)
-	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_name", "==", in.MetricName)
+	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_name", "==", in.MetricName).And("resolved", "==", false)
 
 	if res.RowCount == 0 {
 		err := s.Database.Tables["alert"].Insert(
@@ -48,8 +46,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 	}
 
 	// send notification
-	fmt.Println()
-	fmt.Println(in)
+	// fmt.Println(in)
 	err := email.SendEmail(in.Subject, in.Content)
 	if err != nil {
 		logger.Log("err", err.Error())
@@ -59,7 +56,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 
 func (s *Server) AlertRequest(ctx context.Context, in *Request) (*AlertArray, error) {
 	alerts := AlertArray{}
-	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName)
+	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("resolved", "==", false)
 
 	for _, row := range res.Rows {
 		alerts.Alerts = append(alerts.Alerts, &Alert{
