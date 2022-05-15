@@ -46,7 +46,7 @@ func main() {
 	defer mysql.Close()
 
 	for _, row := range sqliteData {
-		err := mysql.SaveLogToDB(*serverName, row[0], row[2], row[1])
+		err := mysql.SaveLogToDB(*serverName, row[0], row[2], row[1], "")
 		if err != nil {
 			log.Fatalf("error %v", err)
 		}
