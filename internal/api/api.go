@@ -141,22 +141,49 @@ func handleMonitorData(monitorData *monitor.MonitorData) error {
 	data["system"] = &monitorData.System
 	data["memory"] = &monitorData.Memory
 	data["swap"] = &monitorData.Swap
-	data["disks"] = &monitorData.Disk
 	data["procUsage"] = &monitorData.ProcUsage
-	data["networks"] = &monitorData.Networks
-	data["services"] = &monitorData.Services
 	data["processes"] = &monitorData.Processes
 
 	for key, item := range data {
-		res, err := json.Marshal(item)
+		err := saveToDB(item, mysql, serverName, time, key, "")
 		if err != nil {
 			return err
 		}
+	}
 
-		err = mysql.SaveLogToDB(serverName, time, string(res), key)
+	for _, disk := range monitorData.Disk {
+		err := saveToDB(disk, mysql, serverName, time, "disks", disk.FileSystem)
 		if err != nil {
 			return err
 		}
+	}
+
+	for _, service := range monitorData.Services {
+		err := saveToDB(service, mysql, serverName, time, "services", service.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, network := range monitorData.Networks {
+		err := saveToDB(network, mysql, serverName, time, "networks", network.Interface)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func saveToDB(item interface{}, mysql database.MySql, serverName string, time string, key string, logName string) error {
+	res, err := json.Marshal(item)
+	if err != nil {
+		return err
+	}
+
+	err = mysql.SaveLogToDB(serverName, time, string(res), key, logName)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -172,7 +199,7 @@ func handleCustomMetric(customMetric *monitor.CustomMetric) error {
 	if err != nil {
 		return err
 	}
-	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name)
+	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name, "")
 }
 
 func getMonitorLogs(serverName string, logType string, from int64, to int64, time int64, config *config.Config, convertToJsonArr bool) string {
@@ -180,8 +207,23 @@ func getMonitorLogs(serverName string, logType string, from int64, to int64, tim
 	defer mysql.Close()
 	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
 	if (convertToJsonArr || (to != 0 && from != 0)) && logType != "system" {
+		if logType == "disks" || logType == "networks" || logType == "services" {
+			var arr []string
+			for _, row := range data {
+				var newData []string
+				_ = json.Unmarshal([]byte(row), &newData)
+				arr = append(arr, stringops.StringArrToJSONArr(newData))
+			}
+			return stringops.StringArrToJSONArr(arr)
+		}
 		return stringops.StringArrToJSONArr(data)
 	} else {
+		if logType == "disks" || logType == "networks" || logType == "services" {
+			var arr []string
+			_ = json.Unmarshal([]byte(data[0]), &arr)
+			str := stringops.StringArrToJSONArr(arr)
+			return str
+		}
 		return data[0]
 	}
 }

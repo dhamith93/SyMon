@@ -114,7 +114,7 @@ func (mysql *MySql) monitorDataSelect(query string, args ...interface{}) []strin
 	return out
 }
 
-func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr string, logType string) error {
+func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr string, logType string, logName string) error {
 	serverId := mysql.getServerId(serverName)
 	if len(serverId) == 0 {
 		err := fmt.Errorf("server %s not registered", serverName)
@@ -122,7 +122,7 @@ func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr stri
 		return err
 	}
 
-	stmt, err := mysql.DB.Prepare("INSERT INTO monitor_log (server_id, log_time, log_type, log_text) VALUES (?, ?, ?, ?)")
+	stmt, err := mysql.DB.Prepare("INSERT INTO monitor_log (server_id, log_time, log_type, log_name, log_text) VALUES (?, ?, ?, ?, ?)")
 
 	if err != nil {
 		mysql.SqlErr = err
@@ -132,7 +132,7 @@ func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr stri
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(serverId, unixTime, logType, jsonStr)
+	_, err = stmt.Exec(serverId, unixTime, logType, logName, jsonStr)
 
 	if err != nil {
 		mysql.SqlErr = err
@@ -204,6 +204,9 @@ func (mysql *MySql) GetCustomMetricNames(serverName string) []string {
 }
 
 func (mysql *MySql) GetLogFromDBCount(serverId string, logType string, count int64) []string {
+	if logType == "disks" || logType == "networks" || logType == "services" {
+		return mysql.monitorDataSelect("SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM monitor_log WHERE server_id = ? AND log_type = ? GROUP BY log_time ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
+	}
 	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
 }
 
@@ -236,7 +239,7 @@ func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, from i
 }
 
 func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from int64, to int64) []string {
-	query := "SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ?"
+	query := "SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
 	// diff := to - from
 
 	// if diff > 21600 && diff <= 172800 {
@@ -247,7 +250,9 @@ func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from in
 	// 	query = query + " AND STRFTIME('%H%M', DATETIME(log_time, 'unixepoch')) IN ('0001', '0601', '1201', '1801')"
 	// }
 
-	query = query + " AND log_time BETWEEN ? AND ? ORDER BY log_time"
+	if logType == "disks" || logType == "networks" || logType == "services" {
+		query = "SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? GROUP BY log_time ORDER BY log_time"
+	}
 
 	return mysql.monitorDataSelect(query, serverId, logType, from, to)
 }
