@@ -11,6 +11,17 @@ import (
 	"github.com/dhamith93/systats"
 )
 
+const (
+	SYSTEM     string = "system"
+	MEMORY     string = "memory"
+	SWAP       string = "swap"
+	PROC_USAGE string = "procUsage"
+	PROCESSES  string = "processes"
+	DISKS      string = "disks"
+	SERVICES   string = "services"
+	NETWORKS   string = "networks"
+)
+
 // Processes hold CPU and Memory usage data
 type Processes struct {
 	CPU    []systats.Process

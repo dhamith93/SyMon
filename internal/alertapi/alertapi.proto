@@ -21,6 +21,8 @@ message Alert {
     string content = 6;
     string timestamp = 7;
     bool resolved = 8;
+    string disk = 9;
+    string service = 10;
 }
 
 message Request {

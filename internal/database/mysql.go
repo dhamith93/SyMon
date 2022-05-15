@@ -8,6 +8,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/fileops"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/monitor"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -204,7 +205,7 @@ func (mysql *MySql) GetCustomMetricNames(serverName string) []string {
 }
 
 func (mysql *MySql) GetLogFromDBCount(serverId string, logType string, count int64) []string {
-	if logType == "disks" || logType == "networks" || logType == "services" {
+	if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
 		return mysql.monitorDataSelect("SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM monitor_log WHERE server_id = ? AND log_type = ? GROUP BY log_time ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
 	}
 	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
@@ -221,20 +222,16 @@ func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, 
 	}
 }
 
-func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, from int64, to int64) []string {
+func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, logName string, from int64, to int64) [][]string {
 	serverId := mysql.getServerId(serverName)
 	if from > 0 && to > 0 {
-		res, _ := mysql.Select(
-			"SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? ORDER BY log_time",
-			serverId, logType, from, to,
-		)
-		return res.Data[0]
+		q := "SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ?  AND log_name = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
+		res, _ := mysql.Select(q, serverId, logType, logName, from, to)
+		return res.Data
 	} else {
-		res, _ := mysql.Select(
-			"SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT 1",
-			serverId, logType,
-		)
-		return res.Data[0]
+		q := "SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_name = ? ORDER BY log_time DESC LIMIT 1"
+		res, _ := mysql.Select(q, serverId, logType, logName)
+		return res.Data
 	}
 }
 
@@ -250,7 +247,7 @@ func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from in
 	// 	query = query + " AND STRFTIME('%H%M', DATETIME(log_time, 'unixepoch')) IN ('0001', '0601', '1201', '1801')"
 	// }
 
-	if logType == "disks" || logType == "networks" || logType == "services" {
+	if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
 		query = "SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? GROUP BY log_time ORDER BY log_time"
 	}
 
@@ -376,8 +373,24 @@ func (mysql *MySql) UpdateAlert(alertStatus *alertstatus.AlertStatus, startEvent
 
 func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) []string {
 	serverId := mysql.getServerId(alertStatus.Server)
-	q := "SELECT * FROM alert AS a JOIN monitor_log AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?;"
-	t, err := mysql.Select(q, alertStatus.UnixTime, serverId, alertStatus.Alert.MetricName)
+	q := "SELECT * FROM alert AS a JOIN monitor_log AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?"
+
+	if alertStatus.Alert.MetricName == monitor.DISKS || alertStatus.Alert.MetricName == monitor.NETWORKS || alertStatus.Alert.MetricName == monitor.SERVICES {
+		q += " AND m.log_name = ?"
+	}
+
+	var t Table
+	var err error
+
+	switch alertStatus.Alert.MetricName {
+	case monitor.DISKS:
+		t, err = mysql.Select(q, alertStatus.UnixTime, serverId, alertStatus.Alert.MetricName, alertStatus.Alert.Disk)
+	case monitor.SERVICES:
+		t, err = mysql.Select(q, alertStatus.UnixTime, serverId, alertStatus.Alert.MetricName, alertStatus.Alert.Service)
+	default:
+		t, err = mysql.Select(q, alertStatus.UnixTime, serverId, alertStatus.Alert.MetricName)
+	}
+
 	if err != nil {
 		logger.Log("error", "GetPreviousOpenAlert"+err.Error())
 	}

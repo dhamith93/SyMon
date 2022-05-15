@@ -368,7 +368,9 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     let data = {};
                     response.data.Data.reverse();
                     response.data.Data.forEach(alert => {
-                        data[alert.subject] = alert.resolved ? 'Resolved' : 'Ongoing';
+                        if (!alert.resolved) {
+                            data[alert.subject] = 'Ongoing';
+                        }
                     });
                     populateTable(alertTable, data);
                 } else {

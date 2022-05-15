@@ -17,6 +17,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 	"github.com/dhamith93/systats"
 	"google.golang.org/grpc"
@@ -33,6 +34,7 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Config, mysq
 		err := incidentTracker.Create(
 			"alert",
 			memdb.Col{Name: "server_name", Type: memdb.String},
+			memdb.Col{Name: "metric_type", Type: memdb.String},
 			memdb.Col{Name: "metric_name", Type: memdb.String},
 			memdb.Col{Name: "time", Type: memdb.String},
 			memdb.Col{Name: "status", Type: memdb.Int},
@@ -60,6 +62,14 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Config, mysq
 }
 
 func processAlert(alert *alerts.AlertConfig, server string, config *config.Config, mysql *database.MySql, incidentTracker *memdb.Database) {
+	metricType := alert.MetricName
+	metricName := ""
+	if metricType == monitor.DISKS {
+		metricName = alert.Disk
+	}
+	if metricType == monitor.SERVICES {
+		metricName = alert.Service
+	}
 	alertStatus := buildAlertStatus(alert, &server, config, mysql)
 	alertToSend := buildAlert(alerts.Alert{
 		ServerName:        server,
@@ -85,9 +95,12 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 	if previousAlert != nil {
 		// if current alert status is normal, check if normal status continued for threshold period and update alert status in DB
 		if alertStatus.Type != alertstatus.Warning && alertStatus.Type != alertstatus.Critical {
-			res := incidentTracker.Tables["alert"].Where("server_name", "==", server).And("metric_name", "==", alertStatus.Alert.MetricName).And("status", "==", int(alertstatus.Normal))
+			res := incidentTracker.Tables["alert"].Where("server_name", "==", server).And("metric_type", "==", metricType).And("status", "==", int(alertstatus.Normal))
+			if metricType == monitor.DISKS || metricType == monitor.SERVICES {
+				res = res.And("metric_name", "==", metricName)
+			}
 			if res.RowCount == 0 {
-				err := incidentTracker.Tables["alert"].Insert("server_name, metric_name, time, value, status", server, alertStatus.Alert.MetricName, alertStatus.UnixTime, alertStatus.Value, int(alertstatus.Normal))
+				err := incidentTracker.Tables["alert"].Insert("server_name, metric_type, metric_name, time, value, status", server, metricType, metricName, alertStatus.UnixTime, alertStatus.Value, int(alertstatus.Normal))
 				if err != nil {
 					logger.Log("error", "memdb: "+err.Error())
 				}
@@ -129,10 +142,13 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 	}
 
 	if alertStatus.Type == alertstatus.Warning || alertStatus.Type == alertstatus.Critical {
-		res := incidentTracker.Tables["alert"].Where("server_name", "==", server).And("metric_name", "==", alertStatus.Alert.MetricName).And("status", "!=", int(alertstatus.Normal))
+		res := incidentTracker.Tables["alert"].Where("server_name", "==", server).And("metric_type", "==", metricType).And("status", "!=", int(alertstatus.Normal))
+		if metricType == monitor.DISKS || metricType == monitor.SERVICES {
+			res = res.And("metric_name", "==", metricName)
+		}
 
 		if res.RowCount == 0 {
-			err := incidentTracker.Tables["alert"].Insert("server_name, metric_name, time, value, status", server, alertStatus.Alert.MetricName, alertStatus.UnixTime, alertStatus.Value, int(alertStatus.Type))
+			err := incidentTracker.Tables["alert"].Insert("server_name, metric_type, metric_name, time, value, status", server, metricType, metricName, alertStatus.UnixTime, alertStatus.Value, int(alertStatus.Type))
 			if err != nil {
 				logger.Log("error", "memdb: "+err.Error())
 			}
@@ -162,17 +178,25 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 
 func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.Config, mysql *database.MySql) alertstatus.AlertStatus {
 	var alertStatus alertstatus.AlertStatus
+	logName := ""
 
-	metricLogs := mysql.GetLogFromDBWithId(*server, alert.MetricName, 0, 0)
-	logId := metricLogs[0]
+	switch alert.MetricName {
+	case monitor.DISKS:
+		logName = alert.Disk
+	case monitor.SERVICES:
+		logName = alert.Service
+	}
+
+	metricLogs := mysql.GetLogFromDBWithId(*server, alert.MetricName, logName, 0, 0)
+	logId := metricLogs[0][0]
 	alertStatus.Alert = *alert
 	alertStatus.Server = *server
 	alertStatus.Type = alertstatus.Normal
 
 	switch alert.MetricName {
-	case "procUsage":
+	case monitor.PROC_USAGE:
 		var cpu systats.CPU
-		err := json.Unmarshal([]byte(metricLogs[1]), &cpu)
+		err := json.Unmarshal([]byte(metricLogs[0][1]), &cpu)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
@@ -180,9 +204,9 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.UnixTime = strconv.FormatInt(cpu.Time, 10)
 		alertStatus.Value = float32(cpu.LoadAvg)
 		alertStatus.Type = getAlertType(alert, float64(cpu.LoadAvg))
-	case "memory":
+	case monitor.MEMORY:
 		var mem systats.Memory
-		err := json.Unmarshal([]byte(metricLogs[1]), &mem)
+		err := json.Unmarshal([]byte(metricLogs[0][1]), &mem)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
@@ -190,9 +214,9 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.UnixTime = strconv.FormatInt(mem.Time, 10)
 		alertStatus.Value = float32(mem.PercentageUsed)
 		alertStatus.Type = getAlertType(alert, mem.PercentageUsed)
-	case "swap":
+	case monitor.SWAP:
 		var swap systats.Swap
-		err := json.Unmarshal([]byte(metricLogs[1]), &swap)
+		err := json.Unmarshal([]byte(metricLogs[0][1]), &swap)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
@@ -200,26 +224,43 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.UnixTime = strconv.FormatInt(swap.Time, 10)
 		alertStatus.Value = float32(swap.PercentageUsed)
 		alertStatus.Type = getAlertType(alert, swap.PercentageUsed)
-	case "disks":
-		var diskLog []systats.Disk
-		err := json.Unmarshal([]byte(metricLogs[1]), &diskLog)
+	case monitor.DISKS:
+		var disk systats.Disk
+		err := json.Unmarshal([]byte(metricLogs[0][1]), &disk)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return alertStatus
 		}
 
-		alertStatus.UnixTime = metricLogs[0]
-		for _, disk := range diskLog {
-			if disk.FileSystem == alert.Disk {
-				valStr := strings.Replace(disk.Usage.Usage, "%", "", -1)
-				val, err := strconv.ParseFloat(valStr, 32)
-				if err != nil {
-					logger.Log("error", err.Error())
-					return alertStatus
-				}
-				alertStatus.Value = float32(val)
-				alertStatus.Type = getAlertType(alert, val)
+		if disk.FileSystem == alert.Disk {
+			valStr := strings.Replace(disk.Usage.Usage, "%", "", -1)
+			val, err := strconv.ParseFloat(valStr, 32)
+			if err != nil {
+				logger.Log("error", err.Error())
+				return alertStatus
 			}
+			alertStatus.Value = float32(val)
+			alertStatus.Type = getAlertType(alert, val)
+			alertStatus.UnixTime = strconv.FormatInt(disk.Time, 10)
+			break
+		}
+	case monitor.SERVICES:
+		var service monitor.Service
+		err := json.Unmarshal([]byte(metricLogs[0][1]), &service)
+		if err != nil {
+			logger.Log("error", err.Error())
+			return alertStatus
+		}
+
+		if service.Name == alert.Service {
+			val := 0.0
+			if service.Running {
+				val = 1.0
+			}
+			alertStatus.Value = float32(val)
+			alertStatus.Type = getAlertType(alert, val)
+			alertStatus.UnixTime = service.Time
+			break
 		}
 	}
 	logIdInt, err := strconv.ParseInt(logId, 10, 64)
@@ -275,6 +316,14 @@ func getAlertType(alert *alerts.AlertConfig, val float64) alertstatus.StatusType
 			return alertstatus.Warning
 		}
 		return alertstatus.Normal
+	case "inactive":
+		if val == 0.0 {
+			return alertstatus.Critical
+		}
+	case "active":
+		if val == 1.0 {
+			return alertstatus.Critical
+		}
 	}
 	return alertstatus.Normal
 }
@@ -310,7 +359,7 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus) *alertapi.Al
 		"{timestamp}",
 		timestamp.UTC().String(),
 		"{desc}",
-		"desc",
+		status.Alert.Description,
 		"{value}",
 		value,
 	)
@@ -320,7 +369,7 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus) *alertapi.Al
 		content = "\n------------\n" + "Alert is resolved at : " + timestamp.UTC().String() + "\n------------\n"
 	}
 
-	return &alertapi.Alert{
+	alertToSend := alertapi.Alert{
 		ServerName: alert.ServerName,
 		MetricName: alert.MetricName,
 		LogId:      status.StartEvent,
@@ -330,6 +379,15 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus) *alertapi.Al
 		Timestamp:  timestamp.UTC().String(),
 		Resolved:   (status.Type == alertstatus.Normal),
 	}
+
+	if alert.MetricName == monitor.DISKS {
+		alertToSend.Disk = status.Alert.Disk
+	}
+	if alert.MetricName == monitor.SERVICES {
+		alertToSend.Service = status.Alert.Service
+	}
+
+	return &alertToSend
 }
 
 func sendAlert(alert *alertapi.Alert, config *config.Config) {

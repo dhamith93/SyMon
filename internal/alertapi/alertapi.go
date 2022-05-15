@@ -6,6 +6,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/email"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 )
 
@@ -14,13 +15,21 @@ type Server struct {
 }
 
 func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error) {
-	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_name", "==", in.MetricName).And("resolved", "==", false)
+	metricName := ""
+	if in.MetricName == monitor.DISKS {
+		metricName = in.Disk
+	}
+	if in.MetricName == monitor.SERVICES {
+		metricName = in.Service
+	}
+	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_type", "==", in.MetricName).And("metric_name", "==", metricName).And("resolved", "==", false)
 
 	if res.RowCount == 0 {
 		err := s.Database.Tables["alert"].Insert(
-			"server_name, metric_name, log_id, subject, content, status, timestamp, resolved",
+			"server_name, metric_type, metric_name, log_id, subject, content, status, timestamp, resolved",
 			in.ServerName,
 			in.MetricName,
+			metricName,
 			in.LogId,
 			in.Subject,
 			in.Content,
@@ -56,16 +65,18 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 
 func (s *Server) AlertRequest(ctx context.Context, in *Request) (*AlertArray, error) {
 	alerts := AlertArray{}
-	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("resolved", "==", false)
+	res := s.Database.Tables["alert"].Where("server_name", "==", in.ServerName)
 
 	for _, row := range res.Rows {
 		alerts.Alerts = append(alerts.Alerts, &Alert{
 			ServerName: row.Columns["server_name"].StringVal,
-			MetricName: row.Columns["metric_name"].StringVal,
+			MetricName: row.Columns["metric_type"].StringVal,
 			Subject:    row.Columns["subject"].StringVal,
 			Content:    row.Columns["content"].StringVal,
 			Timestamp:  row.Columns["timestamp"].StringVal,
 			Resolved:   row.Columns["resolved"].BoolVal,
+			Disk:       row.Columns["metric_name"].StringVal,
+			Service:    row.Columns["metric_name"].StringVal,
 		})
 	}
 

@@ -33,6 +33,7 @@ func main() {
 	err := notificationTracker.Create(
 		"alert",
 		memdb.Col{Name: "server_name", Type: memdb.String},
+		memdb.Col{Name: "metric_type", Type: memdb.String},
 		memdb.Col{Name: "metric_name", Type: memdb.String},
 		memdb.Col{Name: "log_id", Type: memdb.Int64},
 		memdb.Col{Name: "subject", Type: memdb.String},

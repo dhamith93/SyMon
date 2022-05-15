@@ -16,6 +16,7 @@ type AlertConfig struct {
 	TriggerIntveral   int
 	Servers           []string
 	Disk              string
+	Service           string
 }
 
 type Alert struct {

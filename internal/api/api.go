@@ -152,21 +152,21 @@ func handleMonitorData(monitorData *monitor.MonitorData) error {
 	}
 
 	for _, disk := range monitorData.Disk {
-		err := saveToDB(disk, mysql, serverName, time, "disks", disk.FileSystem)
+		err := saveToDB(disk, mysql, serverName, time, monitor.DISKS, disk.FileSystem)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, service := range monitorData.Services {
-		err := saveToDB(service, mysql, serverName, time, "services", service.Name)
+		err := saveToDB(service, mysql, serverName, time, monitor.SERVICES, service.Name)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, network := range monitorData.Networks {
-		err := saveToDB(network, mysql, serverName, time, "networks", network.Interface)
+		err := saveToDB(network, mysql, serverName, time, monitor.NETWORKS, network.Interface)
 		if err != nil {
 			return err
 		}
@@ -207,7 +207,7 @@ func getMonitorLogs(serverName string, logType string, from int64, to int64, tim
 	defer mysql.Close()
 	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
 	if (convertToJsonArr || (to != 0 && from != 0)) && logType != "system" {
-		if logType == "disks" || logType == "networks" || logType == "services" {
+		if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
 			var arr []string
 			for _, row := range data {
 				var newData []string
@@ -218,7 +218,7 @@ func getMonitorLogs(serverName string, logType string, from int64, to int64, tim
 		}
 		return stringops.StringArrToJSONArr(data)
 	} else {
-		if logType == "disks" || logType == "networks" || logType == "services" {
+		if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
 			var arr []string
 			_ = json.Unmarshal([]byte(data[0]), &arr)
 			str := stringops.StringArrToJSONArr(arr)

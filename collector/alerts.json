@@ -15,7 +15,7 @@
         "Name": "Memory Usage",
         "Description": "",
         "MetricName": "memory",
-        "WarnThreshold": 10,
+        "WarnThreshold": 30,
         "CriticalThreshold": 60,
         "Op": ">",
         "TriggerIntveral": 60,
@@ -27,7 +27,7 @@
         "Description": "",
         "MetricName": "disks",
         "Disk": "/dev/sdb1",
-        "WarnThreshold": 88,
+        "WarnThreshold": 80,
         "CriticalThreshold": 90,
         "Op": ">",
         "TriggerIntveral": 60,
@@ -44,5 +44,37 @@
         "Op": ">",
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Disk Usage - disk3",
+        "Description": "",
+        "MetricName": "disks",
+        "Disk":  "/dev/sda1",
+        "WarnThreshold": 20,
+        "CriticalThreshold": 30,
+        "Op": ">",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Service status - Jenkins",
+        "Description": "",
+        "MetricName": "services",
+        "Service":  "Jenkins",
+        "Op": "inactive",
+        "TriggerIntveral": 10,
+        "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}"
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Service status - Apache",
+        "Description": "",
+        "MetricName": "services",
+        "Service":  "Apache",
+        "Op": "inactive",
+        "TriggerIntveral": 10,
+        "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}"
     }
 ]
