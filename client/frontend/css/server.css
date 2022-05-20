@@ -263,6 +263,15 @@ select:-moz-focusring {
     color: #fff;
 }
 
+table {
+    border-collapse: collapse;
+    border-style: hidden;
+}
+
+table td, table th {
+    padding: 5px;
+}
+
 .modal {
     display: none;
     position: fixed;
