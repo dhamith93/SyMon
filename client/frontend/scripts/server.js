@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', ()=> {
     const swapTable = document.querySelector('#swap-table');
     const customMetricsTable = document.querySelector('#custom-metrics-table');
     const customMetricsDisplayArea = document.querySelector('#custom-metrics-display-area');
+    const modal = document.querySelector('#alert-modal');
+    const modalOkBtn = document.querySelector('#modal-btn-ok');
     const circleStrokeDashOffset = 472;
     const procHeaders = ['PID', 'CPU %', 'Memory %', 'Command'];
     const monitorInterval = 15;
@@ -47,6 +49,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     let loadingPoinInTime = false;
     let customMetricCharts = {};
     let enabledCustomMetrics = [];
+    let alertLinks = null;
 
     serverNameElems.forEach(elem => {
         elem.innerHTML = encodeURIComponent(urlParams.get('name'));
@@ -115,6 +118,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
             menuBtn.classList.toggle('is-active');
             navMenu.classList.toggle('is-active');
         });
+    });
+
+    modalOkBtn.addEventListener('click', e => {
+        modal.style.display = 'none';
     });
 
     document.getElementById('cpu-chart-reset').addEventListener('click', () => {
@@ -369,16 +376,23 @@ document.addEventListener('DOMContentLoaded', ()=> {
                     response.data.Data.reverse();
                     response.data.Data.forEach(alert => {
                         if (!alert.resolved) {
-                            data[alert.subject] = 'Ongoing';
+                            data[alert.subject] = '<a href="#" class="alert-details-link table-link" data-title="'+alert.subject+'" data-msg="'+alert.content+'">More</a>';
                         }
                     });
-                    populateTable(alertTable, data);
+                    populateTable(alertTable, data);                    
                 } else {
                     clearElement(alertTable);
                 }
-            } catch (e) { }
+            } catch (e) { }            
         }, (error) => {
             console.error(error);
+        }).finally(() => {
+            alertLinks = document.querySelectorAll('.alert-details-link');
+            alertLinks.forEach(elm => {
+                elm.addEventListener('click', e => {
+                    showModal(elm.dataset.title, elm.dataset.msg)
+                });
+            });
         }); 
     }
 
@@ -772,6 +786,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
         if (selectedSection === 'custom-metrics-section' && !loadingFromCustomRange) {
             handleCustomMetricUpdates();
         }
+    }
+
+    let showModal = (title, msg) => {
+        msg = msg.replace(/[\u00A0-\u9999<>\&]/g, function(i) {
+            return '&#'+i.charCodeAt(0)+';';
+        });
+        msg = msg.replaceAll('\n', '<br>')
+        modal.style.display = 'block';
+        document.querySelector('#modal-title').innerHTML = title;
+        document.querySelector('#modal-msg').innerHTML = msg;
     }
     
     loadSystem();
