@@ -399,3 +399,27 @@ func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) [
 	}
 	return t.Data[0]
 }
+
+func (mysql *MySql) ClearAllAlertsWithNullEnd() error {
+	q := "UPDATE alert SET end_log_id = 0 WHERE end_log_id IS NULL"
+
+	stmt, err := mysql.DB.Prepare(q)
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec()
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return err
+	}
+
+	return nil
+}

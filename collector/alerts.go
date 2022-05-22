@@ -25,6 +25,7 @@ import (
 )
 
 func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Config, mysql *database.MySql) {
+	mysql.ClearAllAlertsWithNullEnd()
 	ticker := time.NewTicker(15 * time.Second)
 	quit := make(chan struct{})
 	var wg sync.WaitGroup
