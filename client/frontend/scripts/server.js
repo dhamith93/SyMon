@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         axios.get('/system?serverId='+serverName).then((response) => {
             if (response.data.Status === 'OK') {
                 let system = response.data.Data;
+                system.UpTime = processUptimeStr(system.UpTime);
                 if (!loadingFromCustomRange) {
                     toTime = system.Time;
                     fromTime = toTime - 3600;
@@ -691,6 +692,32 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 });
             }
         });
+    }
+
+    processUptimeStr = (str) => {
+        if (str.length === 0) {
+            return str;
+        }
+
+        let match = str.match(/((\d+)h)*((\d+)m)*((\d+)s)*/);
+
+        if (match.length < 7) {
+            return str;
+        }
+
+        let hours = parseInt(match[2]);
+        let mins = parseInt(match[4]);
+        let secs = parseInt(match[6]);
+        secs = (hours * 3600) + (mins * 60) + secs;
+        
+        let days = Math.floor(secs / (3600 * 24));
+        secs -= days * 3600 * 24;
+        hours = Math.floor(secs / 3600);
+        secs -= hours * 3600;
+        mins = Math.floor(secs / 60);
+        secs -= mins * 60;
+
+        return output = `${days} days ${hours} hours ${mins} minutes ${secs} seconds`
     }
 
     reset = () => {
