@@ -54,11 +54,9 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 		}
 	}
 
-	// send notification
-	// fmt.Println(in)
 	err := email.SendEmail(in.Subject, in.Content)
 	if err != nil {
-		logger.Log("err", err.Error())
+		logger.Log("error", err.Error())
 	}
 	return &Response{Success: true, Msg: "alert processed"}, nil
 }

@@ -6,35 +6,24 @@ import (
 	"os"
 	"strings"
 	"time"
-	// "github.com/dhamith93/SyMon/internal/logger"
-	// "github.com/joho/godotenv"
+
+	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/joho/godotenv"
 )
 
-// import (
-// "fmt"
-// "net/smtp"
-// "os"
-// "strings"
-// "time"
-
-// "github.com/dhamith93/SyMon/internal/config"
-// "github.com/dhamith93/SyMon/internal/logger"
-// )
-
-// Need to rewrite this to fit the new arch.
 func SendEmail(subject string, emailBody string) error {
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	logger.Log("Error", "Error loading .env file")
-	// 	return err
-	// }
+	err := godotenv.Load()
+	if err != nil {
+		logger.Log("Error", "Error loading .env file")
+		return err
+	}
 
 	emailUser := os.Getenv("EMAIL_USER")
 	emailPassword := os.Getenv("EMAIL_PASSWORD")
 	emailHost := os.Getenv("EMAIL_HOST")
 	emailPort := os.Getenv("EMAIL_PORT")
-	emailTo := "t123@email.com,test.test.com"
-	emailFrom := "t123@email.com"
+	emailTo := os.Getenv("ALERT_EMAIL_LIST")
+	emailFrom := os.Getenv("EMAIL_FROM")
 	emailAuth := smtp.PlainAuth("", emailUser, emailPassword, emailHost)
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
