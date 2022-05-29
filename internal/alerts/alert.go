@@ -17,6 +17,8 @@ type AlertConfig struct {
 	Servers           []string
 	Disk              string
 	Service           string
+	Email             bool
+	Pagerduty         bool
 }
 
 type Alert struct {

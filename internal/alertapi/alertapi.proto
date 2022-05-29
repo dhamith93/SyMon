@@ -23,6 +23,8 @@ message Alert {
     bool resolved = 8;
     string disk = 9;
     string service = 10;
+    bool pagerduty = 11;
+    bool email = 12;
 }
 
 message Request {

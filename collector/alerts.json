@@ -8,7 +8,9 @@
         "CriticalThreshold": 65,
         "Op": ">",
         "TriggerIntveral": 60,
-        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     },
     {
         "Servers": ["test"],
@@ -19,7 +21,9 @@
         "CriticalThreshold": 60,
         "Op": ">",
         "TriggerIntveral": 60,
-        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     },
     {
         "Servers": ["test"],
@@ -31,7 +35,9 @@
         "CriticalThreshold": 90,
         "Op": ">",
         "TriggerIntveral": 60,
-        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     },
     {
         "Servers": ["test"],
@@ -43,7 +49,9 @@
         "CriticalThreshold": 90,
         "Op": ">",
         "TriggerIntveral": 60,
-        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     },
     {
         "Servers": ["test"],
@@ -55,7 +63,9 @@
         "CriticalThreshold": 30,
         "Op": ">",
         "TriggerIntveral": 60,
-        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     },
     {
         "Servers": ["test"],
@@ -65,7 +75,9 @@
         "Service":  "Jenkins",
         "Op": "inactive",
         "TriggerIntveral": 10,
-        "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     },
     {
         "Servers": ["test"],
@@ -75,6 +87,8 @@
         "Service":  "Apache",
         "Op": "inactive",
         "TriggerIntveral": 10,
-        "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}"
+        "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true
     }
 ]

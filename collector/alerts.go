@@ -83,7 +83,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 		TriggerIntveral:   alert.TriggerIntveral,
 		Value:             alertStatus.Value,
 		Timestamp:         alertStatus.UnixTime,
-	}, alertStatus)
+	}, alertStatus, alert.Pagerduty, alert.Email)
 
 	// duplicate check
 	alertFromDbForStartEvent := mysql.GetAlertByStartEvent(strconv.FormatInt(alertStatus.StartEvent, 10))
@@ -329,7 +329,7 @@ func getAlertType(alert *alerts.AlertConfig, val float64) alertstatus.StatusType
 	return alertstatus.Normal
 }
 
-func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus) *alertapi.Alert {
+func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus, sendPagerduty bool, sendEmail bool) *alertapi.Alert {
 	subject := "[Resolved] "
 	expected := ""
 	value := fmt.Sprintf("%.2f", alert.Value)
@@ -379,6 +379,8 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus) *alertapi.Al
 		Content:    content,
 		Timestamp:  timestamp.UTC().String(),
 		Resolved:   (status.Type == alertstatus.Normal),
+		Pagerduty:  sendPagerduty,
+		Email:      sendEmail,
 	}
 
 	if alert.MetricName == monitor.DISKS {

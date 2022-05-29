@@ -7,6 +7,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/email"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/pagerduty"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 )
 
@@ -16,6 +17,8 @@ type Server struct {
 
 func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error) {
 	metricName := ""
+	sendPagerDuty := in.Pagerduty
+	sendEmail := in.Email
 	if in.MetricName == monitor.DISKS {
 		metricName = in.Disk
 	}
@@ -26,7 +29,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 
 	if res.RowCount == 0 {
 		err := s.Database.Tables["alert"].Insert(
-			"server_name, metric_type, metric_name, log_id, subject, content, status, timestamp, resolved",
+			"server_name, metric_type, metric_name, log_id, subject, content, status, timestamp, resolved, pg_incident_id",
 			in.ServerName,
 			in.MetricName,
 			metricName,
@@ -36,6 +39,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 			int(in.Status),
 			in.Timestamp,
 			in.Resolved,
+			"",
 		)
 
 		if err != nil {
@@ -45,6 +49,13 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 		if !res.Rows[0].Columns["resolved"].BoolVal && (in.Status != int32(alertstatus.Warning) && in.Status != int32(alertstatus.Critical)) {
 			in.Content += "\n" + res.Rows[0].Columns["content"].StringVal
 			res.Update("resolved", true)
+			if res.Rows[0].Columns["pg_incident_id"].StringVal != "" {
+				err := pagerduty.UpdateIncident(res.Rows[0].Columns["pg_incident_id"].StringVal)
+				if err != nil {
+					logger.Log("error", err.Error())
+				}
+				sendPagerDuty = false
+			}
 		}
 
 		if in.Status != int32(res.Rows[0].Columns["status"].IntVal) && (in.Status == int32(alertstatus.Warning) || in.Status == int32(alertstatus.Critical)) {
@@ -54,9 +65,19 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 		}
 	}
 
-	err := email.SendEmail(in.Subject, in.Content)
-	if err != nil {
-		logger.Log("error", err.Error())
+	if sendEmail {
+		err := email.SendEmail(in.Subject, in.Content)
+		if err != nil {
+			logger.Log("error", err.Error())
+		}
+	}
+	if sendPagerDuty {
+		id, err := pagerduty.CreateIncident(createIncident(in.Subject, in.Content))
+		if err != nil {
+			logger.Log("error", err.Error())
+		}
+		res = s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_type", "==", in.MetricName).And("metric_name", "==", metricName).And("resolved", "==", false)
+		res.Update("pg_incident_id", id)
 	}
 	return &Response{Success: true, Msg: "alert processed"}, nil
 }
@@ -79,4 +100,15 @@ func (s *Server) AlertRequest(ctx context.Context, in *Request) (*AlertArray, er
 	}
 
 	return &alerts, nil
+}
+
+func createIncident(subject string, content string) pagerduty.Incident {
+	incident := pagerduty.Incident{}
+	incident.Incident.Type = "incident"
+	incident.Incident.Urgency = "high"
+	incident.Incident.Body.Type = "incident_body"
+	incident.Incident.Service.Type = "service_reference"
+	incident.Incident.Title = subject
+	incident.Incident.Body.Details = content
+	return incident
 }
