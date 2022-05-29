@@ -20,6 +20,9 @@ vendor/
 #macos
 .DS_Store
 
+#env
+.env
+
 #agent config file 
 agent/config.json
 collector/config.json
