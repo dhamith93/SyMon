@@ -1,5 +1,5 @@
 # SyMon
-A system monitoring tool to monitor server HW stats. 
+A system monitoring and alerting tool to monitor server HW stats. Currently supports Linux systems. 
 
 [![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dhamith93/SyMon)](https://goreportcard.com/report/github.com/dhamith93/SyMon)
 
@@ -16,6 +16,7 @@ A system monitoring tool to monitor server HW stats.
 * Custom timeseries metrics
 * Search metrics by date range
 * Point-in-time metrics loading
+* Email and PagerDuty alert notifications
 
 ## Components
 * Agent
@@ -27,7 +28,7 @@ A system monitoring tool to monitor server HW stats.
     * Handles incoming alerts from collector
         * Sends alert to
             * Email addresses
-            * PagerDuty (planned)
+            * PagerDuty
 * Client
     * The user interface of the SyMon
     * Displays monitoring data through a web UI
@@ -59,13 +60,6 @@ Once the `config.json` file is configured, run the below command to register the
 
 Once the agent is registered, run the agent in background.
 
-### Clients
-This is used as the frontend of the application. Change the config-example.json file and save it as config.json. 
-
-Run the client and load localhost:port from a browser. Default localhost:9000.
-
-It is recommended to use the client app internally.
-
 ### Custom metrics
 Custom timeseries data can be added using the agent as below. Current server time will be taken as the time.
 
@@ -77,6 +71,25 @@ Custom timeseries data can be added using the agent as below. Current server tim
 ```
 
 This can be automated using a cron or a script
+
+### Alerts
+SyMon alertprocessor supports internal alert management as well as email and PagerDuty alert notification management. 
+
+[alerts.json](https://github.com/dhamith93/SyMon/blob/master/collector/alerts.json) file can be given when launching the collector as a set of rules to process and push alerts to the Alertprocessor. 
+
+`./collector --config=config.json --alerts=alerts.json`
+
+Alertprocessor holds and distributes alerts via email or as PagerDuty Incidents. [.env](https://github.com/dhamith93/SyMon/blob/master/alertprocessor/.env-example) file has to be set with Email and/or PagerDuty credentials to use that functionality. 
+
+Client, or the frontend of SyMon also use the Alertprocessor to retrieve the ongoing alerts. 
+
+### Clients
+This is used as the frontend of the application. Change the config-example.json file and save it as config.json. 
+
+Run the client and load localhost:port from a browser. Default localhost:9000.
+
+It is recommended to use the client app internally.
+
 
 ### API documentation
 
@@ -113,5 +126,4 @@ This can be automated using a cron or a script
     * `time=[unix timestamp]` value(s) at a certain time (depends on availability of data)
 
 ## Todo
-* Alerts
 * Automatic data deletion past retention period
