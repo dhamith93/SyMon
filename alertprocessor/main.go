@@ -42,6 +42,7 @@ func main() {
 		memdb.Col{Name: "timestamp", Type: memdb.String},
 		memdb.Col{Name: "resolved", Type: memdb.Bool},
 		memdb.Col{Name: "pg_incident_id", Type: memdb.String},
+		memdb.Col{Name: "slack_msg_ts", Type: memdb.String},
 	)
 	if err != nil {
 		logger.Log("error", "memdb: "+err.Error())

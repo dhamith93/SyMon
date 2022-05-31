@@ -31,6 +31,7 @@ agent/agent
 client/client
 client/config.json
 key
+alerts-local.json
 
 alerts
 agent_linux_x86_64

@@ -10,7 +10,9 @@
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     },
     {
         "Servers": ["test"],
@@ -23,7 +25,9 @@
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     },
     {
         "Servers": ["test"],
@@ -37,7 +41,9 @@
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     },
     {
         "Servers": ["test"],
@@ -51,7 +57,9 @@
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     },
     {
         "Servers": ["test"],
@@ -65,7 +73,9 @@
         "TriggerIntveral": 60,
         "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     },
     {
         "Servers": ["test"],
@@ -77,7 +87,9 @@
         "TriggerIntveral": 10,
         "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     },
     {
         "Servers": ["test"],
@@ -89,6 +101,8 @@
         "TriggerIntveral": 10,
         "Template": "{subject}\n{serverName} {metricName} {op} at {timestamp}\n{desc}\n{timestamp}",
         "Email": false,
-        "PagerDuty": true
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     }
 ]

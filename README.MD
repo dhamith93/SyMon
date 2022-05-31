@@ -16,7 +16,7 @@ A system monitoring and alerting tool to monitor server HW stats. Currently supp
 * Custom timeseries metrics
 * Search metrics by date range
 * Point-in-time metrics loading
-* Email and PagerDuty alert notifications
+* Email, PagerDuty, and Slack alert notifications
 
 ## Components
 * Agent
@@ -79,7 +79,7 @@ SyMon alertprocessor supports internal alert management as well as email and Pag
 
 `./collector --config=config.json --alerts=alerts.json`
 
-Alertprocessor holds and distributes alerts via email or as PagerDuty Incidents. [.env](https://github.com/dhamith93/SyMon/blob/master/alertprocessor/.env-example) file has to be set with Email and/or PagerDuty credentials to use that functionality. 
+Alertprocessor holds and distributes alerts via email or as PagerDuty Incidents. [.env](https://github.com/dhamith93/SyMon/blob/master/alertprocessor/.env-example) file has to be set with Email, PagerDuty, and Slack credentials to use that functionality. 
 
 Client, or the frontend of SyMon also use the Alertprocessor to retrieve the ongoing alerts. 
 

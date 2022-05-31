@@ -19,6 +19,8 @@ type AlertConfig struct {
 	Service           string
 	Email             bool
 	Pagerduty         bool
+	Slack             bool
+	SlackChannel      string
 }
 
 type Alert struct {

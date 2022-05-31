@@ -8,6 +8,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/pagerduty"
+	"github.com/dhamith93/SyMon/internal/slack"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 )
 
@@ -19,6 +20,8 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 	metricName := ""
 	sendPagerDuty := in.Pagerduty
 	sendEmail := in.Email
+	sendSlack := in.Slack
+
 	if in.MetricName == monitor.DISKS {
 		metricName = in.Disk
 	}
@@ -29,7 +32,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 
 	if res.RowCount == 0 {
 		err := s.Database.Tables["alert"].Insert(
-			"server_name, metric_type, metric_name, log_id, subject, content, status, timestamp, resolved, pg_incident_id",
+			"server_name, metric_type, metric_name, log_id, subject, content, status, timestamp, resolved, pg_incident_id, slack_msg_ts",
 			in.ServerName,
 			in.MetricName,
 			metricName,
@@ -39,6 +42,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 			int(in.Status),
 			in.Timestamp,
 			in.Resolved,
+			"",
 			"",
 		)
 
@@ -55,6 +59,14 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 					logger.Log("error", err.Error())
 				}
 				sendPagerDuty = false
+			}
+			if res.Rows[0].Columns["slack_msg_ts"].StringVal != "" {
+				msgTs := res.Rows[0].Columns["slack_msg_ts"].StringVal
+				_, err := slack.SendSlackMessage(in.Subject, in.Content, in.SlackChannel, true, msgTs)
+				if err != nil {
+					logger.Log("error", err.Error())
+				}
+				sendSlack = false
 			}
 		}
 
@@ -79,6 +91,15 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 		res = s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_type", "==", in.MetricName).And("metric_name", "==", metricName).And("resolved", "==", false)
 		res.Update("pg_incident_id", id)
 	}
+	if sendSlack {
+		msgTs, err := slack.SendSlackMessage(in.Subject, in.Content, in.SlackChannel, false, "")
+		if err != nil {
+			logger.Log("error", err.Error())
+		}
+		res = s.Database.Tables["alert"].Where("server_name", "==", in.ServerName).And("metric_type", "==", in.MetricName).And("metric_name", "==", metricName).And("resolved", "==", false)
+		res.Update("slack_msg_ts", msgTs)
+	}
+
 	return &Response{Success: true, Msg: "alert processed"}, nil
 }
 
