@@ -64,7 +64,7 @@ func main() {
 	} else {
 
 		if alertConfig != nil {
-			mysql := getMySQLConnection(&config)
+			mysql := getMySQLConnection(&config, false)
 			defer mysql.Close()
 			go handleAlerts(alertConfig, &config, &mysql)
 		}
@@ -101,7 +101,7 @@ func authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerIn
 
 func removeAgent(removeAgentVal string, config config.Config) {
 	fmt.Println("Removing agent " + removeAgentVal)
-	mysql := getMySQLConnection(&config)
+	mysql := getMySQLConnection(&config, false)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {
@@ -121,17 +121,18 @@ func removeAgent(removeAgentVal string, config config.Config) {
 }
 
 func initCollector(config *config.Config) {
-	mysql := getMySQLConnection(config)
+	mysql := getMySQLConnection(config, true)
 	defer mysql.Close()
 	err := mysql.Init()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+	auth.GetKey()
 }
 
-func getMySQLConnection(c *config.Config) database.MySql {
+func getMySQLConnection(c *config.Config, isMultiStatement bool) database.MySql {
 	mysql := database.MySql{}
 	password := os.Getenv("SYMON_MYSQL_PSWD")
-	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
+	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, isMultiStatement)
 	return mysql
 }
