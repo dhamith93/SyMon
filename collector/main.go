@@ -15,6 +15,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -42,6 +43,11 @@ func main() {
 		}
 		defer file.Close()
 		log.SetOutput(file)
+	}
+
+	err := godotenv.Load()
+	if err != nil {
+		logger.Log("Error", "Error loading .env file")
 	}
 
 	if len(alertConfigPath) > 0 {
