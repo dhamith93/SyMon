@@ -229,7 +229,7 @@ func getMonitorData(serverName string, logType string, from int64, to int64, tim
 }
 
 func getActiveAlerts(serverName string, config *config.Config) (alertapi.AlertArray, error) {
-	conn, err := grpc.Dial("localhost:5999", grpc.WithInsecure())
+	conn, err := grpc.Dial(config.AlertEndpoint, grpc.WithInsecure())
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		os.Exit(1)

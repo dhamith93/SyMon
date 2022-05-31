@@ -8,6 +8,7 @@ import (
 // Config struct with config
 type Config struct {
 	Port              string
+	AlertEndpoint     string
 	SSLEnabled        bool
 	SSLCertFilePath   string
 	SSLKeyFilePath    string

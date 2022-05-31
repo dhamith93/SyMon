@@ -419,7 +419,7 @@ func generateToken() string {
 }
 
 func createClient(config *config.Config) (*grpc.ClientConn, alertapi.AlertServiceClient, context.Context, context.CancelFunc) {
-	conn, err := grpc.Dial("localhost:5999", grpc.WithInsecure())
+	conn, err := grpc.Dial(config.AlertEndpoint, grpc.WithInsecure())
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		return nil, nil, nil, nil
