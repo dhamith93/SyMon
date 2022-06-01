@@ -72,18 +72,6 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 		metricName = alert.Service
 	}
 	alertStatus := buildAlertStatus(alert, &server, config, mysql)
-	alertToSend := buildAlert(alerts.Alert{
-		ServerName:        server,
-		Name:              alert.Name,
-		MetricName:        alert.MetricName,
-		Template:          alert.Template,
-		Op:                alert.Op,
-		WarnThreshold:     alert.WarnThreshold,
-		CriticalThreshold: alert.CriticalThreshold,
-		TriggerIntveral:   alert.TriggerIntveral,
-		Value:             alertStatus.Value,
-		Timestamp:         alertStatus.UnixTime,
-	}, alertStatus, alert.Pagerduty, alert.Email, alert.Slack, alert.SlackChannel)
 
 	// duplicate check
 	alertFromDbForStartEvent := mysql.GetAlertByStartEvent(strconv.FormatInt(alertStatus.StartEvent, 10))
@@ -120,7 +108,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 			if (currTime - prevTime) >= int64(alertStatus.Alert.TriggerIntveral) {
 				err = mysql.SetAlertEndLog(&alertStatus, previousAlert[6])
 				// queue an alert resolved
-				sendAlert(alertToSend, config)
+				sendAlert(buildAlertToSend(server, alert, alertStatus), config)
 				if err != nil {
 					logger.Log("error", "Error updating alert: "+err.Error())
 				}
@@ -137,7 +125,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 				logger.Log("error", "Error updating alert: "+err.Error())
 			}
 			// queue an alert status changed
-			sendAlert(alertToSend, config)
+			sendAlert(buildAlertToSend(server, alert, alertStatus), config)
 		}
 		return
 	}
@@ -168,13 +156,29 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Confi
 		if (currTime - prevTime) >= int64(alertStatus.Alert.TriggerIntveral) {
 			err = mysql.AddAlert(&alertStatus)
 			// queue a new alert
-			sendAlert(alertToSend, config)
+			sendAlert(buildAlertToSend(server, alert, alertStatus), config)
 			if err != nil {
 				logger.Log("error", "Error adding alert: "+err.Error())
 			}
 			res.Delete()
 		}
 	}
+}
+
+func buildAlertToSend(server string, alert *alerts.AlertConfig, alertStatus alertstatus.AlertStatus) *alertapi.Alert {
+	alertToSend := buildAlert(alerts.Alert{
+		ServerName:        server,
+		Name:              alert.Name,
+		MetricName:        alert.MetricName,
+		Template:          alert.Template,
+		Op:                alert.Op,
+		WarnThreshold:     alert.WarnThreshold,
+		CriticalThreshold: alert.CriticalThreshold,
+		TriggerIntveral:   alert.TriggerIntveral,
+		Value:             alertStatus.Value,
+		Timestamp:         alertStatus.UnixTime,
+	}, alertStatus, alert.Pagerduty, alert.Email, alert.Slack, alert.SlackChannel)
+	return alertToSend
 }
 
 func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.Config, mysql *database.MySql) alertstatus.AlertStatus {
