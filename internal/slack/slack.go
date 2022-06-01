@@ -37,7 +37,7 @@ const SLACK_TEMPLATE_NEW_MSG = `{
 	]
 }`
 
-const SLACK_TEMPLATE_RESOLVED = `{
+const SLACK_TEMPLATE_UPDATE = `{
 	"channel":"{channel}",
 	"ts":"{ts}",
 	"attachments": [
@@ -66,7 +66,7 @@ const SLACK_TEMPLATE_RESOLVED = `{
 const ONGOING_COLOR = "#FF3A4C"
 const RESOLVED_COLOR = "#00EA6B"
 const ONGOING_URL = "https://slack.com/api/chat.postMessage"
-const RESOLVED_URL = "https://slack.com/api/chat.update"
+const UPDATE_URL = "https://slack.com/api/chat.update"
 
 type SlackResponse struct {
 	Channel string `json:"channel"`
@@ -86,10 +86,15 @@ func SendSlackMessage(subject string, content string, slackChannel string, resol
 	msg := ""
 	url := ONGOING_URL
 	if resolved {
-		msg = buildMessage(SLACK_TEMPLATE_RESOLVED, subject, content, slackChannel, RESOLVED_COLOR, ts)
-		url = RESOLVED_URL
+		msg = buildMessage(SLACK_TEMPLATE_UPDATE, subject, content, slackChannel, RESOLVED_COLOR, ts)
+		url = UPDATE_URL
 	} else {
-		msg = buildMessage(SLACK_TEMPLATE_NEW_MSG, subject, content, slackChannel, ONGOING_COLOR, ts)
+		if len(ts) > 0 {
+			msg = buildMessage(SLACK_TEMPLATE_UPDATE, subject, content, slackChannel, ONGOING_COLOR, ts)
+			url = UPDATE_URL
+		} else {
+			msg = buildMessage(SLACK_TEMPLATE_NEW_MSG, subject, content, slackChannel, ONGOING_COLOR, ts)
+		}
 	}
 
 	payload := strings.NewReader(msg)

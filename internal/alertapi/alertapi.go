@@ -74,6 +74,15 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 			res.Update("status", int(in.Status))
 			res.Update("subject", in.Subject)
 			res.Update("content", in.Content)
+
+			if res.Rows[0].Columns["slack_msg_ts"].StringVal != "" {
+				msgTs := res.Rows[0].Columns["slack_msg_ts"].StringVal
+				_, err := slack.SendSlackMessage(in.Subject, in.Content, in.SlackChannel, false, msgTs)
+				if err != nil {
+					logger.Log("error", err.Error())
+				}
+				sendSlack = false
+			}
 		}
 	}
 
