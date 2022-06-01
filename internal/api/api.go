@@ -218,6 +218,10 @@ func getMonitorLogs(serverName string, logType string, from int64, to int64, tim
 		}
 		return stringops.StringArrToJSONArr(data)
 	} else {
+		if len(data) == 0 {
+			return ""
+		}
+
 		if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
 			var arr []string
 			_ = json.Unmarshal([]byte(data[0]), &arr)
