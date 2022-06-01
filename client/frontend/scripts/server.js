@@ -708,7 +708,12 @@ document.addEventListener('DOMContentLoaded', ()=> {
         let hours = parseInt(match[2]);
         let mins = parseInt(match[4]);
         let secs = parseInt(match[6]);
-        secs = (hours * 3600) + (mins * 60) + secs;
+
+        if (isNaN(hours)) {
+            secs = (mins * 60) + secs;
+        } else {
+            secs = (hours * 3600) + (mins * 60) + secs;
+        }
         
         let days = Math.floor(secs / (3600 * 24));
         secs -= days * 3600 * 24;
@@ -717,7 +722,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
         mins = Math.floor(secs / 60);
         secs -= mins * 60;
 
-        return output = `${days} days ${hours} hours ${mins} minutes ${secs} seconds`
+        return `${days} days ${hours} hours ${mins} minutes ${secs} seconds`
     }
 
     reset = () => {
