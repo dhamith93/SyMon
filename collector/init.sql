@@ -149,3 +149,11 @@ CREATE INDEX `log_time` ON `monitor_log`(`log_time`);
 -- changes done for alerting functionalities
 ALTER TABLE `monitor_log` ADD `log_name` VARCHAR(255);
 CREATE INDEX `log_name` ON `monitor_log`(`log_name`);
+
+-- changes done for `ping` functionality 
+CREATE TABLE `server_ping_time` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `server_id` int,
+  `time` bigint(20)
+);
+ALTER TABLE `server_ping_time` ADD FOREIGN KEY (`server_id`) REFERENCES `server` (`id`);

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
@@ -31,6 +33,24 @@ func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error
 		return &Message{Body: err.Error()}, err
 	}
 	return &Message{Body: "agent added"}, nil
+}
+
+func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*Message, error) {
+	config := config.GetConfig("config.json")
+	err := handlePing(in.ServerName, &config)
+	if err != nil {
+		return &Message{Body: err.Error()}, err
+	}
+	return &Message{Body: "pong"}, nil
+}
+
+func (s *Server) IsUp(ctx context.Context, in *ServerInfo) (*IsActive, error) {
+	config := config.GetConfig("config.json")
+	upAndRunning, err := isUp(in.ServerName, &config)
+	if err != nil {
+		return &IsActive{IsUp: false}, err
+	}
+	return &IsActive{IsUp: upAndRunning}, nil
 }
 
 func (s *Server) HandleMonitorData(ctx context.Context, in *MonitorData) (*Message, error) {
@@ -128,6 +148,37 @@ func initAgent(agentId string, timezone string, config *config.Config) error {
 	}
 
 	return nil
+}
+
+func handlePing(serverName string, config *config.Config) error {
+	mysql := getMySQLConnection(config)
+	defer mysql.Close()
+	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
+	err := mysql.Ping(serverName, unixTime)
+	if err != nil {
+		logger.Log("error", err.Error())
+		return fmt.Errorf("error saving ping from %s", serverName)
+	}
+	return nil
+}
+
+func isUp(serverName string, config *config.Config) (bool, error) {
+	mysql := getMySQLConnection(config)
+	defer mysql.Close()
+
+	serverPingTimeStr, err := mysql.ServerPingTime(serverName)
+	if err != nil {
+		logger.Log("error", err.Error())
+		return false, fmt.Errorf("error loading ping time of %s", serverName)
+	}
+
+	serverPingTime, err := strconv.ParseInt(serverPingTimeStr, 10, 64)
+	if err != nil {
+		logger.Log("error", err.Error())
+		return false, fmt.Errorf("error loading ping time of %s", serverName)
+	}
+
+	return time.Now().Unix()-serverPingTime <= 61, nil // extra sec for delays ¯\_(ツ)_/¯
 }
 
 func handleMonitorData(monitorData *monitor.MonitorData) error {

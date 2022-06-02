@@ -11,6 +11,10 @@ message Message {
     string body = 1;
 }
 
+message IsActive {
+    bool isUp = 1;
+}
+
 message ServerInfo {
     string serverName = 1;
     string timezone = 2;
@@ -29,6 +33,8 @@ message MonitorDataRequest {
 }
 
 service MonitorDataService {
+    rpc HandlePing(ServerInfo) returns (Message) {}
+    rpc IsUp(ServerInfo) returns (IsActive) {}
     rpc InitAgent(ServerInfo) returns (Message) {}
     rpc HandleMonitorData(MonitorData) returns (Message) {}
     rpc HandleCustomMonitorData(MonitorData) returns (Message) {}

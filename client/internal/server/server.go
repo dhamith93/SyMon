@@ -30,6 +30,10 @@ type output struct {
 	Data   interface{}
 }
 
+type IsUp struct {
+	IsUp bool
+}
+
 // Run starts the server in given port
 func Run(port string) {
 	handleRequests(port)
@@ -38,7 +42,7 @@ func Run(port string) {
 func handleRequests(port string) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/agents", returnAgents)
-	// router.HandleFunc("/isup", returnIsUp)
+	router.HandleFunc("/isup", returnIsUp)
 	router.HandleFunc("/system", returnSystem)
 	router.HandleFunc("/memory", returnMemory)
 	router.HandleFunc("/swap", returnSwap)
@@ -66,6 +70,10 @@ func handleRequests(port string) {
 
 func returnAgents(w http.ResponseWriter, r *http.Request) {
 	handleRequestForMeta("agents", w, r)
+}
+
+func returnIsUp(w http.ResponseWriter, r *http.Request) {
+	handleRequestForPing(w, r)
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
@@ -157,6 +165,28 @@ func handleRequest(logType string, w http.ResponseWriter, r *http.Request) {
 	}
 	_ = json.Unmarshal([]byte(received), &data)
 	out.Data = data
+	json.NewEncoder(w).Encode(&out)
+}
+
+func handleRequestForPing(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	config := config.GetConfig("config.json")
+	var out output
+	out.Status = "OK"
+	conn, c, ctx, cancel := createClient(&config)
+	defer conn.Close()
+	defer cancel()
+	serverName, _ := parseGETForServerName(r)
+
+	isUp, err := c.IsUp(ctx, &api.ServerInfo{ServerName: serverName})
+
+	if err != nil {
+		out.Data = IsUp{IsUp: false}
+		json.NewEncoder(w).Encode(&out)
+		return
+	}
+
+	out.Data = IsUp{IsUp: isUp.IsUp}
 	json.NewEncoder(w).Encode(&out)
 }
 

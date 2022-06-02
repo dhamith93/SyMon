@@ -55,9 +55,14 @@ func main() {
 	}
 
 	ticker := time.NewTicker(time.Duration(config.MonitorIntervalSeconds) * time.Second)
+	tickerForPing := time.NewTicker(time.Minute)
 	quit := make(chan struct{})
+	quitForPing := make(chan bool)
+
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
+
+	// Monitoring
 	go func() {
 		for {
 			select {
@@ -70,6 +75,20 @@ func main() {
 			}
 		}
 	}()
+
+	// pinging
+	go func() {
+		for {
+			select {
+			case <-tickerForPing.C:
+				sendPing(&config)
+			case <-quitForPing:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	wg.Wait()
 	fmt.Println("Exiting")
 }
@@ -92,6 +111,20 @@ func initAgent(config *config.Config) {
 		os.Exit(1)
 	}
 	fmt.Printf("%s \n", response.Body)
+}
+
+func sendPing(config *config.Config) {
+	conn, c, ctx, cancel := createClient(config)
+	if conn == nil {
+		logger.Log("error", "error creating connection")
+		return
+	}
+	defer conn.Close()
+	defer cancel()
+	_, err := c.HandlePing(ctx, &api.ServerInfo{ServerName: config.ServerId})
+	if err != nil {
+		logger.Log("error", "error sending ping: "+err.Error())
+	}
 }
 
 func sendMonitorData(monitorData string, config *config.Config) {
