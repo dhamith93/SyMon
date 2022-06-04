@@ -9,5 +9,6 @@
     "AlertEndpoint": "localhost:5999",
     "MySQLUserName": "user",
     "MySQLHost": "127.0.0.1:3306",
-    "MySQLDatabaseName": "symon"
+    "MySQLDatabaseName": "symon",
+    "DataRetentionDays": 60
 }

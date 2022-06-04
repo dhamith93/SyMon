@@ -18,6 +18,7 @@ type Config struct {
 	MySQLUserName     string
 	MySQLHost         string
 	MySQLDatabaseName string
+	DataRetentionDays int32
 }
 
 // GetConfig return config struct

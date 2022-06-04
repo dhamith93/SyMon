@@ -482,3 +482,27 @@ func (mysql *MySql) ClearAllAlertsWithNullEnd() error {
 
 	return nil
 }
+
+func (mysql *MySql) PurgeMonitorDataOlderThan(unixTime string) (int64, error) {
+	q := "DELETE FROM monitor_log WHERE log_time < ?;"
+
+	stmt, err := mysql.DB.Prepare(q)
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return -1, err
+	}
+
+	defer stmt.Close()
+
+	res, err := stmt.Exec(unixTime)
+
+	if err != nil {
+		mysql.SqlErr = err
+		logger.Log("ERROR", err.Error())
+		return -1, err
+	}
+
+	return res.RowsAffected()
+}

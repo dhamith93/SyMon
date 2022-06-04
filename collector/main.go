@@ -63,11 +63,14 @@ func main() {
 		removeAgent(removeAgentVal, config)
 	} else {
 
+		mysql := getMySQLConnection(&config, false)
+		defer mysql.Close()
+
 		if alertConfig != nil {
-			mysql := getMySQLConnection(&config, false)
-			defer mysql.Close()
 			go handleAlerts(alertConfig, &config, &mysql)
 		}
+
+		go handleDataPurge(&config, &mysql)
 
 		lis, err := net.Listen("tcp", ":"+config.Port)
 		if err != nil {
