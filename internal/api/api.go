@@ -168,7 +168,7 @@ func isUp(serverName string, config *config.Config) (bool, error) {
 
 	serverPingTimeStr, err := mysql.ServerPingTime(serverName)
 	if err != nil {
-		logger.Log("error", err.Error())
+		// logger.Log("error", err.Error())
 		return false, fmt.Errorf("error loading ping time of %s", serverName)
 	}
 
