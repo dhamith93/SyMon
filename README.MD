@@ -7,7 +7,7 @@ A system monitoring and alerting tool to monitor server HW stats. Currently supp
 * System info
 * CPU info
 * Memory/SWAP info
-* CPU/Memory usage graphs for past hour
+* CPU/Memory usage graphs for past hour (default) or custom time range
 * Disk usage info
 * Primary network interface bandwidth metrics
 * Network usage info
@@ -17,6 +17,7 @@ A system monitoring and alerting tool to monitor server HW stats. Currently supp
 * Search metrics by date range
 * Point-in-time metrics loading
 * Email, PagerDuty, and Slack alert notifications
+* Custom data retention time
 
 ## Components
 * Agent
@@ -37,13 +38,13 @@ A system monitoring and alerting tool to monitor server HW stats. Currently supp
 ## Usage
 
 ### Collector
-Install or set up a MySQL/MariaDB database for the collector. 
+Install or set up a MariaDB >= 10.5 and create a database for the collector.
 
 Change the config-example.json file and save it as config.json. Set up the env var `SYMON_MYSQL_PSWD` with the MySQL/MariaDB user name.
 
-Init Collector by running `./collector --init`. It will create a key file. 
+Init Collector by running `./collector --init --config=config.json`. It will create a key file. 
 
-Copy the key file and place the key file with agents/clients.
+Copy the key file and place the key file with agents and clients.
 
 Run the collector by executing `./collector`
 
@@ -124,6 +125,3 @@ It is recommended to use the client app internally.
 * Optional GET parameters
     * `from=[unix timestamp]&to=[unix timestamp]` values within a time range
     * `time=[unix timestamp]` value(s) at a certain time (depends on availability of data)
-
-## Todo
-* Automatic data deletion past retention period
