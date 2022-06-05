@@ -1,0 +1,14 @@
+[Unit]
+Description=SyMon Alertprocessor
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+WorkingDirectory=/path/to/alertprocessor/bin/
+ExecStart=/path/to/alertprocessor/bin/alertprocessor_linux_x86_64
+
+[Install]
+WantedBy=multi-user.target

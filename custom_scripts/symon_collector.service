@@ -1,0 +1,14 @@
+[Unit]
+Description=SyMon Collector
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+WorkingDirectory=/path/to/collector/bin/
+ExecStart=/path/to/collector/bin/collector_linux_x86_64 --config=config.json --alerts=alerts.json
+
+[Install]
+WantedBy=multi-user.target
