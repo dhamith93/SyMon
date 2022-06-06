@@ -18,6 +18,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/systats"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -178,7 +179,7 @@ func generateToken() string {
 }
 
 func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
-	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithInsecure())
+	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		return nil, nil, nil, nil

@@ -18,6 +18,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -235,7 +236,7 @@ func generateToken() string {
 }
 
 func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
-	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithInsecure())
+	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		os.Exit(1)
@@ -258,8 +259,8 @@ func getMonitorData(serverName string, logType string, from int64, to int64, tim
 	return monitorData.MonitorData, nil
 }
 
-func getActiveAlerts(serverName string, config *config.Config) (alertapi.AlertArray, error) {
-	conn, err := grpc.Dial(config.AlertEndpoint, grpc.WithInsecure())
+func getActiveAlerts(serverName string, config *config.Config) (*alertapi.AlertArray, error) {
+	conn, err := grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		os.Exit(1)
@@ -274,9 +275,9 @@ func getActiveAlerts(serverName string, config *config.Config) (alertapi.AlertAr
 
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
-		return alertapi.AlertArray{}, err
+		return &alertapi.AlertArray{}, err
 	}
-	return *alerts, nil
+	return alerts, nil
 }
 
 func parseGETForTime(r *http.Request) (int64, error) {
