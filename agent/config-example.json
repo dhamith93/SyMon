@@ -1,6 +1,8 @@
 {
     "ServerId": "unique-id",
-    "MonitorEndpoint": "localhost:9900",
+    "CollectorEndpoint": "localhost:9900",
+    "AlertEndpointCACertPath": "",
+    "CollectorEndpointCACertPath": "",
     "LogFileEnabled": false,
     "LogFilePath": "",
     "SQLiteDBLoggingEnabled": false,

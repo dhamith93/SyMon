@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +21,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
@@ -236,7 +240,22 @@ func generateToken() string {
 }
 
 func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
-	conn, err := grpc.Dial(config.MonitorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var (
+		conn     *grpc.ClientConn
+		tlsCreds credentials.TransportCredentials
+		err      error
+	)
+
+	if len(config.CollectorEndpointCACertPath) > 0 {
+		tlsCreds, err = loadTLSCreds(config.CollectorEndpointCACertPath)
+		if err != nil {
+			log.Fatal("cannot load TLS credentials: ", err)
+		}
+		conn, err = grpc.Dial(config.CollectorEndpoint, grpc.WithTransportCredentials(tlsCreds))
+	} else {
+		conn, err = grpc.Dial(config.CollectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		os.Exit(1)
@@ -260,7 +279,22 @@ func getMonitorData(serverName string, logType string, from int64, to int64, tim
 }
 
 func getActiveAlerts(serverName string, config *config.Config) (*alertapi.AlertArray, error) {
-	conn, err := grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var (
+		conn     *grpc.ClientConn
+		tlsCreds credentials.TransportCredentials
+		err      error
+	)
+
+	if len(config.AlertEndpointCACertPath) > 0 {
+		tlsCreds, err = loadTLSCreds(config.AlertEndpointCACertPath)
+		if err != nil {
+			log.Fatal("cannot load TLS credentials: ", err)
+		}
+		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(tlsCreds))
+	} else {
+		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		os.Exit(1)
@@ -335,4 +369,22 @@ func parseGETForCustomMetricName(r *http.Request) (string, error) {
 	}
 
 	return customMetricNameArr[0], nil
+}
+
+func loadTLSCreds(path string) (credentials.TransportCredentials, error) {
+	cert, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(cert) {
+		return nil, fmt.Errorf("failed to add server CA cert")
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs: certPool,
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -60,7 +62,7 @@ func main() {
 	if *initPtr {
 		initCollector(&config)
 	} else if len(removeAgentVal) > 0 {
-		removeAgent(removeAgentVal, config)
+		removeAgent(removeAgentVal, &config)
 	} else {
 
 		mysql := getMySQLConnection(&config, false)
@@ -77,12 +79,39 @@ func main() {
 			log.Fatalf("failed to listen: %v", err)
 		}
 		s := api.Server{}
-		grpcServer := grpc.NewServer(grpc.UnaryInterceptor(authInterceptor))
+		var grpcServer *grpc.Server
+
+		if config.TLSEnabled {
+			tlsCreds, err := loadTLSCreds(&config)
+			if err != nil {
+				log.Fatal("cannot load TLS credentials: ", err)
+				log.Fatalf("failed to load TLS cert %s, key %s: %v", config.KeyPath, config.KeyPath, err)
+			}
+			grpcServer = grpc.NewServer(
+				grpc.Creds(tlsCreds),
+				grpc.UnaryInterceptor(authInterceptor),
+			)
+		} else {
+			grpcServer = grpc.NewServer(grpc.UnaryInterceptor(authInterceptor))
+		}
+
 		api.RegisterMonitorDataServiceServer(grpcServer, &s)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %s", err)
 		}
 	}
+}
+
+func loadTLSCreds(config *config.Config) (credentials.TransportCredentials, error) {
+	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.NoClientCert,
+	}
+	return credentials.NewTLS(tlsConfig), nil
 }
 
 func authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -102,9 +131,9 @@ func authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerIn
 	return handler(ctx, req)
 }
 
-func removeAgent(removeAgentVal string, config config.Config) {
+func removeAgent(removeAgentVal string, config *config.Config) {
 	fmt.Println("Removing agent " + removeAgentVal)
-	mysql := getMySQLConnection(&config, false)
+	mysql := getMySQLConnection(config, false)
 	defer mysql.Close()
 
 	if mysql.SqlErr != nil {

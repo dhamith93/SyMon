@@ -1,0 +1,9 @@
+BUGS
+    * [FIXED] uptime shows `NAN` on time < 1 hour
+
+Features
+    * [DONE] `ping` to check active systems
+    * [DONE] purging records after retention time
+
+Nice to have
+    * enable/disable metrics types to be collected

@@ -7,28 +7,30 @@ import (
 
 // Config struct with config
 type Config struct {
-	MonitorEndpoint        string
-	AlertEndpoint          string
-	Port                   string
-	SSLEnabled             bool
-	SSLCertFilePath        string
-	SSLKeyFilePath         string
-	LogFileEnabled         bool
-	LogFilePath            string
-	CLIMonitoringInterval  int
-	SQLiteDBLoggingEnabled bool
-	SQLiteDBPath           string
-	MySQLUserName          string
-	MySQLHost              string
-	MySQLDatabaseName      string
-	CPUThreshold           int
-	MemoryThreshold        int
-	DiskUsageThreshold     int
-	MonitorIntervalSeconds int
-	DisksToIgnore          string
-	WarnAfterSecs          int
-	ServerId               string
-	Services               []ServiceToMonitor
+	CollectorEndpoint           string
+	CollectorEndpointCACertPath string
+	AlertEndpoint               string
+	AlertEndpointCACertPath     string
+	Port                        string
+	TLSEnabled                  bool
+	CertPath                    string
+	KeyPath                     string
+	LogFileEnabled              bool
+	LogFilePath                 string
+	CLIMonitoringInterval       int
+	SQLiteDBLoggingEnabled      bool
+	SQLiteDBPath                string
+	MySQLUserName               string
+	MySQLHost                   string
+	MySQLDatabaseName           string
+	CPUThreshold                int
+	MemoryThreshold             int
+	DiskUsageThreshold          int
+	MonitorIntervalSeconds      int
+	DisksToIgnore               string
+	WarnAfterSecs               int
+	ServerId                    string
+	Services                    []ServiceToMonitor
 }
 
 // ServiceToMonitor holds service info from config.json

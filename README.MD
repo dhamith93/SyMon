@@ -45,6 +45,16 @@ Client component can show all collected data as tables or graphs, which includes
 
 ## Installing and usage
 
+### TLS support
+
+Communication between Agent, Collector, Alertprocessor, and Client can be encrypted using TLS. Respective `config.json` files specify the server certificate, server private key (Collector, Alertprocessor), and CA file (Agents, Collector, Client).
+
+Server certificate and the private key is needed with Collector and Alertprocessor if TLS is used. Agents and Clients need the CA file to communicate with them.
+
+Collector also needs the CA file of the Alertprocessor's server certificate if TLS is used with the Alertprocessor to push the alerts to ther processor.
+
+Communication between the Client and end user should be encrypted using Apache/nginx.
+
 ### Collector
 
 First step is to install MariaDB (`version >= 10.15`) and create a database. Once it is set up, `config.json` file should be filled with the required configurations. Which includes database name, user, and host information. `.env` file should be used to set the database password. `alerts.json` should be used to set up alerting rules. Setting up alert rules is optional and can be skipped if alerting is not used. 

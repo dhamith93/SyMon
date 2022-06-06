@@ -7,18 +7,19 @@ import (
 
 // Config struct with config
 type Config struct {
-	Port              string
-	AlertEndpoint     string
-	SSLEnabled        bool
-	SSLCertFilePath   string
-	SSLKeyFilePath    string
-	LogFileEnabled    bool
-	LogFilePath       string
-	SQLiteDBPath      string
-	MySQLUserName     string
-	MySQLHost         string
-	MySQLDatabaseName string
-	DataRetentionDays int32
+	Port                    string
+	AlertEndpoint           string
+	AlertEndpointCACertPath string
+	TLSEnabled              bool
+	CertPath                string
+	KeyPath                 string
+	LogFileEnabled          bool
+	LogFilePath             string
+	SQLiteDBPath            string
+	MySQLUserName           string
+	MySQLHost               string
+	MySQLDatabaseName       string
+	DataRetentionDays       int32
 }
 
 // GetConfig return config struct

@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -21,6 +25,7 @@ import (
 	"github.com/dhamith93/SyMon/pkg/memdb"
 	"github.com/dhamith93/systats"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
@@ -424,7 +429,21 @@ func generateToken() string {
 }
 
 func createClient(config *config.Config) (*grpc.ClientConn, alertapi.AlertServiceClient, context.Context, context.CancelFunc) {
-	conn, err := grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var (
+		conn     *grpc.ClientConn
+		tlsCreds credentials.TransportCredentials
+		err      error
+	)
+
+	if len(config.AlertEndpointCACertPath) > 0 {
+		tlsCreds, err = loadTLSCredsAsClient(config)
+		if err != nil {
+			log.Fatal("cannot load TLS credentials: ", err)
+		}
+		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(tlsCreds))
+	} else {
+		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
 		return nil, nil, nil, nil
@@ -433,4 +452,22 @@ func createClient(config *config.Config) (*grpc.ClientConn, alertapi.AlertServic
 	token := generateToken()
 	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
 	return conn, c, ctx, cancel
+}
+
+func loadTLSCredsAsClient(config *config.Config) (credentials.TransportCredentials, error) {
+	cert, err := ioutil.ReadFile(config.AlertEndpointCACertPath)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(cert) {
+		return nil, fmt.Errorf("failed to add server CA cert")
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs: certPool,
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
 }
