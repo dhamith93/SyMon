@@ -23,13 +23,13 @@ Currently, it gathers following metrics under the monitoring interval given in t
 
 ### Screenshots
 
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/01.png.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/02.png.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/03.png.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/04.png.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/05.png.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/06.png.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/07.png.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/01.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/02.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/03.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/04.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/05.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/06.png?raw=true" width="400" />
+<img src="https://github.com/dhamith93/SyMon/blob/master/png/07.png?raw=true" width="400" />
 
 ## Customizations
 Communication between components (agents, collector, frontend, and alertprocessor) is done using gRPC. A custom service can be set up to read or push data into any of the components if needed. [API](internal/api/api.proto), [Alert API](internal/alertapi/alertapi.proto)
