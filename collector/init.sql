@@ -157,3 +157,6 @@ CREATE TABLE `server_ping_time` (
   `time` bigint(20)
 );
 ALTER TABLE `server_ping_time` ADD FOREIGN KEY (`server_id`) REFERENCES `server` (`id`);
+
+-- change done to fix some lag on select queries
+ALTER TABLE `monitor_log` ADD INDEX(`server_id`, `log_type`);
