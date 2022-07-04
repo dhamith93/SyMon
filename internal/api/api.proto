@@ -30,6 +30,7 @@ message MonitorDataRequest {
     int64 from = 3;
     int64 to = 4;
     int64 time = 5;
+    bool isCustomMetric = 6;
 }
 
 service MonitorDataService {

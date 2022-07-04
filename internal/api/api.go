@@ -89,7 +89,7 @@ func (s *Server) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRe
 		convertToJsonArr = true
 		in.LogType = "memory"
 	}
-	monitorData := getMonitorLogs(in.ServerName, in.LogType, in.From, in.To, in.Time, &config, convertToJsonArr)
+	monitorData := getMonitorLogs(in.ServerName, in.LogType, in.From, in.To, in.Time, &config, convertToJsonArr, in.IsCustomMetric)
 	if len(monitorData) == 0 {
 		return &MonitorData{MonitorData: "no data"}, fmt.Errorf("no data found")
 	}
@@ -232,7 +232,7 @@ func saveToDB(item interface{}, mysql database.MySql, serverName string, time st
 		return err
 	}
 
-	err = mysql.SaveLogToDB(serverName, time, string(res), key, logName)
+	err = mysql.SaveLogToDB(serverName, time, string(res), key, logName, false)
 	if err != nil {
 		return err
 	}
@@ -250,13 +250,13 @@ func handleCustomMetric(customMetric *monitor.CustomMetric) error {
 	if err != nil {
 		return err
 	}
-	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name, "")
+	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name, "", true)
 }
 
-func getMonitorLogs(serverName string, logType string, from int64, to int64, time int64, config *config.Config, convertToJsonArr bool) string {
+func getMonitorLogs(serverName string, logType string, from int64, to int64, time int64, config *config.Config, convertToJsonArr bool, isCustomMetric bool) string {
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
-	data := mysql.GetLogFromDB(serverName, logType, from, to, time)
+	data := mysql.GetLogFromDB(serverName, logType, from, to, time, isCustomMetric)
 	if (convertToJsonArr || (to != 0 && from != 0)) && logType != "system" {
 		if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
 			var arr []string

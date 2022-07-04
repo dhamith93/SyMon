@@ -82,52 +82,52 @@ func returnIsUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func returnSystem(w http.ResponseWriter, r *http.Request) {
-	handleRequest("system", w, r)
+	handleRequest("system", w, r, false)
 }
 
 func returnMemory(w http.ResponseWriter, r *http.Request) {
-	handleRequest("memory", w, r)
+	handleRequest("memory", w, r, false)
 }
 
 func returnSwap(w http.ResponseWriter, r *http.Request) {
-	handleRequest("swap", w, r)
+	handleRequest("swap", w, r, false)
 }
 
 func returnDisks(w http.ResponseWriter, r *http.Request) {
-	handleRequest("disks", w, r)
+	handleRequest("disks", w, r, false)
 }
 
 func returnProc(w http.ResponseWriter, r *http.Request) {
-	handleRequest("procUsage", w, r)
+	handleRequest("procUsage", w, r, false)
 }
 
 func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	handleRequest("networks", w, r)
+	handleRequest("networks", w, r, false)
 }
 
 func returnProcesses(w http.ResponseWriter, r *http.Request) {
-	handleRequest("processes", w, r)
+	handleRequest("processes", w, r, false)
 }
 
 func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	handleRequest("procUsage", w, r)
+	handleRequest("procUsage", w, r, false)
 }
 
 func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	handleRequest("memory-historical", w, r)
+	handleRequest("memory-historical", w, r, false)
 }
 
 func returnDisksHistorical(w http.ResponseWriter, r *http.Request) {
-	handleRequest("disks", w, r)
+	handleRequest("disks", w, r, false)
 }
 
 func returnServices(w http.ResponseWriter, r *http.Request) {
-	handleRequest("services", w, r)
+	handleRequest("services", w, r, false)
 }
 
 func returnCustom(w http.ResponseWriter, r *http.Request) {
 	customMetricName, _ := parseGETForCustomMetricName(r)
-	handleRequest(customMetricName, w, r)
+	handleRequest(customMetricName, w, r, true)
 }
 
 func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
@@ -153,13 +153,13 @@ func returnAlerts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&out)
 }
 
-func handleRequest(logType string, w http.ResponseWriter, r *http.Request) {
+func handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCustomMetric bool) {
 	w.Header().Set("Content-Type", "application/json")
 	config := config.GetConfig("config.json")
 	serverName, _ := parseGETForServerName(r)
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	received, err := getMonitorData(serverName, logType, from, to, time, &config)
+	received, err := getMonitorData(serverName, logType, from, to, time, &config, isCustomMetric)
 	var data interface{}
 	var out output
 	out.Status = "OK"
@@ -266,11 +266,11 @@ func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServi
 	return conn, c, ctx, cancel
 }
 
-func getMonitorData(serverName string, logType string, from int64, to int64, time int64, config *config.Config) (string, error) {
+func getMonitorData(serverName string, logType string, from int64, to int64, time int64, config *config.Config, isCustomMetric bool) (string, error) {
 	conn, c, ctx, cancel := createClient(config)
 	defer conn.Close()
 	defer cancel()
-	monitorData, err := c.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: time})
+	monitorData, err := c.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: time, IsCustomMetric: isCustomMetric})
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
 		return "", err

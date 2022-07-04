@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/fileops"
@@ -174,7 +175,7 @@ func (mysql *MySql) monitorDataSelect(query string, args ...interface{}) []strin
 	return out
 }
 
-func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr string, logType string, logName string) error {
+func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr string, logType string, logName string, isCustomMetric bool) error {
 	serverId := mysql.getServerId(serverName)
 	if len(serverId) == 0 {
 		err := fmt.Errorf("server %s not registered", serverName)
@@ -182,7 +183,16 @@ func (mysql *MySql) SaveLogToDB(serverName string, unixTime string, jsonStr stri
 		return err
 	}
 
-	stmt, err := mysql.DB.Prepare("INSERT INTO monitor_log (server_id, log_time, log_type, log_name, log_text) VALUES (?, ?, ?, ?, ?)")
+	var (
+		stmt *sql.Stmt
+		err  error
+	)
+
+	if isCustomMetric {
+		stmt, err = mysql.DB.Prepare("INSERT INTO custom_metrics (server_id, log_time, log_type, log_name, log_text) VALUES (?, ?, ?, ?, ?)")
+	} else {
+		stmt, err = mysql.DB.Prepare("INSERT INTO system_metrics (server_id, log_time, log_type, log_name, log_text) VALUES (?, ?, ?, ?, ?)")
+	}
 
 	if err != nil {
 		mysql.SqlErr = err
@@ -260,42 +270,46 @@ func (mysql *MySql) GetAgents() []string {
 
 func (mysql *MySql) GetCustomMetricNames(serverName string) []string {
 	serverId := mysql.getServerId(serverName)
-	return mysql.monitorDataSelect("SELECT DISTINCT log_type FROM monitor_log WHERE server_id = ? AND log_type NOT IN ('system', 'memory', 'swap', 'disks', 'processor', 'procUsage', 'networks', 'services', 'processes', 'memoryUsage', 'CpuUsage')", serverId)
+	return mysql.monitorDataSelect("SELECT DISTINCT log_type FROM custom_metrics WHERE server_id = ?", serverId)
 }
 
-func (mysql *MySql) GetLogFromDBCount(serverId string, logType string, count int64) []string {
+func (mysql *MySql) GetLogFromDBCount(table string, serverId string, logType string, count int64) []string {
 	if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
-		return mysql.monitorDataSelect("SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM monitor_log WHERE server_id = ? AND log_type = ? GROUP BY log_time ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
+		return mysql.monitorDataSelect(strings.Replace("SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM #TBL# WHERE server_id = ? AND log_type = ? GROUP BY log_time ORDER BY log_time DESC LIMIT ?", "#TBL#", table, -1), serverId, logType, count)
 	}
-	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT ?", serverId, logType, count)
+	return mysql.monitorDataSelect(strings.Replace("SELECT log_text FROM #TBL# WHERE server_id = ? AND log_type = ? ORDER BY log_time DESC LIMIT ?", "#TBL#", table, -1), serverId, logType, count)
 }
 
-func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, to int64, time int64) []string {
+func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, to int64, time int64, isCustomMetric bool) []string {
 	serverId := mysql.getServerId(serverName)
+	tblName := "system_metrics"
+	if isCustomMetric {
+		tblName = "custom_metrics"
+	}
 	if from > 0 && to > 0 {
-		return mysql.getLogFromDBInRange(serverId, logType, from, to)
+		return mysql.getLogFromDBInRange(tblName, serverId, logType, from, to)
 	} else if time > 0 {
-		return mysql.getLogFromDBAt(serverId, logType, time)
+		return mysql.getLogFromDBAt(tblName, serverId, logType, time)
 	} else {
-		return mysql.GetLogFromDBCount(serverId, logType, 1)
+		return mysql.GetLogFromDBCount(tblName, serverId, logType, 1)
 	}
 }
 
 func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, logName string, from int64, to int64) [][]string {
 	serverId := mysql.getServerId(serverName)
 	if from > 0 && to > 0 {
-		q := "SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ?  AND log_name = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
+		q := "SELECT id, log_text FROM system_metrics WHERE server_id = ? AND log_type = ?  AND log_name = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
 		res, _ := mysql.Select(q, serverId, logType, logName, from, to)
 		return res.Data
 	} else {
-		q := "SELECT id, log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_name = ? ORDER BY log_time DESC LIMIT 1"
+		q := "SELECT id, log_text FROM system_metrics WHERE server_id = ? AND log_type = ? AND log_name = ? ORDER BY log_time DESC LIMIT 1"
 		res, _ := mysql.Select(q, serverId, logType, logName)
 		return res.Data
 	}
 }
 
-func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from int64, to int64) []string {
-	query := "SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
+func (mysql *MySql) getLogFromDBInRange(table string, serverId string, logType string, from int64, to int64) []string {
+	query := "SELECT log_text FROM #TBL# WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
 	// diff := to - from
 
 	// if diff > 21600 && diff <= 172800 {
@@ -307,14 +321,18 @@ func (mysql *MySql) getLogFromDBInRange(serverId string, logType string, from in
 	// }
 
 	if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
-		query = "SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? GROUP BY log_time ORDER BY log_time"
+		query = "SELECT JSON_ARRAYAGG(log_text ORDER BY id) FROM #TBL# WHERE server_id = ? AND log_type = ? AND log_time BETWEEN ? AND ? GROUP BY log_time ORDER BY log_time"
 	}
+
+	query = strings.Replace(query, "#TBL#", table, -1)
 
 	return mysql.monitorDataSelect(query, serverId, logType, from, to)
 }
 
-func (mysql *MySql) getLogFromDBAt(serverId string, logType string, time int64) []string {
-	return mysql.monitorDataSelect("SELECT log_text FROM monitor_log WHERE server_id = ? AND log_type = ? AND log_time = ?", serverId, logType, time)
+func (mysql *MySql) getLogFromDBAt(table string, serverId string, logType string, time int64) []string {
+	query := "SELECT log_text FROM #TBL# WHERE server_id = ? AND log_type = ? AND log_time = ?"
+	query = strings.Replace(query, "#TBL#", table, -1)
+	return mysql.monitorDataSelect(query, serverId, logType, time)
 }
 
 func (mysql *MySql) GetAlertByStartEvent(logId string) []string {
@@ -432,7 +450,7 @@ func (mysql *MySql) UpdateAlert(alertStatus *alertstatus.AlertStatus, startEvent
 
 func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) []string {
 	serverId := mysql.getServerId(alertStatus.Server)
-	q := "SELECT * FROM alert AS a JOIN monitor_log AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?"
+	q := "SELECT * FROM alert AS a JOIN system_metrics AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?"
 
 	if alertStatus.Alert.MetricName == monitor.DISKS || alertStatus.Alert.MetricName == monitor.NETWORKS || alertStatus.Alert.MetricName == monitor.SERVICES {
 		q += " AND m.log_name = ?"
@@ -484,7 +502,7 @@ func (mysql *MySql) ClearAllAlertsWithNullEnd() error {
 }
 
 func (mysql *MySql) PurgeMonitorDataOlderThan(unixTime string) (int64, error) {
-	q := "DELETE FROM monitor_log WHERE log_time < ?;"
+	q := "DELETE FROM system_metrics WHERE log_time < ?;"
 
 	stmt, err := mysql.DB.Prepare(q)
 
