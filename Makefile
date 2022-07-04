@@ -9,6 +9,7 @@ clean:
 	rm -f alertprocessor/alerts
 	rm -f client/client
 	rm -f collector/collector
+	rm -rf release
 	rm -rf collector/release/
 	rm -rf agent/release/
 	rm -rf alertprocessor/release/
