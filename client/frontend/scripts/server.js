@@ -498,7 +498,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
                 if (networkChart !== null) {
                     networkChart.destroy();
                 }
-                networkChart = generateUsageChartForMultiple(processedData, document.getElementById('networks-chart'), (context) => { context.parsed.y + 'kB/s'; }, false);
+                networkChart = generateUsageChartForMultiple(processedData, document.getElementById('networks-chart'), context => context.parsed.y + 'kB/s', false);
                 isNetworkFirstTime = false;    
             }, (error) => {
                 console.error(error);
@@ -614,14 +614,16 @@ document.addEventListener('DOMContentLoaded', ()=> {
     }
 
     handleNetworkInfoTable = (networks, table) => {
-        let headerArray = ['Interface', 'IP', 'Rx', 'Tx'];
+        let headerArray = ['Interface', 'IP', 'Rx Data', 'Rx Packets', 'Tx Data', 'Tx Packets'];
         let networkArray = [];
         networks.forEach(network => {
             networkArray.push([
                 network.Interface,
                 network.Ip,
                 `${convertTo(network.Usage.RxBytes, 'B', 'M')} MB`,
-                `${convertTo(network.Usage.TxBytes, 'B', 'M')} MB`
+                network.Usage.RxPackets,
+                `${convertTo(network.Usage.TxBytes, 'B', 'M')} MB`,
+                network.Usage.TxPackets
             ])
         });
 
