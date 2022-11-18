@@ -6,12 +6,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dhamith93/SyMon/collector/internal/config"
+	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 )
 
-func handleDataPurge(config *config.Config, mysql *database.MySql) {
+func handleDataPurge(config *config.Collector, mysql *database.MySql) {
 	ticker := time.NewTicker(6 * time.Hour)
 	quit := make(chan struct{})
 	var wg sync.WaitGroup

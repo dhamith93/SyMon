@@ -136,7 +136,7 @@ func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
 
 func returnAlerts(w http.ResponseWriter, r *http.Request) {
 	// handleRequestForMeta("customMetricNames", w, r)
-	config := config.GetConfig("config.json")
+	config := config.GetClient()
 	serverName, _ := parseGETForServerName(r)
 	received, _ := getActiveAlerts(serverName, &config)
 	alertData, err := json.Marshal(received.Alerts)
@@ -155,7 +155,7 @@ func returnAlerts(w http.ResponseWriter, r *http.Request) {
 
 func handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCustomMetric bool) {
 	w.Header().Set("Content-Type", "application/json")
-	config := config.GetConfig("config.json")
+	config := config.GetClient()
 	serverName, _ := parseGETForServerName(r)
 	time, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
@@ -175,7 +175,7 @@ func handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCus
 
 func handleRequestForPing(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	config := config.GetConfig("config.json")
+	config := config.GetClient()
 	var out output
 	out.Status = "OK"
 	conn, c, ctx, cancel := createClient(&config)
@@ -197,7 +197,7 @@ func handleRequestForPing(w http.ResponseWriter, r *http.Request) {
 
 func handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	config := config.GetConfig("config.json")
+	config := config.GetClient()
 	var out output
 	out.Status = "OK"
 	conn, c, ctx, cancel := createClient(&config)
@@ -239,7 +239,7 @@ func generateToken() string {
 	return token
 }
 
-func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
+func createClient(config *config.Client) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
 	var (
 		conn     *grpc.ClientConn
 		tlsCreds credentials.TransportCredentials
@@ -266,7 +266,7 @@ func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServi
 	return conn, c, ctx, cancel
 }
 
-func getMonitorData(serverName string, logType string, from int64, to int64, time int64, config *config.Config, isCustomMetric bool) (string, error) {
+func getMonitorData(serverName string, logType string, from int64, to int64, time int64, config *config.Client, isCustomMetric bool) (string, error) {
 	conn, c, ctx, cancel := createClient(config)
 	defer conn.Close()
 	defer cancel()
@@ -278,7 +278,7 @@ func getMonitorData(serverName string, logType string, from int64, to int64, tim
 	return monitorData.MonitorData, nil
 }
 
-func getActiveAlerts(serverName string, config *config.Config) (*alertapi.AlertArray, error) {
+func getActiveAlerts(serverName string, config *config.Client) (*alertapi.AlertArray, error) {
 	var (
 		conn     *grpc.ClientConn
 		tlsCreds credentials.TransportCredentials

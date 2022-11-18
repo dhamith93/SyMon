@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	config := config.GetConfig("config.json")
+	config := config.GetAgent()
 
 	if config.LogFileEnabled {
 		file, err := os.OpenFile(config.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
@@ -98,7 +98,7 @@ func main() {
 	fmt.Println("Exiting")
 }
 
-func initAgent(config *config.Config) {
+func initAgent(config *config.Agent) {
 	conn, c, ctx, cancel := createClient(config)
 	if conn == nil {
 		logger.Log("error", "error creating connection")
@@ -118,7 +118,7 @@ func initAgent(config *config.Config) {
 	fmt.Printf("%s \n", response.Body)
 }
 
-func sendPing(config *config.Config) {
+func sendPing(config *config.Agent) {
 	conn, c, ctx, cancel := createClient(config)
 	if conn == nil {
 		logger.Log("error", "error creating connection")
@@ -132,7 +132,7 @@ func sendPing(config *config.Config) {
 	}
 }
 
-func sendMonitorData(monitorData string, config *config.Config) {
+func sendMonitorData(monitorData string, config *config.Agent) {
 	conn, c, ctx, cancel := createClient(config)
 	if conn == nil {
 		logger.Log("error", "error creating connection")
@@ -146,7 +146,7 @@ func sendMonitorData(monitorData string, config *config.Config) {
 	}
 }
 
-func sendCustomMetric(name string, unit string, value string, config *config.Config) {
+func sendCustomMetric(name string, unit string, value string, config *config.Agent) {
 	customMetric := monitor.CustomMetric{
 		Name:     name,
 		Unit:     unit,
@@ -182,7 +182,7 @@ func generateToken() string {
 	return token
 }
 
-func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
+func createClient(config *config.Agent) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
 	var (
 		conn     *grpc.ClientConn
 		tlsCreds credentials.TransportCredentials
@@ -208,7 +208,7 @@ func createClient(config *config.Config) (*grpc.ClientConn, api.MonitorDataServi
 	return conn, c, ctx, cancel
 }
 
-func loadTLSCreds(config *config.Config) (credentials.TransportCredentials, error) {
+func loadTLSCreds(config *config.Agent) (credentials.TransportCredentials, error) {
 	cert, err := ioutil.ReadFile(config.CollectorEndpointCACertPath)
 	if err != nil {
 		return nil, err

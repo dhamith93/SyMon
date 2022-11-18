@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	config := config.GetConfig("config.json")
+	config := config.GetClient()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {

@@ -14,11 +14,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/internal/alertapi"
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/auth"
+	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Config, mysql *database.MySql) {
+func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, mysql *database.MySql) {
 	mysql.ClearAllAlertsWithNullEnd()
 	ticker := time.NewTicker(15 * time.Second)
 	quit := make(chan struct{})
@@ -68,7 +68,7 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Config, mysq
 	fmt.Println("Exiting")
 }
 
-func processAlert(alert *alerts.AlertConfig, server string, config *config.Config, mysql *database.MySql, incidentTracker *memdb.Database) {
+func processAlert(alert *alerts.AlertConfig, server string, config *config.Collector, mysql *database.MySql, incidentTracker *memdb.Database) {
 	metricType := alert.MetricName
 	metricName := ""
 	if metricType == monitor.DISKS {
@@ -187,7 +187,7 @@ func buildAlertToSend(server string, alert *alerts.AlertConfig, alertStatus aler
 	return alertToSend
 }
 
-func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.Config, mysql *database.MySql) alertstatus.AlertStatus {
+func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.Collector, mysql *database.MySql) alertstatus.AlertStatus {
 	var alertStatus alertstatus.AlertStatus
 	logName := ""
 
@@ -405,7 +405,7 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus, sendPagerdut
 	return &alertToSend
 }
 
-func sendAlert(alert *alertapi.Alert, config *config.Config) {
+func sendAlert(alert *alertapi.Alert, config *config.Collector) {
 	conn, c, ctx, cancel := createClient(config)
 	if conn == nil {
 		logger.Log("error", "error creating connection")
@@ -428,7 +428,7 @@ func generateToken() string {
 	return token
 }
 
-func createClient(config *config.Config) (*grpc.ClientConn, alertapi.AlertServiceClient, context.Context, context.CancelFunc) {
+func createClient(config *config.Collector) (*grpc.ClientConn, alertapi.AlertServiceClient, context.Context, context.CancelFunc) {
 	var (
 		conn     *grpc.ClientConn
 		tlsCreds credentials.TransportCredentials
@@ -454,7 +454,7 @@ func createClient(config *config.Config) (*grpc.ClientConn, alertapi.AlertServic
 	return conn, c, ctx, cancel
 }
 
-func loadTLSCredsAsClient(config *config.Config) (credentials.TransportCredentials, error) {
+func loadTLSCredsAsClient(config *config.Collector) (credentials.TransportCredentials, error) {
 	cert, err := ioutil.ReadFile(config.AlertEndpointCACertPath)
 	if err != nil {
 		return nil, err

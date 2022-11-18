@@ -22,20 +22,17 @@ const (
 	NETWORKS   string = "networks"
 )
 
-// Processes hold CPU and Memory usage data
 type Processes struct {
 	CPU    []systats.Process
 	Memory []systats.Process
 }
 
-// Service holds service activity info
 type Service struct {
 	Name    string
 	Running bool
 	Time    string
 }
 
-// MonitorData holds individual system stats
 type MonitorData struct {
 	UnixTime  string
 	System    systats.System
@@ -49,8 +46,7 @@ type MonitorData struct {
 	ServerId  string
 }
 
-// MonitorAsJSON returns MonitorData struct as an JSON object
-func MonitorAsJSON(config *config.Config) string {
+func MonitorAsJSON(config *config.Agent) string {
 	monitorData := Monitor(config)
 	monitorData.ServerId = config.ServerId
 	jsonData, err := json.Marshal(&monitorData)
@@ -61,8 +57,7 @@ func MonitorAsJSON(config *config.Config) string {
 	return string(jsonData)
 }
 
-// Monitor returns MonitorData struct with system stats
-func Monitor(config *config.Config) MonitorData {
+func Monitor(config *config.Agent) MonitorData {
 	syStats := systats.New()
 	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
 	system := GetSystem(&syStats)
@@ -87,7 +82,6 @@ func Monitor(config *config.Config) MonitorData {
 	}
 }
 
-// GetProcessor returns a systats.CPU struct with CPU info and usage data
 func GetProcessor(syStats *systats.SyStats) systats.CPU {
 	cpu, err := syStats.GetCPU()
 	if err != nil {
@@ -96,7 +90,6 @@ func GetProcessor(syStats *systats.SyStats) systats.CPU {
 	return cpu
 }
 
-// GetSystem returns a systats.System struct with system info
 func GetSystem(syStats *systats.SyStats) systats.System {
 	system, err := syStats.GetSystem()
 	if err != nil {
@@ -105,7 +98,6 @@ func GetSystem(syStats *systats.SyStats) systats.System {
 	return system
 }
 
-// GetMemory returns systats.Memory struct with memory usage
 func GetMemory(syStats *systats.SyStats) systats.Memory {
 	memory, err := syStats.GetMemory(systats.Megabyte)
 	if err != nil {
@@ -114,7 +106,6 @@ func GetMemory(syStats *systats.SyStats) systats.Memory {
 	return memory
 }
 
-// GetSwap returns systats.Swap struct with swap usage
 func GetSwap(syStats *systats.SyStats) systats.Swap {
 	swap, err := syStats.GetSwap(systats.Megabyte)
 	if err != nil {
@@ -123,8 +114,7 @@ func GetSwap(syStats *systats.SyStats) systats.Swap {
 	return swap
 }
 
-// GetDisks returns array of systats.Disk structs with disk info and usage data
-func GetDisks(syStats *systats.SyStats, config *config.Config) []systats.Disk {
+func GetDisks(syStats *systats.SyStats, config *config.Agent) []systats.Disk {
 	disks, err := syStats.GetDisks()
 	output := []systats.Disk{}
 	disksTOIgnore := strings.Split(config.DisksToIgnore, ",")
@@ -145,7 +135,6 @@ func GetDisks(syStats *systats.SyStats, config *config.Config) []systats.Disk {
 	return output
 }
 
-// GetNetwork returns an array of systats.Network struct with network usage
 func GetNetwork(syStats *systats.SyStats) []systats.Network {
 	network, err := syStats.GetNetworks()
 	if err != nil {
@@ -154,7 +143,6 @@ func GetNetwork(syStats *systats.SyStats) []systats.Network {
 	return network
 }
 
-// GetProcesses returns struct with process info
 func GetProcesses(syStats *systats.SyStats) Processes {
 	cpu, err := syStats.GetTopProcesses(10, "cpu")
 	if err != nil {
@@ -170,8 +158,7 @@ func GetProcesses(syStats *systats.SyStats) Processes {
 	}
 }
 
-// GetServices returns array of Service structs with service status
-func GetServices(syStats *systats.SyStats, unixTime string, config *config.Config) []Service {
+func GetServices(syStats *systats.SyStats, unixTime string, config *config.Agent) []Service {
 	servicesToCheck := config.Services
 	var services []Service
 	for _, serviceToCheck := range servicesToCheck {

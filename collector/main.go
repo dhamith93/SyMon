@@ -10,13 +10,12 @@ import (
 	"net"
 	"os"
 
-	"github.com/dhamith93/SyMon/collector/internal/config"
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/auth"
+	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -25,19 +24,13 @@ import (
 )
 
 func main() {
-	var removeAgentVal, configPath, alertConfigPath string
+	var removeAgentVal string
 	var alertConfig []alerts.AlertConfig
 	initPtr := flag.Bool("init", false, "Initialize the collector")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
-	flag.StringVar(&configPath, "config", "", "Path to config.json.")
-	flag.StringVar(&alertConfigPath, "alerts", "", "Path to alerts json file.")
 	flag.Parse()
 
-	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		log.Fatalf("cannot load config.json: %v", err)
-	}
-
-	config := config.GetConfig(configPath)
+	config := config.GetCollector()
 	if config.LogFileEnabled {
 		file, err := os.OpenFile(config.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
@@ -47,16 +40,11 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	err := godotenv.Load()
-	if err != nil {
-		logger.Log("Error", "Error loading .env file")
-	}
-
-	if len(alertConfigPath) > 0 {
-		if _, err := os.Stat(alertConfigPath); errors.Is(err, os.ErrNotExist) {
+	if len(config.AlertsFilePath) > 0 {
+		if _, err := os.Stat(config.AlertsFilePath); errors.Is(err, os.ErrNotExist) {
 			logger.Log("cannot load alert config: ", err.Error())
 		}
-		alertConfig = alerts.GetAlertConfig(alertConfigPath)
+		alertConfig = alerts.GetAlertConfig(config.AlertsFilePath)
 	}
 
 	if *initPtr {
@@ -102,7 +90,7 @@ func main() {
 	}
 }
 
-func loadTLSCreds(config *config.Config) (credentials.TransportCredentials, error) {
+func loadTLSCreds(config *config.Collector) (credentials.TransportCredentials, error) {
 	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
 	if err != nil {
 		return nil, err
@@ -131,7 +119,7 @@ func authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerIn
 	return handler(ctx, req)
 }
 
-func removeAgent(removeAgentVal string, config *config.Config) {
+func removeAgent(removeAgentVal string, config *config.Collector) {
 	fmt.Println("Removing agent " + removeAgentVal)
 	mysql := getMySQLConnection(config, false)
 	defer mysql.Close()
@@ -152,19 +140,20 @@ func removeAgent(removeAgentVal string, config *config.Config) {
 	}
 }
 
-func initCollector(config *config.Config) {
+func initCollector(config *config.Collector) {
 	mysql := getMySQLConnection(config, true)
 	defer mysql.Close()
 	err := mysql.Init()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	auth.GetKey()
+	key := auth.GetKey(true)
+	os.Setenv("SYMON_KEY", key)
+	fmt.Printf("---\nSYMON_KEY: %s\n---\n", key)
 }
 
-func getMySQLConnection(c *config.Config, isMultiStatement bool) database.MySql {
+func getMySQLConnection(c *config.Collector, isMultiStatement bool) database.MySql {
 	mysql := database.MySql{}
-	password := os.Getenv("SYMON_MYSQL_PSWD")
-	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, isMultiStatement)
+	mysql.Connect(c.MySQLUserName, c.MySQLPassword, c.MySQLHost, c.MySQLDatabaseName, isMultiStatement)
 	return mysql
 }

@@ -63,7 +63,7 @@ type ServiceToMonitor struct {
 	ServiceName string
 }
 
-func GetAgent(path string) Agent {
+func GetAgent() Agent {
 	intervalSecs := os.Getenv("SYMON_MONITOR_INTERVAL_SECONDS")
 	intervalSecsInt := DEFAULT_INTERVAL_SECS
 	if len(intervalSecs) > 0 {
@@ -149,5 +149,5 @@ func GetAlertProcessor() AlertProcessor {
 }
 
 func LogFileEnabled() bool {
-	return GetAlertProcessor().LogFileEnabled || GetCollector().LogFileEnabled || GetClient().LogFileEnabled
+	return GetAgent().LogFileEnabled || GetAlertProcessor().LogFileEnabled || GetCollector().LogFileEnabled || GetClient().LogFileEnabled
 }
