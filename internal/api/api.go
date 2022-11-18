@@ -27,7 +27,7 @@ type CustomMetrics struct {
 }
 
 func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error) {
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	err := initAgent(in.ServerName, in.Timezone, &config)
 	if err != nil {
 		return &Message{Body: err.Error()}, err
@@ -36,7 +36,7 @@ func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error
 }
 
 func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*Message, error) {
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	err := handlePing(in.ServerName, &config)
 	if err != nil {
 		return &Message{Body: err.Error()}, err
@@ -45,7 +45,7 @@ func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*Message, erro
 }
 
 func (s *Server) IsUp(ctx context.Context, in *ServerInfo) (*IsActive, error) {
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	upAndRunning, err := isUp(in.ServerName, &config)
 	if err != nil {
 		return &IsActive{IsUp: false}, err
@@ -80,7 +80,7 @@ func (s *Server) HandleCustomMonitorData(ctx context.Context, in *MonitorData) (
 }
 
 func (s *Server) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest) (*MonitorData, error) {
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	convertToJsonArr := false
 	switch in.LogType {
 	case "networks", "procUsage":
@@ -97,7 +97,7 @@ func (s *Server) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRe
 }
 
 func (s *Server) HandleAgentIdsRequest(context.Context, *Void) (*Message, error) {
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 	agents := Agents{}
@@ -114,7 +114,7 @@ func (s *Server) HandleAgentIdsRequest(context.Context, *Void) (*Message, error)
 }
 
 func (s *Server) HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo) (*Message, error) {
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 	customMetrics := CustomMetrics{}
@@ -130,7 +130,7 @@ func (s *Server) HandleCustomMetricNameRequest(ctx context.Context, in *ServerIn
 	return &Message{Body: string(out)}, nil
 }
 
-func initAgent(agentId string, timezone string, config *config.Config) error {
+func initAgent(agentId string, timezone string, config *config.Collector) error {
 	logger.Log("info", "Initializing agent for "+agentId)
 
 	mysql := getMySQLConnection(config)
@@ -150,7 +150,7 @@ func initAgent(agentId string, timezone string, config *config.Config) error {
 	return nil
 }
 
-func handlePing(serverName string, config *config.Config) error {
+func handlePing(serverName string, config *config.Collector) error {
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
@@ -162,7 +162,7 @@ func handlePing(serverName string, config *config.Config) error {
 	return nil
 }
 
-func isUp(serverName string, config *config.Config) (bool, error) {
+func isUp(serverName string, config *config.Collector) (bool, error) {
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 
@@ -184,7 +184,7 @@ func isUp(serverName string, config *config.Config) (bool, error) {
 func handleMonitorData(monitorData *monitor.MonitorData) error {
 	serverName := monitorData.ServerId
 	time := monitorData.UnixTime
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
@@ -242,7 +242,7 @@ func saveToDB(item interface{}, mysql database.MySql, serverName string, time st
 func handleCustomMetric(customMetric *monitor.CustomMetric) error {
 	serverName := customMetric.ServerId
 	time := customMetric.Time
-	config := config.GetConfig("config.json")
+	config := config.GetCollector()
 	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
 
@@ -253,7 +253,7 @@ func handleCustomMetric(customMetric *monitor.CustomMetric) error {
 	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name, "", true)
 }
 
-func getMonitorLogs(serverName string, logType string, from int64, to int64, time int64, config *config.Config, convertToJsonArr bool, isCustomMetric bool) string {
+func getMonitorLogs(serverName string, logType string, from int64, to int64, time int64, config *config.Collector, convertToJsonArr bool, isCustomMetric bool) string {
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 	data := mysql.GetLogFromDB(serverName, logType, from, to, time, isCustomMetric)
@@ -283,9 +283,9 @@ func getMonitorLogs(serverName string, logType string, from int64, to int64, tim
 	}
 }
 
-func getMySQLConnection(c *config.Config) database.MySql {
+func getMySQLConnection(c *config.Collector) database.MySql {
 	mysql := database.MySql{}
-	password := os.Getenv("SYMON_MYSQL_PSWD")
+	password := os.Getenv("SYMON_DB_PASSWORD")
 	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
 	return mysql
 }

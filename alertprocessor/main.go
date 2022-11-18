@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	config := config.GetConfig("config.json")
+	config := config.GetAlertProcessor()
 
 	if config.LogFileEnabled {
 		file, err := os.OpenFile(config.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
@@ -80,7 +80,7 @@ func main() {
 	}
 }
 
-func loadTLSCreds(config *config.Config) (credentials.TransportCredentials, error) {
+func loadTLSCreds(config *config.AlertProcessor) (credentials.TransportCredentials, error) {
 	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
 	if err != nil {
 		return nil, err
