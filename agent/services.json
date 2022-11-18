@@ -1,0 +1,14 @@
+[
+    {
+        "Name": "Apache",
+        "ServiceName": "apache2"
+    },
+    {
+        "Name": "containerd",
+        "ServiceName": "containerd"
+    },
+    {
+        "Name": "Jenkins",
+        "ServiceName": "jenkins"
+    }
+]

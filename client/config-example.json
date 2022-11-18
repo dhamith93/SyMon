@@ -1,9 +1,0 @@
-{
-    "Port": "9000",
-    "CollectorEndpoint": "localhost:9900",
-    "AlertEndpoint": "localhost:5999",
-    "CollectorEndpointCACertPath": "",
-    "AlertEndpointCACertPath": "",
-    "LogFileEnabled": true,
-    "LogFilePath": "/home/dhamith93/tmp/symon_collector.log"
-}
