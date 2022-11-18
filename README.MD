@@ -57,7 +57,7 @@ Client component can show all collected data as tables or graphs, which includes
 
 ### TLS support
 
-Communication between Agent, Collector, Alertprocessor, and Client can be encrypted using TLS. Respective `config.json` files specify the server certificate, server private key (Collector, Alertprocessor), and CA file (Agents, Collector, Client).
+Communication between Agent, Collector, Alertprocessor, and Client can be encrypted using TLS. Respective `.env-example` files can be referred to set up the server certificate, server private key (Collector, Alertprocessor), and CA file (Agents, Collector, Client) related environment variables.
 
 Server certificate and the private key is needed with Collector and Alertprocessor if TLS is used. Agents and Clients need the CA file to communicate with them.
 
@@ -67,20 +67,20 @@ Communication between the Client and end user should be encrypted using Apache/n
 
 ### Collector
 
-First step is to install MariaDB (`version >= 10.15`) and create a database. Once it is set up, `config.json` file should be filled with the required configurations. Which includes database name, user, and host information. `.env` file should be used to set the database password. `alerts.json` should be used to set up alerting rules. Setting up alert rules is optional and can be skipped if alerting is not used. 
+First step is to install MariaDB (`version >= 10.15`) and create a database. Once it is set up, environment variables as per the `.env-example` file should be set up with the required configurations. Which includes database name, user, password, and host information. `alerts.json` should be used to set up alerting rules. Setting up alert rules is optional and can be skipped if alerting is not used. 
 
-Once everything is set up, you have to initialize the collector by running the below command. It will create the database tables and generate the key file.
+Once everything is set up, you have to initialize the collector by running the below command. It will create the database tables and print the `key` string as well as set the `key` as an environment variable `SYMON_KEY`.
 
-`./collector_linux_x86_64 --init --config=config.json`
+`./collector_linux_x86_64 --init`
 
-Once initialized, you can run the collector by running below command. `--alerts` argument is optional. It is best to set this up as a service. Example can be find [here](https://github.com/dhamith93/SyMon/tree/master/custom_scripts).
+Once initialized, you can run the collector by running below command. It is best to set this up as a service. Example can be find [here](https://github.com/dhamith93/SyMon/tree/master/custom_scripts).
 
-`./collector_linux_x86_64 --config=config.json --alerts=alerts.json`
+`./collector_linux_x86_64`
 
 ### Agents
-You should first install Collector, initialize, and copy over the key file to the server to install the agent.
+You should first install Collector, initialize, and set the `SYMON_KEY` environment variable with the key to install the agent.
 
-Once the key file is in the same directory as the executable and the `config.json` file is set up. You can register the agent to the Collector by running the below command. 
+Once all the relevent environment variables in the `.env-example` file is set up. You can register the agent to the Collector by running the below command. 
 
 `./agent_linux_x86_64 -init`
 
@@ -96,12 +96,12 @@ Custom time series data can be added using the agent as below. Current server ti
 ### Alerts
 This is an optional part of SyMon. It is only needed if you need to process alerts and push them out to Email, PagerDuty, and Slack. 
 
-Fill the config.json and .env file with configurations and API credentials for PagerDuty/Slack and run the Alert processor.
+Set up the environment variables as shown in `.env-example` file with configurations and API credentials for PagerDuty/Slack and run the Alert processor.
 
 `./alertprocessor_linux_x86_64`
 
 ### Clients
-To run the Client, fill the config.json and start the Client with the below command. You can use Apache, or nginx to set up SSL and user authentication if needed.
+To run the Client, fill the relevent environment variables as shown in `.env-example` and start the Client with the below command. You can use Apache, or nginx to set up SSL and user authentication if needed.
 
 `./client_linux_x86_64`
 
@@ -125,7 +125,7 @@ Client also exposes an REST API to retrieve collection data.
 * `/memory-historical`
     * Memory usage
 * `/services`
-    * List of services enabled to monitor in agent's config.json
+    * List of services enabled to monitor in agent's service.json
 * `/custom-metric-names`
     * Names of custom metrics
 * `/custom?custom-metric=name`
