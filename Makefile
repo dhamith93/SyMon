@@ -43,7 +43,7 @@ pack-collector: build-collector
 pack-agent: build-agent
 	mkdir -p release/agent_linux_x86_64
 	cp agent/agent_linux_x86_64 release/agent_linux_x86_64
-	cp agent/env-example release/agent_linux_x86_64
+	cp agent/.env-example release/agent_linux_x86_64
 	cd release/ && tar -cvf agent_linux_x86_64.tar.gz agent_linux_x86_64
 	rm -rf release/agent_linux_x86_64
 
@@ -57,7 +57,7 @@ pack-alertprocessor: build-alertprocessor
 pack-client: build-client
 	mkdir -p release/client_linux_x86_64
 	cp client/client_linux_x86_64 release/client_linux_x86_64
-	cp client/env-example release/client_linux_x86_64
+	cp client/.env-example release/client_linux_x86_64
 	cp -r client/frontend release/client_linux_x86_64
 	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
 	rm -rf release/client_linux_x86_64
