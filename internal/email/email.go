@@ -6,18 +6,9 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/joho/godotenv"
 )
 
 func SendEmail(subject string, emailBody string) error {
-	err := godotenv.Load()
-	if err != nil {
-		logger.Log("Error", "Error loading .env file")
-		return err
-	}
-
 	emailUser := os.Getenv("EMAIL_USER")
 	emailPassword := os.Getenv("EMAIL_PASSWORD")
 	emailHost := os.Getenv("EMAIL_HOST")

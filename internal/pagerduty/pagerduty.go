@@ -8,9 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/joho/godotenv"
 )
 
 type Body struct {
@@ -50,12 +47,6 @@ type Error struct {
 const URL = "https://api.pagerduty.com/incidents"
 
 func CreateIncident(incident Incident) (string, error) {
-	err := godotenv.Load()
-	if err != nil {
-		logger.Log("Error", "Error loading .env file")
-		return "", err
-	}
-
 	incident.Incident.Service.Id = os.Getenv("PAGER_DUTY_SERVICE_ID")
 
 	req, err := createRequest(incident, URL, "POST")
@@ -92,12 +83,6 @@ func CreateIncident(incident Incident) (string, error) {
 }
 
 func UpdateIncident(id string) error {
-	err := godotenv.Load()
-	if err != nil {
-		logger.Log("Error", "Error loading .env file")
-		return err
-	}
-
 	payload := strings.NewReader("{\n  \"incident\": {\n    \"type\": \"incident_reference\",\n    \"status\": \"resolved\"\n  }\n}")
 
 	req, err := http.NewRequest("PUT", URL+"/"+id, payload)

@@ -7,9 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/joho/godotenv"
 )
 
 const SLACK_TEMPLATE_NEW_MSG = `{
@@ -77,12 +74,6 @@ type SlackResponse struct {
 }
 
 func SendSlackMessage(subject string, content string, slackChannel string, resolved bool, ts string) (string, error) {
-	err := godotenv.Load()
-	if err != nil {
-		logger.Log("Error", "Error loading .env file")
-		return "", err
-	}
-
 	msg := ""
 	url := ONGOING_URL
 	if resolved {
