@@ -297,6 +297,11 @@ func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, 
 
 func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, logName string, from int64, to int64) [][]string {
 	serverId := mysql.getServerId(serverName)
+	if logType == monitor.PING {
+		q := "SELECT id, time FROM server_ping_time WHERE server_id = ?"
+		res, _ := mysql.Select(q, serverId)
+		return res.Data
+	}
 	if from > 0 && to > 0 {
 		q := "SELECT id, log_text FROM system_metrics WHERE server_id = ? AND log_type = ?  AND log_name = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
 		res, _ := mysql.Select(q, serverId, logType, logName, from, to)
@@ -450,6 +455,19 @@ func (mysql *MySql) UpdateAlert(alertStatus *alertstatus.AlertStatus, startEvent
 
 func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) []string {
 	serverId := mysql.getServerId(alertStatus.Server)
+
+	if alertStatus.Alert.MetricName == monitor.PING {
+		q := "SELECT * FROM alert WHERE start_log_id = ? AND server_id = ? AND expected = 0 AND actual = 0 AND end_log_id IS NULL ORDER BY id DESC"
+		t, err := mysql.Select(q, serverId, serverId)
+		if err != nil {
+			logger.Log("error", "GetPreviousOpenAlert"+err.Error())
+		}
+		if len(t.Data) == 0 {
+			return nil
+		}
+		return t.Data[0]
+	}
+
 	q := "SELECT * FROM alert AS a JOIN system_metrics AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?"
 
 	if alertStatus.Alert.MetricName == monitor.DISKS || alertStatus.Alert.MetricName == monitor.NETWORKS || alertStatus.Alert.MetricName == monitor.SERVICES {

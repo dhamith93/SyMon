@@ -104,5 +104,17 @@
         "PagerDuty": true,
         "Slack": true,
         "SlackChannel": ""
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Ping status",
+        "Description": "",
+        "MetricName": "ping",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} fails to ping > {triggerInterval} seconds at {timestamp}\n{desc}",
+        "Email": false,
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     }
 ]

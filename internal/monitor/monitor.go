@@ -20,6 +20,7 @@ const (
 	DISKS      string = "disks"
 	SERVICES   string = "services"
 	NETWORKS   string = "networks"
+	PING       string = "ping"
 )
 
 type Processes struct {

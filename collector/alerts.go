@@ -80,9 +80,11 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Colle
 	alertStatus := buildAlertStatus(alert, &server, config, mysql)
 
 	// duplicate check
-	alertFromDbForStartEvent := mysql.GetAlertByStartEvent(strconv.FormatInt(alertStatus.StartEvent, 10))
-	if alertFromDbForStartEvent != nil {
-		return
+	if metricType != monitor.PING {
+		alertFromDbForStartEvent := mysql.GetAlertByStartEvent(strconv.FormatInt(alertStatus.StartEvent, 10))
+		if alertFromDbForStartEvent != nil {
+			return
+		}
 	}
 
 	// check if an active alert is present in DB
@@ -273,6 +275,18 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 			alertStatus.UnixTime = service.Time
 			break
 		}
+	case monitor.PING:
+		pingLog := mysql.GetLogFromDBWithId(*server, alert.MetricName, "", 0, 0)
+		alertStatus.Type = alertstatus.Normal
+		if len(pingLog) > 0 {
+			lastPingTime, _ := strconv.Atoi(pingLog[0][1])
+			timeNow := time.Now().Unix()
+			diff := timeNow - int64(lastPingTime)
+			if diff > int64(alert.TriggerIntveral) {
+				alertStatus.Type = alertstatus.Critical
+			}
+		}
+		alertStatus.UnixTime = strconv.FormatInt(time.Now().Unix(), 10)
 	}
 	logIdInt, err := strconv.ParseInt(logId, 10, 64)
 	if err != nil {
@@ -373,6 +387,8 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus, sendPagerdut
 		status.Alert.Description,
 		"{value}",
 		value,
+		"{triggerInterval}",
+		strconv.Itoa(alert.TriggerIntveral),
 	)
 	content := replacer.Replace(alert.Template)
 
