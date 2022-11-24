@@ -56,27 +56,28 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 		memdb.Col{Name: "status", Type: memdb.Int},
 		memdb.Col{Name: "value", Type: memdb.Float32},
 	)
-	go func() {
-		if err != nil {
-			logger.Log("error", "memdb: "+err.Error())
-		}
-		for {
-			select {
-			case <-ticker.C:
-				for _, alert := range alertConfigs {
-					if alert.MetricName == "endpoint" {
-						continue
+	if err != nil {
+		logger.Log("error", "memdb: "+err.Error())
+	} else {
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					for _, alert := range alertConfigs {
+						if alert.MetricName == "endpoint" {
+							continue
+						}
+						for _, server := range alert.Servers {
+							processAlert(&alert, server, config, mysql, &incidentTracker)
+						}
 					}
-					for _, server := range alert.Servers {
-						processAlert(&alert, server, config, mysql, &incidentTracker)
-					}
+				case <-quit:
+					ticker.Stop()
+					return
 				}
-			case <-quit:
-				ticker.Stop()
-				return
 			}
-		}
-	}()
+		}()
+	}
 
 	if config.EndpointMonitoringEnabled {
 		logger.Log("info", "starting endpoint monitor")
@@ -91,24 +92,25 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 			memdb.Col{Name: "error", Type: memdb.String},
 			memdb.Col{Name: "alerted", Type: memdb.Bool},
 		)
-		go func() {
-			if err != nil {
-				logger.Log("error", "memdb: "+err.Error())
-			}
-			for {
-				select {
-				case <-endpointTicker.C:
-					for _, alert := range alertConfigs {
-						if alert.MetricName == "endpoint" {
-							checkEndpoint(&alert, &incidentTracker, config)
+		if err != nil {
+			logger.Log("error", "memdb: "+err.Error())
+		} else {
+			go func() {
+				for {
+					select {
+					case <-endpointTicker.C:
+						for _, alert := range alertConfigs {
+							if alert.MetricName == "endpoint" {
+								checkEndpoint(&alert, &incidentTracker, config)
+							}
 						}
+					case <-quit:
+						ticker.Stop()
+						return
 					}
-				case <-quit:
-					ticker.Stop()
-					return
 				}
-			}
-		}()
+			}()
+		}
 	}
 	wg.Wait()
 	fmt.Println("Exiting")
