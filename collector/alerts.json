@@ -116,5 +116,21 @@
         "PagerDuty": true,
         "Slack": true,
         "SlackChannel": ""
+    },
+    {
+        "Name": "Endpoint check for HTTP code",
+        "MetricName": "endpoint",
+        "Endpoint": "https://someplace.com:6660",
+        "TriggerIntveral": 60,
+        "ExpectedHTTPCode": 200,
+        "Method": "GET",
+        "CustomCACert": "/path/to/ca/cert",
+        "POSTContentType": "application/json",
+        "POSTBody": "{}",
+        "Template": "{subject}\n{endpoint} expected: {expected} got {actual} for {triggerInterval} seconds at {timestamp}\n{desc}",
+        "Email": false,
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     }
 ]

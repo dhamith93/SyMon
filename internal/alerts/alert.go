@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 )
 
+const ENDPOINT_METHOD_GET string = "GET"
+const ENDPOINT_METHOD_POST string = "POST"
+
 type AlertConfig struct {
 	Name              string
 	Description       string
@@ -15,6 +18,12 @@ type AlertConfig struct {
 	CriticalThreshold int
 	TriggerIntveral   int
 	Servers           []string
+	Endpoint          string
+	ExpectedHTTPCode  int
+	Method            string
+	CustomCACert      string
+	POSTContentType   string
+	POSTBody          string
 	Disk              string
 	Service           string
 	Email             bool

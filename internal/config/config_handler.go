@@ -10,6 +10,7 @@ import (
 
 const DEFAULT_RETENTION_DAYS int32 = 30
 const DEFAULT_INTERVAL_SECS int = 30
+const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
 
 type Collector struct {
 	TLSEnabled              bool
@@ -26,6 +27,7 @@ type Collector struct {
 	MySQLDatabaseName       string
 	MySQLPassword           string
 	AlertsFilePath          string
+	EndpointCheckInterval   int
 }
 
 type Client struct {
@@ -107,6 +109,14 @@ func GetCollector() Collector {
 			retentionDaysInt = int32(converted)
 		}
 	}
+	checkInterval := os.Getenv("SYMON_ENDPOINT_CHECK_INTERVAL")
+	checkIntervalInt := DEFAULT_ENDPOINT_CHECK_INTERVAL
+	if len(checkInterval) > 0 {
+		converted, _ := strconv.Atoi(checkInterval)
+		if converted > 0 {
+			checkIntervalInt = converted
+		}
+	}
 	return Collector{
 		Port:                    os.Getenv("SYMON_PORT"),
 		AlertEndpoint:           os.Getenv("SYMON_ALERT_ENDPOINT"),
@@ -122,6 +132,7 @@ func GetCollector() Collector {
 		MySQLPassword:           os.Getenv("SYMON_DB_PASSWORD"),
 		AlertsFilePath:          os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
 		DataRetentionDays:       retentionDaysInt,
+		EndpointCheckInterval:   checkIntervalInt,
 	}
 }
 

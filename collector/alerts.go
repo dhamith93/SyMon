@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -33,11 +35,14 @@ import (
 func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, mysql *database.MySql) {
 	mysql.ClearAllAlertsWithNullEnd()
 	ticker := time.NewTicker(15 * time.Second)
+	endpointTicker := time.NewTicker(time.Duration(config.EndpointCheckInterval) * time.Second)
 	quit := make(chan struct{})
 	var wg sync.WaitGroup
-	wg.Add(1)
+	incidentTracker := memdb.CreateDatabase("incident_tracker")
+	wg.Add(2)
+	logger.Log("info", "starting alert checker")
 	go func() {
-		incidentTracker := memdb.CreateDatabase("incident_tracker")
+		// incidentTracker := memdb.CreateDatabase("incident_tracker")
 		err := incidentTracker.Create(
 			"alert",
 			memdb.Col{Name: "server_name", Type: memdb.String},
@@ -54,8 +59,41 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 			select {
 			case <-ticker.C:
 				for _, alert := range alertConfigs {
+					if alert.MetricName == "endpoint" {
+						continue
+					}
 					for _, server := range alert.Servers {
 						processAlert(&alert, server, config, mysql, &incidentTracker)
+					}
+				}
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	logger.Log("info", "starting endpoint monitor")
+	go func() {
+		err := incidentTracker.Create(
+			"endpoint_monitor",
+			memdb.Col{Name: "url", Type: memdb.String},
+			memdb.Col{Name: "method", Type: memdb.String},
+			memdb.Col{Name: "expected", Type: memdb.Int},
+			memdb.Col{Name: "actual", Type: memdb.Int},
+			memdb.Col{Name: "time", Type: memdb.Int64},
+			memdb.Col{Name: "failed", Type: memdb.Bool},
+			memdb.Col{Name: "error", Type: memdb.String},
+			memdb.Col{Name: "alerted", Type: memdb.Bool},
+		)
+		if err != nil {
+			logger.Log("error", "memdb: "+err.Error())
+		}
+		for {
+			select {
+			case <-endpointTicker.C:
+				for _, alert := range alertConfigs {
+					if alert.MetricName == "endpoint" {
+						checkEndpoint(&alert, &incidentTracker, config)
 					}
 				}
 			case <-quit:
@@ -170,6 +208,140 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Colle
 			}
 			res.Delete()
 		}
+	}
+}
+
+func checkEndpoint(alert *alerts.AlertConfig, incidentTracker *memdb.Database, config *config.Collector) {
+	var (
+		res *http.Response
+		err error
+	)
+	customCACertUsed := len(strings.TrimSpace(alert.CustomCACert)) > 0
+	client := &http.Client{}
+
+	if customCACertUsed {
+		caCert, err := ioutil.ReadFile(alert.CustomCACert)
+		if err != nil {
+			logger.Log("error", err.Error())
+			return
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		client = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
+	}
+
+	method := strings.ToUpper(alert.Method)
+
+	if method == alerts.ENDPOINT_METHOD_GET {
+		res, err = client.Get(alert.Endpoint)
+	}
+	if method == alerts.ENDPOINT_METHOD_POST {
+		body := []byte(alert.POSTBody)
+		bodyReader := bytes.NewReader(body)
+		res, err = client.Post(alert.Endpoint, alert.POSTContentType, bodyReader)
+	}
+
+	timeNow := time.Now().Unix()
+	failed := false
+	errMsg := ""
+
+	if err != nil {
+		logger.Log("error", err.Error())
+		errMsg = err.Error()
+		failed = true
+	}
+
+	statusCode := -1
+
+	if !failed {
+		defer res.Body.Close()
+		statusCode = res.StatusCode
+	}
+
+	existingRecord := incidentTracker.Tables["endpoint_monitor"].Where("url", "==", alert.Endpoint).And("method", "==", method).And("expected", "==", alert.ExpectedHTTPCode)
+
+	if existingRecord.RowCount > 0 {
+		diff := timeNow - existingRecord.Rows[0].Columns["time"].Int64Val
+		existingActual := existingRecord.Rows[0].Columns["actual"].IntVal
+		alerted := existingRecord.Rows[0].Columns["alerted"].BoolVal
+
+		existingRecord.Update("actual", statusCode)
+		existingRecord.Update("failed", failed)
+		existingRecord.Update("error", errMsg)
+
+		if statusCode != alert.ExpectedHTTPCode {
+			if alert.ExpectedHTTPCode != existingActual && !alerted {
+				if diff > int64(alert.TriggerIntveral) {
+					alertToSend := buildEndpointAlert(alert, statusCode, errMsg, false, timeNow)
+					sendAlert(alertToSend, config)
+					existingRecord.Update("alerted", true)
+				}
+			}
+		} else {
+			if alert.ExpectedHTTPCode != existingActual && alerted {
+				alertToSend := buildEndpointAlert(alert, statusCode, errMsg, true, timeNow)
+				sendAlert(alertToSend, config)
+				existingRecord.Update("alerted", false)
+			}
+			existingRecord.Update("time", timeNow)
+		}
+
+	} else {
+		incidentTracker.Tables["endpoint_monitor"].Insert(
+			"url, method, expected, actual, time, failed, error, alerted",
+			alert.Endpoint, method, alert.ExpectedHTTPCode, statusCode, timeNow, failed, errMsg, false,
+		)
+	}
+}
+
+func buildEndpointAlert(alert *alerts.AlertConfig, actualHTTPCode int, errMsg string, resolved bool, unixtime int64) *alertapi.Alert {
+	subject := "[Resolved] "
+	status := 0
+	if !resolved {
+		subject = "[Critical] "
+		status = 2
+	}
+	subject += "endpoint check failed on " + alert.Endpoint
+	errMsg = strings.ReplaceAll(errMsg, "\"", "'")
+	timestamp := time.Unix(unixtime, 0)
+	replacer := strings.NewReplacer(
+		"{subject}",
+		subject,
+		"{endpoint}",
+		alert.Endpoint,
+		"{metricName}",
+		alert.MetricName,
+		"{expected}",
+		strconv.Itoa(alert.ExpectedHTTPCode),
+		"{actual}",
+		strconv.Itoa(actualHTTPCode),
+		"{timestamp}",
+		timestamp.UTC().String(),
+		"{error}",
+		errMsg,
+		"{triggerInterval}",
+		strconv.Itoa(alert.TriggerIntveral),
+	)
+	content := replacer.Replace(alert.Template)
+	return &alertapi.Alert{
+		ServerName:   alert.Endpoint,
+		MetricName:   alert.MetricName,
+		Status:       int32(status),
+		Subject:      subject,
+		Content:      content,
+		Timestamp:    timestamp.UTC().String(),
+		Resolved:     resolved,
+		Pagerduty:    alert.Pagerduty,
+		Email:        alert.Email,
+		Slack:        alert.Slack,
+		SlackChannel: alert.SlackChannel,
 	}
 }
 
