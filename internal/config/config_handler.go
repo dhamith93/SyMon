@@ -13,21 +13,22 @@ const DEFAULT_INTERVAL_SECS int = 30
 const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
 
 type Collector struct {
-	TLSEnabled              bool
-	LogFileEnabled          bool
-	DataRetentionDays       int32
-	Port                    string
-	AlertEndpoint           string
-	AlertEndpointCACertPath string
-	CertPath                string
-	KeyPath                 string
-	LogFilePath             string
-	MySQLUserName           string
-	MySQLHost               string
-	MySQLDatabaseName       string
-	MySQLPassword           string
-	AlertsFilePath          string
-	EndpointCheckInterval   int
+	TLSEnabled                bool
+	LogFileEnabled            bool
+	EndpointCheckInterval     int
+	DataRetentionDays         int32
+	EndpointMonitoringEnabled bool
+	Port                      string
+	AlertEndpoint             string
+	AlertEndpointCACertPath   string
+	CertPath                  string
+	KeyPath                   string
+	LogFilePath               string
+	MySQLUserName             string
+	MySQLHost                 string
+	MySQLDatabaseName         string
+	MySQLPassword             string
+	AlertsFilePath            string
 }
 
 type Client struct {
@@ -118,21 +119,22 @@ func GetCollector() Collector {
 		}
 	}
 	return Collector{
-		Port:                    os.Getenv("SYMON_PORT"),
-		AlertEndpoint:           os.Getenv("SYMON_ALERT_ENDPOINT"),
-		AlertEndpointCACertPath: os.Getenv("SYMON_ALERT_ENDPOINT_CERT_PATH"),
-		TLSEnabled:              strings.ToUpper(os.Getenv("SYMON_TLS_ENABLED")) == "TRUE",
-		CertPath:                os.Getenv("SYMON_TLS_CERT_PATH"),
-		KeyPath:                 os.Getenv("SYMON_TLS_KEY_PATH"),
-		LogFileEnabled:          strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
-		LogFilePath:             os.Getenv("SYMON_LOG_FILE_PATH"),
-		MySQLUserName:           os.Getenv("SYMON_DB_USER"),
-		MySQLHost:               os.Getenv("SYMON_DB_HOST"),
-		MySQLDatabaseName:       os.Getenv("SYMON_DB_NAME"),
-		MySQLPassword:           os.Getenv("SYMON_DB_PASSWORD"),
-		AlertsFilePath:          os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
-		DataRetentionDays:       retentionDaysInt,
-		EndpointCheckInterval:   checkIntervalInt,
+		Port:                      os.Getenv("SYMON_PORT"),
+		AlertEndpoint:             os.Getenv("SYMON_ALERT_ENDPOINT"),
+		AlertEndpointCACertPath:   os.Getenv("SYMON_ALERT_ENDPOINT_CERT_PATH"),
+		TLSEnabled:                strings.ToUpper(os.Getenv("SYMON_TLS_ENABLED")) == "TRUE",
+		CertPath:                  os.Getenv("SYMON_TLS_CERT_PATH"),
+		KeyPath:                   os.Getenv("SYMON_TLS_KEY_PATH"),
+		LogFileEnabled:            strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
+		LogFilePath:               os.Getenv("SYMON_LOG_FILE_PATH"),
+		MySQLUserName:             os.Getenv("SYMON_DB_USER"),
+		MySQLHost:                 os.Getenv("SYMON_DB_HOST"),
+		MySQLDatabaseName:         os.Getenv("SYMON_DB_NAME"),
+		MySQLPassword:             os.Getenv("SYMON_DB_PASSWORD"),
+		AlertsFilePath:            os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
+		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) == "TRUE",
+		DataRetentionDays:         retentionDaysInt,
+		EndpointCheckInterval:     checkIntervalInt,
 	}
 }
 

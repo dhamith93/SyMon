@@ -39,19 +39,24 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 	quit := make(chan struct{})
 	var wg sync.WaitGroup
 	incidentTracker := memdb.CreateDatabase("incident_tracker")
-	wg.Add(2)
+
+	delta := 1
+	if config.EndpointMonitoringEnabled {
+		delta = 2
+	}
+
+	wg.Add(delta)
 	logger.Log("info", "starting alert checker")
+	err := incidentTracker.Create(
+		"alert",
+		memdb.Col{Name: "server_name", Type: memdb.String},
+		memdb.Col{Name: "metric_type", Type: memdb.String},
+		memdb.Col{Name: "metric_name", Type: memdb.String},
+		memdb.Col{Name: "time", Type: memdb.String},
+		memdb.Col{Name: "status", Type: memdb.Int},
+		memdb.Col{Name: "value", Type: memdb.Float32},
+	)
 	go func() {
-		// incidentTracker := memdb.CreateDatabase("incident_tracker")
-		err := incidentTracker.Create(
-			"alert",
-			memdb.Col{Name: "server_name", Type: memdb.String},
-			memdb.Col{Name: "metric_type", Type: memdb.String},
-			memdb.Col{Name: "metric_name", Type: memdb.String},
-			memdb.Col{Name: "time", Type: memdb.String},
-			memdb.Col{Name: "status", Type: memdb.Int},
-			memdb.Col{Name: "value", Type: memdb.Float32},
-		)
 		if err != nil {
 			logger.Log("error", "memdb: "+err.Error())
 		}
@@ -72,8 +77,9 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 			}
 		}
 	}()
-	logger.Log("info", "starting endpoint monitor")
-	go func() {
+
+	if config.EndpointMonitoringEnabled {
+		logger.Log("info", "starting endpoint monitor")
 		err := incidentTracker.Create(
 			"endpoint_monitor",
 			memdb.Col{Name: "url", Type: memdb.String},
@@ -85,23 +91,25 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 			memdb.Col{Name: "error", Type: memdb.String},
 			memdb.Col{Name: "alerted", Type: memdb.Bool},
 		)
-		if err != nil {
-			logger.Log("error", "memdb: "+err.Error())
-		}
-		for {
-			select {
-			case <-endpointTicker.C:
-				for _, alert := range alertConfigs {
-					if alert.MetricName == "endpoint" {
-						checkEndpoint(&alert, &incidentTracker, config)
-					}
-				}
-			case <-quit:
-				ticker.Stop()
-				return
+		go func() {
+			if err != nil {
+				logger.Log("error", "memdb: "+err.Error())
 			}
-		}
-	}()
+			for {
+				select {
+				case <-endpointTicker.C:
+					for _, alert := range alertConfigs {
+						if alert.MetricName == "endpoint" {
+							checkEndpoint(&alert, &incidentTracker, config)
+						}
+					}
+				case <-quit:
+					ticker.Stop()
+					return
+				}
+			}
+		}()
+	}
 	wg.Wait()
 	fmt.Println("Exiting")
 }
