@@ -12,6 +12,7 @@ type AlertConfig struct {
 	Name              string
 	Description       string
 	MetricName        string
+	IsCustom          bool
 	Op                string
 	Template          string
 	WarnThreshold     int

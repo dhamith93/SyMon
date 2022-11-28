@@ -132,5 +132,21 @@
         "PagerDuty": true,
         "Slack": true,
         "SlackChannel": ""
+    },
+    {
+        "Servers": ["test"],
+        "Name": "Custom TEST",
+        "IsCustom": true,
+        "Description": "",
+        "MetricName": "custom-metric-name",
+        "WarnThreshold": 30,
+        "CriticalThreshold": 50,
+        "Op": ">",
+        "TriggerIntveral": 60,
+        "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}\n{timestamp}",
+        "Email": false,
+        "PagerDuty": true,
+        "Slack": true,
+        "SlackChannel": ""
     }
 ]

@@ -8,6 +8,10 @@
 # Test binary, built with `go test -c`
 *.test
 
+# Custom test scripts
+custom_scripts/out
+custom_scripts/custom_metric_test.sh
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
@@ -38,7 +42,6 @@ alerts-local.json
 release
 
 # binaries
-alerts
 agent_linux_x86_64
 alertprocessor_linux_x86_64
 client_linux_x86_64

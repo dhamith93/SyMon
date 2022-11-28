@@ -295,7 +295,11 @@ func (mysql *MySql) GetLogFromDB(serverName string, logType string, from int64, 
 	}
 }
 
-func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, logName string, from int64, to int64) [][]string {
+func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, logName string, from int64, to int64, isCustom bool) [][]string {
+	tableName := "system_metrics"
+	if isCustom {
+		tableName = "custom_metrics"
+	}
 	serverId := mysql.getServerId(serverName)
 	if logType == monitor.PING {
 		q := "SELECT id, time FROM server_ping_time WHERE server_id = ?"
@@ -303,11 +307,11 @@ func (mysql *MySql) GetLogFromDBWithId(serverName string, logType string, logNam
 		return res.Data
 	}
 	if from > 0 && to > 0 {
-		q := "SELECT id, log_text FROM system_metrics WHERE server_id = ? AND log_type = ?  AND log_name = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
+		q := "SELECT id, log_text FROM " + tableName + " WHERE server_id = ? AND log_type = ?  AND log_name = ? AND log_time BETWEEN ? AND ? ORDER BY log_time"
 		res, _ := mysql.Select(q, serverId, logType, logName, from, to)
 		return res.Data
 	} else {
-		q := "SELECT id, log_text FROM system_metrics WHERE server_id = ? AND log_type = ? AND log_name = ? ORDER BY log_time DESC LIMIT 1"
+		q := "SELECT id, log_text FROM " + tableName + " WHERE server_id = ? AND log_type = ? AND log_name = ? ORDER BY log_time DESC LIMIT 1"
 		res, _ := mysql.Select(q, serverId, logType, logName)
 		return res.Data
 	}
@@ -453,7 +457,7 @@ func (mysql *MySql) UpdateAlert(alertStatus *alertstatus.AlertStatus, startEvent
 	return nil
 }
 
-func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) []string {
+func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus, isCustom bool) []string {
 	serverId := mysql.getServerId(alertStatus.Server)
 
 	if alertStatus.Alert.MetricName == monitor.PING {
@@ -468,7 +472,11 @@ func (mysql *MySql) GetPreviousOpenAlert(alertStatus *alertstatus.AlertStatus) [
 		return t.Data[0]
 	}
 
-	q := "SELECT * FROM alert AS a JOIN system_metrics AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?"
+	tableName := "system_metrics"
+	if isCustom {
+		tableName = "custom_metrics"
+	}
+	q := "SELECT * FROM alert AS a JOIN " + tableName + " AS m ON a.start_log_id = m.id WHERE a.end_log_id IS NULL AND a.time < ? AND a.server_id = ? AND m.log_type = ?"
 
 	if alertStatus.Alert.MetricName == monitor.DISKS || alertStatus.Alert.MetricName == monitor.NETWORKS || alertStatus.Alert.MetricName == monitor.SERVICES {
 		q += " AND m.log_name = ?"

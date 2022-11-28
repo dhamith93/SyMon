@@ -136,7 +136,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Colle
 	}
 
 	// check if an active alert is present in DB
-	previousAlert := mysql.GetPreviousOpenAlert(&alertStatus)
+	previousAlert := mysql.GetPreviousOpenAlert(&alertStatus, alert.IsCustom)
 	if previousAlert != nil {
 		// if current alert status is normal, check if normal status continued for threshold period and update alert status in DB
 		if alertStatus.Type != alertstatus.Warning && alertStatus.Type != alertstatus.Critical {
@@ -382,7 +382,10 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		logName = alert.Service
 	}
 
-	metricLogs := mysql.GetLogFromDBWithId(*server, alert.MetricName, logName, 0, 0)
+	metricLogs := mysql.GetLogFromDBWithId(*server, alert.MetricName, logName, 0, 0, alert.IsCustom)
+	if len(metricLogs) == 0 {
+		return alertStatus
+	}
 	logId := metricLogs[0][0]
 	alertStatus.Alert = *alert
 	alertStatus.Server = *server
@@ -458,7 +461,7 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 			break
 		}
 	case monitor.PING:
-		pingLog := mysql.GetLogFromDBWithId(*server, alert.MetricName, "", 0, 0)
+		pingLog := mysql.GetLogFromDBWithId(*server, alert.MetricName, "", 0, 0, alert.IsCustom)
 		alertStatus.Type = alertstatus.Normal
 		if len(pingLog) > 0 {
 			lastPingTime, _ := strconv.Atoi(pingLog[0][1])
@@ -469,6 +472,21 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 			}
 		}
 		alertStatus.UnixTime = strconv.FormatInt(time.Now().Unix(), 10)
+	default:
+		var customMetric monitor.CustomMetric
+		err := json.Unmarshal([]byte(metricLogs[0][1]), &customMetric)
+		if err != nil {
+			logger.Log("error", err.Error())
+			return alertStatus
+		}
+		alertStatus.UnixTime = customMetric.Time
+		value, err := strconv.ParseFloat(customMetric.Value, 32)
+		if err != nil {
+			logger.Log("error", err.Error())
+			return alertStatus
+		}
+		alertStatus.Value = float32(value)
+		alertStatus.Type = getAlertType(alert, float64(alertStatus.Value))
 	}
 	logIdInt, err := strconv.ParseInt(logId, 10, 64)
 	if err != nil {
