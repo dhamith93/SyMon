@@ -16,20 +16,14 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: 1.18
         
     - name: Set outputs
       id: vars
       run: echo "::set-output name=sha::$(git rev-parse HEAD)"
 
-    - name: Build collector
-      run: go build -v -o ./collector/symon-collector ./collector
-      
-    - name: Build agent
-      run: go build -v -o ./agent/symon-agent ./agent
-      
-    - name: Build client
-      run: go build -v -o ./client/symon-client ./client
+    - name: Build all
+      run: make build-all
       
     - name: Test
       run: go test -v ./...
