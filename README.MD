@@ -12,12 +12,13 @@ Currently, it gathers following metrics under the monitoring interval given in t
 * CPU/Memory usage graphs for past hour (default) or custom time range
 * Disk usage and usage graphs
 * Network usage info and graphs
+* Endpoint monitoring with support for GET and POST requests
 * Whether a service is running or not
 * 10 processes running on the system sorted by CPU or Memory usage
 * Custom metrics (time series data) collection and graphs
 * Showing metrics graphs in custom time/date ranges
 * Point-in-time data loading of processes for CPU/Memory usage 
-* Alert setup for CPU/Memory/SWAP/Disk/Service 
+* Alert setup for CPU/Memory/SWAP/Disk/Services/Custom metrics 
     * Push alerts to user via Email, PagerDuty, or Slack
 * Custom data retention period
 
