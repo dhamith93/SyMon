@@ -59,5 +59,15 @@ pack-client: build-client
 	cp client/client_linux_x86_64 release/client_linux_x86_64
 	cp client/.env-example release/client_linux_x86_64
 	cp -r client/frontend release/client_linux_x86_64
+	cp client/Dockerfile release/client_linux_x86_64
+	cd release/client_linux_x86_64/frontend/css && wget "https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdn.jsdelivr.net/npm/axios@1.2.2/dist/axios.min.js"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.1.1/chartjs-plugin-zoom.min.js"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdn.jsdelivr.net/npm/moment@2.27.0" -O moment.min.js
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdn.jsdelivr.net/npm/moment-timezone@0.5.17/builds/moment-timezone-with-data.min.js"
+	cd release/client_linux_x86_64/frontend/scripts && wget "https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1" -O chartjs-adapter-moment.min.js
 	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
 	rm -rf release/client_linux_x86_64
