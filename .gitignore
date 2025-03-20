@@ -46,3 +46,6 @@ agent_linux_x86_64
 alertprocessor_linux_x86_64
 client_linux_x86_64
 collector_linux_x86_64
+
+# ansible
+ansible
