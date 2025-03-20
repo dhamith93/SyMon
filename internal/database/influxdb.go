@@ -197,7 +197,6 @@ func (influxdb *InfluxDB) writeProcessMetrics(monitorData *monitor.MonitorData, 
 			"server_name":  monitorData.ServerId,
 			"metric_name":  "process",
 			"process_type": "cpu",
-			"pid":          strconv.Itoa(process.Pid),
 		}
 		fields := map[string]interface{}{
 			"pid":       process.Pid,
@@ -216,8 +215,7 @@ func (influxdb *InfluxDB) writeProcessMetrics(monitorData *monitor.MonitorData, 
 		tags := map[string]string{
 			"server_name":  monitorData.ServerId,
 			"metric_name":  "process",
-			"process_type": "cpu",
-			"pid":          strconv.Itoa(process.Pid),
+			"process_type": "memory",
 		}
 		fields := map[string]interface{}{
 			"pid":       process.Pid,
