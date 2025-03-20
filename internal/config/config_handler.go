@@ -24,10 +24,15 @@ type Collector struct {
 	CertPath                  string
 	KeyPath                   string
 	LogFilePath               string
+	DB                        string
 	MySQLUserName             string
 	MySQLHost                 string
 	MySQLDatabaseName         string
 	MySQLPassword             string
+	InfluxDBToken             string
+	InfluxDBOrg               string
+	InfluxDBBucket            string
+	InfluxDBURL               string
 	AlertsFilePath            string
 }
 
@@ -127,10 +132,15 @@ func GetCollector() Collector {
 		KeyPath:                   os.Getenv("SYMON_TLS_KEY_PATH"),
 		LogFileEnabled:            strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
 		LogFilePath:               os.Getenv("SYMON_LOG_FILE_PATH"),
+		DB:                        os.Getenv("SYMON_DB"),
 		MySQLUserName:             os.Getenv("SYMON_DB_USER"),
 		MySQLHost:                 os.Getenv("SYMON_DB_HOST"),
 		MySQLDatabaseName:         os.Getenv("SYMON_DB_NAME"),
 		MySQLPassword:             os.Getenv("SYMON_DB_PASSWORD"),
+		InfluxDBOrg:               os.Getenv("SYMON_INFLUXDB_ORG"),
+		InfluxDBBucket:            os.Getenv("SYMON_INFLUXDB_BUCKET"),
+		InfluxDBURL:               os.Getenv("SYMON_INFLUXDB_URL"),
+		InfluxDBToken:             os.Getenv("SYMON_INFLUXDB_TOKEN"),
 		AlertsFilePath:            os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
 		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) == "TRUE",
 		DataRetentionDays:         retentionDaysInt,
