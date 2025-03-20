@@ -53,14 +53,26 @@ func main() {
 		removeAgent(removeAgentVal, &config)
 	} else {
 
-		mysql := getMySQLConnection(&config, false)
-		defer mysql.Close()
-
-		if alertConfig != nil {
-			go handleAlerts(alertConfig, &config, &mysql)
+		if config.DB == "influxdb" {
+			db := database.InfluxDB{
+				URL:    config.InfluxDBURL,
+				Bucket: config.InfluxDBBucket,
+				Org:    config.InfluxDBOrg,
+				Token:  config.InfluxDBToken,
+			}
+			defer db.Close()
 		}
 
-		go handleDataPurge(&config, &mysql)
+		if config.DB == "mysql" {
+			mysql := getMySQLConnection(&config, false)
+			defer mysql.Close()
+
+			if alertConfig != nil {
+				go handleAlerts(alertConfig, &config, &mysql)
+			}
+
+			go handleDataPurge(&config, &mysql)
+		}
 
 		lis, err := net.Listen("tcp", ":"+config.Port)
 		if err != nil {
@@ -87,6 +99,7 @@ func main() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %s", err)
 		}
+
 	}
 }
 
