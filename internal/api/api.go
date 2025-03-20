@@ -183,43 +183,57 @@ func isUp(serverName string, config *config.Collector) (bool, error) {
 
 func handleMonitorData(monitorData *monitor.MonitorData) error {
 	serverName := monitorData.ServerId
-	time := monitorData.UnixTime
+	timeStr := monitorData.UnixTime
 	config := config.GetCollector()
-	mysql := getMySQLConnection(&config)
-	defer mysql.Close()
 
-	data := make(map[string]interface{})
-	data["system"] = &monitorData.System
-	data["memory"] = &monitorData.Memory
-	data["swap"] = &monitorData.Swap
-	data["procUsage"] = &monitorData.ProcUsage
-	data["processes"] = &monitorData.Processes
-
-	for key, item := range data {
-		err := saveToDB(item, mysql, serverName, time, key, "")
-		if err != nil {
-			return err
+	if config.DB == "influxdb" {
+		db := database.InfluxDB{
+			URL:    config.InfluxDBURL,
+			Bucket: config.InfluxDBBucket,
+			Org:    config.InfluxDBOrg,
+			Token:  config.InfluxDBToken,
 		}
+		defer db.Close()
+		return db.Save(monitorData)
 	}
 
-	for _, disk := range monitorData.Disk {
-		err := saveToDB(disk, mysql, serverName, time, monitor.DISKS, disk.FileSystem)
-		if err != nil {
-			return err
-		}
-	}
+	if config.DB == "mysql" {
+		mysql := getMySQLConnection(&config)
+		defer mysql.Close()
 
-	for _, service := range monitorData.Services {
-		err := saveToDB(service, mysql, serverName, time, monitor.SERVICES, service.Name)
-		if err != nil {
-			return err
-		}
-	}
+		data := make(map[string]interface{})
+		data["system"] = &monitorData.System
+		data["memory"] = &monitorData.Memory
+		data["swap"] = &monitorData.Swap
+		data["procUsage"] = &monitorData.ProcUsage
+		data["processes"] = &monitorData.Processes
 
-	for _, network := range monitorData.Networks {
-		err := saveToDB(network, mysql, serverName, time, monitor.NETWORKS, network.Interface)
-		if err != nil {
-			return err
+		for key, item := range data {
+			err := saveToDB(item, mysql, serverName, timeStr, key, "")
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, disk := range monitorData.Disk {
+			err := saveToDB(disk, mysql, serverName, timeStr, monitor.DISKS, disk.FileSystem)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, service := range monitorData.Services {
+			err := saveToDB(service, mysql, serverName, timeStr, monitor.SERVICES, service.Name)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, network := range monitorData.Networks {
+			err := saveToDB(network, mysql, serverName, timeStr, monitor.NETWORKS, network.Interface)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
