@@ -152,12 +152,8 @@ func initAgent(agentId string, timezone string, config *config.Collector) error 
 
 func handlePing(serverName string, config *config.Collector) error {
 	if config.DB == "influxdb" {
-		db := database.InfluxDB{
-			URL:    config.InfluxDBURL,
-			Bucket: config.InfluxDBBucket,
-			Org:    config.InfluxDBOrg,
-			Token:  config.InfluxDBToken,
-		}
+		db := database.InfluxDB{}
+		db.Init(config)
 		defer db.Close()
 		return db.Ping(serverName, time.Now())
 	}
@@ -197,12 +193,8 @@ func handleMonitorData(monitorData *monitor.MonitorData) error {
 	config := config.GetCollector()
 
 	if config.DB == "influxdb" {
-		db := database.InfluxDB{
-			URL:    config.InfluxDBURL,
-			Bucket: config.InfluxDBBucket,
-			Org:    config.InfluxDBOrg,
-			Token:  config.InfluxDBToken,
-		}
+		db := database.InfluxDB{}
+		db.Init(&config)
 		defer db.Close()
 		return db.Save(monitorData)
 	}

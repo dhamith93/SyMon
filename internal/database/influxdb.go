@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
@@ -18,6 +19,13 @@ type InfluxDB struct {
 	Org       string
 	Token     string
 	Client    influxdb2.Client
+}
+
+func (influxdb *InfluxDB) Init(config *config.Collector) {
+	influxdb.URL = config.InfluxDBURL
+	influxdb.Bucket = config.InfluxDBBucket
+	influxdb.Org = config.InfluxDBOrg
+	influxdb.Token = config.InfluxDBToken
 }
 
 func (influxdb *InfluxDB) Connect() {
