@@ -151,6 +151,16 @@ func initAgent(agentId string, timezone string, config *config.Collector) error 
 }
 
 func handlePing(serverName string, config *config.Collector) error {
+	if config.DB == "influxdb" {
+		db := database.InfluxDB{
+			URL:    config.InfluxDBURL,
+			Bucket: config.InfluxDBBucket,
+			Org:    config.InfluxDBOrg,
+			Token:  config.InfluxDBToken,
+		}
+		defer db.Close()
+		return db.Ping(serverName, time.Now())
+	}
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 	unixTime := strconv.FormatInt(time.Now().Unix(), 10)

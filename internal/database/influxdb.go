@@ -78,6 +78,20 @@ func (influxdb *InfluxDB) Save(monitorData *monitor.MonitorData) error {
 	return nil
 }
 
+func (influxdb *InfluxDB) Ping(serverName string, t time.Time) error {
+	if !influxdb.Connected {
+		influxdb.Connect()
+	}
+	tags := map[string]string{
+		"server_name": serverName,
+		"metric_name": "ping",
+	}
+	fields := map[string]interface{}{
+		"up": 1,
+	}
+	return influxdb.WriteMetrics(tags, fields, t)
+}
+
 func (influxdb *InfluxDB) writeSystemMetrics(monitorData *monitor.MonitorData, t time.Time) error {
 	tags := map[string]string{
 		"server_name": monitorData.ServerId,
