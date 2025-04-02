@@ -169,6 +169,12 @@ func handlePing(serverName string, config *config.Collector) error {
 }
 
 func isUp(serverName string, config *config.Collector) (bool, error) {
+	if config.DB == "influxdb" {
+		db := database.InfluxDB{}
+		db.Init(config)
+		defer db.Close()
+		return db.GetLastPing(serverName)
+	}
 	mysql := getMySQLConnection(config)
 	defer mysql.Close()
 

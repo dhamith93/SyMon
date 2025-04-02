@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/config"
@@ -84,6 +85,26 @@ func (influxdb *InfluxDB) Save(monitorData *monitor.MonitorData) error {
 		return err
 	}
 	return nil
+}
+
+func (influxdb *InfluxDB) GetLastPing(serverName string) (bool, error) {
+	if !influxdb.Connected {
+		influxdb.Connect()
+	}
+	query := `from(bucket: "<bucket>")
+	|> range(start: -61s)
+	|> filter(fn: (r) => r["_measurement"] == "metrics")
+	|> filter(fn: (r) => r["server_name"] == "<server_name>")
+	|> filter(fn: (r) => r["metric_name"] == "ping")
+	|> filter(fn: (r) => r["_field"] == "up")
+	|> last()`
+	query = strings.ReplaceAll(query, "<bucket>", influxdb.Bucket)
+	query = strings.ReplaceAll(query, "<server_name>", serverName)
+	results, err := influxdb.Client.QueryAPI(influxdb.Org).Query(context.Background(), query)
+	if err != nil {
+		return false, err
+	}
+	return results.Next(), results.Err()
 }
 
 func (influxdb *InfluxDB) Ping(serverName string, t time.Time) error {
