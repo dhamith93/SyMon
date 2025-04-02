@@ -98,9 +98,24 @@ func (s *Server) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRe
 
 func (s *Server) HandleAgentIdsRequest(context.Context, *Void) (*Message, error) {
 	config := config.GetCollector()
+	agents := Agents{}
+	if config.DB == "influxdb" {
+		db := database.InfluxDB{}
+		db.Init(&config)
+		defer db.Close()
+		data, err := db.GetAgentList()
+		if err != nil {
+			return &Message{Body: "error getting data"}, fmt.Errorf("error getting data")
+		}
+		agents.AgentIDs = data
+		out, err := json.Marshal(agents)
+		if err != nil {
+			return &Message{Body: "cannot parse data"}, fmt.Errorf("cannot parse data")
+		}
+		return &Message{Body: string(out)}, nil
+	}
 	mysql := getMySQLConnection(&config)
 	defer mysql.Close()
-	agents := Agents{}
 	agents.AgentIDs = mysql.GetAgents()
 	if len(agents.AgentIDs) == 0 {
 		return &Message{Body: "no data"}, fmt.Errorf("no data found")

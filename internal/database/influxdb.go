@@ -87,6 +87,27 @@ func (influxdb *InfluxDB) Save(monitorData *monitor.MonitorData) error {
 	return nil
 }
 
+func (influxdb *InfluxDB) GetAgentList() ([]string, error) {
+	if !influxdb.Connected {
+		influxdb.Connect()
+	}
+	query := `from(bucket: "<bucket>")
+  |> range(start: -30d)
+  |> filter(fn: (r) => r["_measurement"] == "metrics")
+  |> filter(fn: (r) => r["metric_name"] == "ping")
+  |> distinct(column: "server_name")`
+	query = strings.ReplaceAll(query, "<bucket>", influxdb.Bucket)
+	agents := []string{}
+	results, err := influxdb.Client.QueryAPI(influxdb.Org).Query(context.Background(), query)
+	if err != nil {
+		return agents, err
+	}
+	for results.Next() {
+		agents = append(agents, results.Record().Value().(string))
+	}
+	return agents, results.Err()
+}
+
 func (influxdb *InfluxDB) GetLastPing(serverName string) (bool, error) {
 	if !influxdb.Connected {
 		influxdb.Connect()
