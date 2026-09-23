@@ -24,13 +24,13 @@ Currently, it gathers following metrics under the monitoring interval given in t
 
 ### Screenshots
 
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/01.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/02.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/03.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/04.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/05.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/06.png?raw=true" width="400" />
-<img src="https://github.com/dhamith93/SyMon/blob/master/png/07.png?raw=true" width="400" />
+<img src="png/01.png" width="400" />
+<img src="png/02.png" width="400" />
+<img src="png/03.png" width="400" />
+<img src="png/04.png" width="400" />
+<img src="png/05.png" width="400" />
+<img src="png/06.png" width="400" />
+<img src="png/07.png" width="400" />
 
 ## Customizations
 Communication between components (agents, collector, frontend, and alertprocessor) is done using gRPC. A custom service can be set up to read or push data into any of the components if needed. [API](internal/api/api.proto), [Alert API](internal/alertapi/alertapi.proto)
@@ -80,7 +80,7 @@ Once everything is set up, you have to initialize the collector by running the b
 
 `./collector_linux_x86_64 --init`
 
-Once initialized, you can run the collector by running below command. It is best to set this up as a service. Example can be find [here](https://github.com/dhamith93/SyMon/tree/master/custom_scripts).
+Once initialized, you can run the collector by running below command. It is best to set this up as a service. Example can be find [here](custom_scripts).
 
 `./collector_linux_x86_64`
 
