@@ -3,21 +3,17 @@ package auth
 import (
 	"crypto/rand"
 	b64 "encoding/base64"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/logger"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func ValidToken(token string) bool {
 	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("error with method")
-		}
 		return []byte(GetKey(false)), nil
-	})
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), jwt.WithExpirationRequired())
 	if err != nil {
 		logger.Log("Auth Error", err.Error())
 		return false
@@ -26,12 +22,11 @@ func ValidToken(token string) bool {
 }
 
 func GenerateJWT() (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-
-	claims["authorized"] = true
-	claims["client"] = "test-client"
-	claims["exp"] = time.Now().Add(time.Minute).Unix()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"authorized": true,
+		"client":     "test-client",
+		"exp":        time.Now().Add(time.Minute).Unix(),
+	})
 
 	tokenString, err := token.SignedString([]byte(GetKey(false)))
 

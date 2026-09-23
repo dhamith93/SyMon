@@ -5,10 +5,10 @@ go 1.26.0
 require (
 	github.com/dhamith93/systats v0.2.0
 	github.com/go-sql-driver/mysql v1.10.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	google.golang.org/grpc v1.84.0
+	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 )
 
