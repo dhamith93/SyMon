@@ -1,14 +1,19 @@
+# SyMon Alert processor, reads settings from /etc/symon/alertprocessor.env.
+# Expects the release bundle extracted to /opt/symon, see README.MD.
 [Unit]
-Description=SyMon Alertprocessor
+Description=SyMon Alert processor
 Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
 Type=simple
-WorkingDirectory=/path/to/alertprocessor/bin/
-ExecStart=/path/to/alertprocessor/bin/alertprocessor_linux_x86_64
+User=symon
+Group=symon
+EnvironmentFile=/etc/symon/alertprocessor.env
+WorkingDirectory=/opt/symon/alertprocessor_linux_x86_64
+ExecStart=/opt/symon/alertprocessor_linux_x86_64/alertprocessor_linux_x86_64
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

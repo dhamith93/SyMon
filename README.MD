@@ -115,6 +115,9 @@ To run the Client, fill the relevent environment variables as shown in `.env-exa
 
 Building the Client from source needs Node.js 22 or newer for the dashboard: `make build-client` runs `make web` first. `npm run dev` in `client/web` serves the dashboard with live reload against a Client running on port 8080.
 
+### Running as systemd services
+`custom_scripts` has a unit per component. They expect each release bundle extracted to `/opt/symon` (for example `/opt/symon/collector_linux_x86_64/`) and read their settings from `/etc/symon/<component>.env`. Those files use plain `KEY=value` lines, without the `export` used in the `.env-example` files. The collector, alert processor and client run as a `symon` system user. The agent runs as root so it can read every process and check services.
+
 ### API documentation
 The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors return a JSON body `{"error": "..."}` with a 4xx or 5xx status.
 

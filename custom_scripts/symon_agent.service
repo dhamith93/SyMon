@@ -1,14 +1,19 @@
+# SyMon Agent, runs as root so it can read every process and check services.
+# Expects the release bundle extracted to /opt/symon, see README.MD.
 [Unit]
 Description=SyMon Agent
 Wants=network-online.target
 After=network-online.target
 
 [Service]
+Type=simple
 User=root
 Group=root
-Type=simple
-WorkingDirectory=/path/to/agent/bin/
-ExecStart=/path/to/agent/bin/agent_linux_x86_64
+EnvironmentFile=/etc/symon/agent.env
+WorkingDirectory=/opt/symon/agent_linux_x86_64
+ExecStart=/opt/symon/agent_linux_x86_64/agent_linux_x86_64
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

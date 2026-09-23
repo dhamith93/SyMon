@@ -1,14 +1,19 @@
+# SyMon Collector, reads settings from /etc/symon/collector.env.
+# Expects the release bundle extracted to /opt/symon, see README.MD.
 [Unit]
 Description=SyMon Collector
 Wants=network-online.target
-After=network-online.target
+After=network-online.target postgresql.service
 
 [Service]
-User=root
-Group=root
 Type=simple
-WorkingDirectory=/path/to/collector/bin/
-ExecStart=/path/to/collector/bin/collector_linux_x86_64 --config=config.json --alerts=alerts.json
+User=symon
+Group=symon
+EnvironmentFile=/etc/symon/collector.env
+WorkingDirectory=/opt/symon/collector_linux_x86_64
+ExecStart=/opt/symon/collector_linux_x86_64/collector_linux_x86_64
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

@@ -1,14 +1,19 @@
+# SyMon Client, reads settings from /etc/symon/client.env.
+# Expects the release bundle extracted to /opt/symon, see README.MD.
 [Unit]
 Description=SyMon Client
 Wants=network-online.target
 After=network-online.target
 
 [Service]
-User=root
-Group=root
 Type=simple
-WorkingDirectory=/path/to/client/bin/
-ExecStart=/path/to/client/bin/client_linux_x86_64
+User=symon
+Group=symon
+EnvironmentFile=/etc/symon/client.env
+WorkingDirectory=/opt/symon/client_linux_x86_64
+ExecStart=/opt/symon/client_linux_x86_64/client_linux_x86_64
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
