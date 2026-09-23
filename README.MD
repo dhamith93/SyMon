@@ -86,13 +86,23 @@ Once initialized, you can run the collector by running below command. It is best
 `./collector_linux_x86_64`
 
 ### Agents
-You should first install Collector, initialize, and set the `SYMON_KEY` environment variable with the key to install the agent.
+The easiest way to add a host is to enroll it. On the collector host, create a token:
 
-Once all the relevent environment variables in the `.env-example` file is set up. You can register the agent to the Collector by running the below command. 
+`sudo ./collector_linux_x86_64 -enroll-token`
 
-`./agent_linux_x86_64 -init`
+It prints a command like the one below. Run it on the new host. It downloads the agent from the dashboard, enrolls the host, and installs and starts the agent as a systemd service.
 
-Once initialized, run the agent (preferably as a service) to enable the metrics collection. 
+`curl -fsSL http://symon:8080/install.sh | sudo sh -s -- --token <token>`
+
+* Tokens work once and expire after an hour. `-uses 10` lets one token enroll ten hosts, `-ttl 24h` keeps it valid longer and `-host web-3` limits it to one host name.
+* The host name is the machine's name unless `--host <name>` is passed to the script.
+* Each host gets its own key in `/etc/symon/agent.key`, so the shared `SYMON_KEY` is not needed on it. Data sent with that key is always stored under that host.
+* Running the command again on an enrolled host upgrades the agent. `--uninstall` removes it, and `collector -remove-agent <name>` removes the host and its key from SyMon.
+* Agents are downloaded from the Client, which serves the builds `make pack-client` puts in its `downloads` folder (Linux amd64, arm64 and 32 bit ARM). Agents reach the collector through the dashboard's host name on the collector's port, unless `SYMON_CLIENT_AGENT_COLLECTOR_ENDPOINT` says otherwise.
+
+An agent can also be set up by hand with the shared `SYMON_KEY`: fill in the variables from `.env-example`, register the host with `./agent_linux_x86_64 -init`, and run the agent, preferably as a service.
+
+Custom metrics sent with `agent -custom` use the host's key too, so run them as root on enrolled hosts.
 
 ### Custom metrics
 Custom time series data can be added using the agent as below. Current server time will be taken as the time. Running the below command with the parameters will send out the data to the Collector. This can be done manually, using a cron job, or through an application. 
