@@ -195,11 +195,25 @@ func (c *Collector) disks() []Disk {
 	}
 	output := []Disk{}
 	for _, disk := range disks {
-		if !c.ignoredDisk(disk.FileSystem) {
+		if c.keepDisk(disk) {
 			output = append(output, fromSystatsDisk(disk))
 		}
 	}
 	return output
+}
+
+// keepDisk is false for disks in SYMON_DISKS_TO_IGNORE and for filesystems
+// that are never real disks
+func (c *Collector) keepDisk(disk systats.Disk) bool {
+	return !c.ignoredDisk(disk.FileSystem) && !skippedFsTypes[disk.Type]
+}
+
+// skippedFsTypes are never real disks: snap packages are read only
+// squashfs images that always look full, and overlay is a container's
+// view of a disk that is already listed
+var skippedFsTypes = map[string]bool{
+	"squashfs": true,
+	"overlay":  true,
 }
 
 // ignoredDisk checks a device path like /dev/loop0 against SYMON_DISKS_TO_IGNORE

@@ -295,3 +295,21 @@ func TestContainerAware(t *testing.T) {
 		t.Error("expected container aware to follow the config")
 	}
 }
+
+func TestKeepDisk(t *testing.T) {
+	c := NewCollector(&config.Agent{DisksToIgnore: "/dev/sdz1"})
+	tests := []struct {
+		disk systats.Disk
+		keep bool
+	}{
+		{systats.Disk{FileSystem: "/dev/sda1", Type: "ext4"}, true},
+		{systats.Disk{FileSystem: "/dev/sdz1", Type: "ext4"}, false},
+		{systats.Disk{FileSystem: "/dev/loop3", Type: "squashfs"}, false},
+		{systats.Disk{FileSystem: "overlay", Type: "overlay"}, false},
+	}
+	for _, tt := range tests {
+		if got := c.keepDisk(tt.disk); got != tt.keep {
+			t.Errorf("%s (%s): keep %v, want %v", tt.disk.FileSystem, tt.disk.Type, got, tt.keep)
+		}
+	}
+}

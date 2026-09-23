@@ -11,6 +11,7 @@ import (
 const DEFAULT_INTERVAL_SECS int = 30
 const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
 const DEFAULT_REFRESH_SECS int = 15
+const DEFAULT_AGENT_KEY_PATH string = "/etc/symon/agent.key"
 
 type Collector struct {
 	TLSEnabled                bool
@@ -43,6 +44,12 @@ type Client struct {
 	LogFilePath                 string
 	// RefreshSeconds is how often the dashboard reloads live data
 	RefreshSeconds int
+	// DownloadsDir holds the agent builds new hosts download
+	DownloadsDir string
+	// AgentCollectorEndpoint is how agents on other hosts reach the
+	// collector. Empty means CollectorEndpoint, with localhost replaced by
+	// the dashboard's host name.
+	AgentCollectorEndpoint string
 }
 
 type AlertProcessor struct {
@@ -65,6 +72,8 @@ type Agent struct {
 	Services                    []ServiceToMonitor
 	DisabledCollectors          []string
 	ContainerAware              bool
+	// AgentKeyPath holds the agent's own credential once it is enrolled
+	AgentKeyPath string
 }
 
 type ServiceToMonitor struct {
@@ -81,8 +90,17 @@ func GetAgent() Agent {
 			intervalSecsInt = converted
 		}
 	}
+	serverID := os.Getenv("SYMON_SERVER_ID")
+	if serverID == "" {
+		serverID, _ = os.Hostname()
+	}
+	agentKeyPath := os.Getenv("SYMON_AGENT_KEY_PATH")
+	if agentKeyPath == "" {
+		agentKeyPath = DEFAULT_AGENT_KEY_PATH
+	}
 	return Agent{
-		ServerId:                    os.Getenv("SYMON_SERVER_ID"),
+		ServerId:                    serverID,
+		AgentKeyPath:                agentKeyPath,
 		CollectorEndpoint:           os.Getenv("SYMON_COLLECTOR_ENDPOINT"),
 		CollectorEndpointCACertPath: os.Getenv("SYMON_COLLECTOR_ENDPOINT_CERT_PATH"),
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_AGENT_LOG_FILE_ENABLED")) == "TRUE",
@@ -170,6 +188,10 @@ func GetClient() Client {
 	if refreshSeconds == 0 {
 		refreshSeconds = DEFAULT_REFRESH_SECS
 	}
+	downloadsDir := os.Getenv("SYMON_CLIENT_DOWNLOADS_DIR")
+	if downloadsDir == "" {
+		downloadsDir = "downloads"
+	}
 	return Client{
 		Port:                        os.Getenv("SYMON_CLIENT_PORT"),
 		CollectorEndpoint:           os.Getenv("SYMON_CLIENT_COLLECTOR_ENDPOINT"),
@@ -177,6 +199,8 @@ func GetClient() Client {
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_CLIENT_LOG_FILE_ENABLED")) == "TRUE",
 		LogFilePath:                 os.Getenv("SYMON_CLIENT_LOG_FILE_PATH"),
 		RefreshSeconds:              refreshSeconds,
+		DownloadsDir:                downloadsDir,
+		AgentCollectorEndpoint:      os.Getenv("SYMON_CLIENT_AGENT_COLLECTOR_ENDPOINT"),
 	}
 }
 

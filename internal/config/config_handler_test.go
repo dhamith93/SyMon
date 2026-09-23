@@ -64,3 +64,17 @@ func TestAgentCollectorDefaults(t *testing.T) {
 		t.Errorf("expected no disabled collectors and container aware off, got: %+v", agent)
 	}
 }
+
+func TestAgentDefaults(t *testing.T) {
+	t.Setenv("SYMON_SERVER_ID", "")
+	t.Setenv("SYMON_AGENT_KEY_PATH", "")
+
+	agent := config.GetAgent()
+	hostname, _ := os.Hostname()
+	if agent.ServerId != hostname {
+		t.Errorf("expected the host name %q by default, got %q", hostname, agent.ServerId)
+	}
+	if agent.AgentKeyPath != "/etc/symon/agent.key" {
+		t.Errorf("unexpected default key path %q", agent.AgentKeyPath)
+	}
+}
