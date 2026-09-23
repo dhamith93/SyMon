@@ -13,6 +13,7 @@ import (
 )
 
 type Server struct {
+	UnimplementedAlertServiceServer
 	Database *memdb.Database
 }
 

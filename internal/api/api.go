@@ -16,6 +16,7 @@ import (
 )
 
 type Server struct {
+	UnimplementedMonitorDataServiceServer
 }
 
 type Agents struct {

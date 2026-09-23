@@ -1,4 +1,9 @@
-.PHONY: clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
+.PHONY: proto clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
+
+proto:
+	cd internal && protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		api/api.proto alertapi/alertapi.proto
 
 clean:	
 	rm -f agent/agent_linux_x86_64
