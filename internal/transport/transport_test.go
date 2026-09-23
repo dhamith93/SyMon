@@ -34,7 +34,7 @@ func (fakeCollector) Fleet(ctx context.Context, in *api.Void) (*api.FleetSummary
 // startServer runs a collector stub and returns its address
 func startServer(t *testing.T, tlsEnabled bool, certPath string, keyPath string) string {
 	t.Helper()
-	grpcServer, err := transport.NewServer(tlsEnabled, certPath, keyPath)
+	grpcServer, err := transport.NewServer(tlsEnabled, certPath, keyPath, transport.AuthInterceptor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func startServer(t *testing.T, tlsEnabled bool, certPath string, keyPath string)
 
 func callFleet(t *testing.T, addr string, caPath string) error {
 	t.Helper()
-	conn, err := transport.Dial(addr, caPath)
+	conn, err := transport.Dial(addr, caPath, transport.SharedKey())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -19,6 +19,8 @@ type Collector struct {
 	EndpointMonitoringEnabled bool
 	// DatabaseURL is a postgres:// connection string for TimescaleDB
 	DatabaseURL string
+	// DashboardURL is where new hosts download the agent, like http://symon:8080
+	DashboardURL string
 	// days to keep raw data, 1 minute rollups and 1 hour rollups.
 	// 0 means the store's default.
 	RetentionRawDays        int
@@ -153,6 +155,7 @@ func GetCollector() Collector {
 		LogFileEnabled:            strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
 		LogFilePath:               os.Getenv("SYMON_LOG_FILE_PATH"),
 		DatabaseURL:               os.Getenv("SYMON_DATABASE_URL"),
+		DashboardURL:              os.Getenv("SYMON_DASHBOARD_URL"),
 		RetentionRawDays:          positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
 		RetentionMinuteDays:       positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
 		RetentionHourDays:         positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),

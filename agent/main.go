@@ -43,7 +43,7 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
+	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath, transport.SharedKey())
 	if err != nil {
 		log.Fatal("cannot create collector client: ", err)
 	}

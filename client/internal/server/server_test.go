@@ -64,7 +64,7 @@ func newTestServer(t *testing.T, files fstest.MapFS) (*server, *fakeCollector) {
 	t.Setenv("SYMON_KEY", "test-key")
 
 	fake := &fakeCollector{}
-	grpcServer, err := transport.NewServer(false, "", "")
+	grpcServer, err := transport.NewServer(false, "", "", transport.AuthInterceptor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func newTestServer(t *testing.T, files fstest.MapFS) (*server, *fakeCollector) {
 	go grpcServer.Serve(lis)
 	t.Cleanup(grpcServer.Stop)
 
-	conn, err := transport.Dial(lis.Addr().String(), "")
+	conn, err := transport.Dial(lis.Addr().String(), "", transport.SharedKey())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -20,6 +20,18 @@ message MonitorData {
     string monitorData = 1;
 }
 
+// A new host trades a single use token for its own agent key
+message EnrollRequest {
+    string token = 1;
+    string hostName = 2;
+    string timezone = 3;
+}
+
+message EnrollResponse {
+    string hostName = 1;
+    string agentKey = 2;
+}
+
 // Query API. Times are unix seconds.
 
 message HostSummary {
@@ -132,6 +144,7 @@ message AlertList {
 
 service MonitorDataService {
     // agent
+    rpc Enroll(EnrollRequest) returns (EnrollResponse) {}
     rpc HandlePing(ServerInfo) returns (Message) {}
     rpc InitAgent(ServerInfo) returns (Message) {}
     rpc HandleMonitorData(MonitorData) returns (Message) {}

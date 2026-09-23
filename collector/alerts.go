@@ -28,7 +28,7 @@ import (
 var alertClient alertapi.AlertServiceClient
 
 func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, st *store.Store) {
-	conn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath)
+	conn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath, transport.SharedKey())
 	if err != nil {
 		log.Fatal("cannot create alert processor client: ", err)
 	}

@@ -23,10 +23,14 @@ import (
 // RequestTimeout is the default deadline for a single RPC.
 const RequestTimeout = 10 * time.Second
 
-// NewServer returns a gRPC server that checks the jwt on every call.
-// TLS is used when tlsEnabled is set.
-func NewServer(tlsEnabled bool, certPath string, keyPath string) (*grpc.Server, error) {
-	opts := []grpc.ServerOption{grpc.UnaryInterceptor(AuthInterceptor)}
+// AgentKeyHeader is the metadata key an enrolled agent sends its own
+// credential in
+const AgentKeyHeader = "agent-key"
+
+// NewServer returns a gRPC server that runs auth on every call, usually
+// AuthInterceptor. TLS is used when tlsEnabled is set.
+func NewServer(tlsEnabled bool, certPath string, keyPath string, auth grpc.UnaryServerInterceptor) (*grpc.Server, error) {
+	opts := []grpc.ServerOption{grpc.UnaryInterceptor(auth)}
 	if tlsEnabled {
 		creds, err := ServerCreds(certPath, keyPath)
 		if err != nil {
@@ -71,18 +75,28 @@ func ClientCreds(caPath string) (credentials.TransportCredentials, error) {
 }
 
 // Dial creates a connection to endpoint that is meant to be kept for the
-// life of the process. It connects lazily and reconnects on its own, and
-// every call on it carries a fresh jwt.
-func Dial(endpoint string, caPath string) (*grpc.ClientConn, error) {
+// life of the process. It connects lazily and reconnects on its own. auth
+// is sent with every call, SharedKey() or AgentKey(key), or nil for none.
+func Dial(endpoint string, caPath string, auth credentials.PerRPCCredentials) (*grpc.ClientConn, error) {
 	creds, err := ClientCreds(caPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load TLS credentials: %w", err)
 	}
-	return grpc.NewClient(
-		endpoint,
-		grpc.WithTransportCredentials(creds),
-		grpc.WithPerRPCCredentials(jwtCreds{}),
-	)
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds)}
+	if auth != nil {
+		opts = append(opts, grpc.WithPerRPCCredentials(auth))
+	}
+	return grpc.NewClient(endpoint, opts...)
+}
+
+// SharedKey authenticates with a fresh jwt signed with SYMON_KEY
+func SharedKey() credentials.PerRPCCredentials {
+	return jwtCreds{}
+}
+
+// AgentKey authenticates as one enrolled agent
+func AgentKey(key string) credentials.PerRPCCredentials {
+	return agentKeyCreds{key: key}
 }
 
 // Context returns a context with the default request timeout.
@@ -121,5 +135,18 @@ func (jwtCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[stri
 
 // plaintext is still allowed until TLS becomes the default
 func (jwtCreds) RequireTransportSecurity() bool {
+	return false
+}
+
+// agentKeyCreds sends an enrolled agent's credential with each call
+type agentKeyCreds struct {
+	key string
+}
+
+func (c agentKeyCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{AgentKeyHeader: c.key}, nil
+}
+
+func (agentKeyCreds) RequireTransportSecurity() bool {
 	return false
 }

@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	MonitorDataService_Enroll_FullMethodName                  = "/api.MonitorDataService/Enroll"
 	MonitorDataService_HandlePing_FullMethodName              = "/api.MonitorDataService/HandlePing"
 	MonitorDataService_InitAgent_FullMethodName               = "/api.MonitorDataService/InitAgent"
 	MonitorDataService_HandleMonitorData_FullMethodName       = "/api.MonitorDataService/HandleMonitorData"
@@ -36,6 +37,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MonitorDataServiceClient interface {
 	// agent
+	Enroll(ctx context.Context, in *EnrollRequest, opts ...grpc.CallOption) (*EnrollResponse, error)
 	HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
 	InitAgent(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
 	HandleMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
@@ -55,6 +57,16 @@ type monitorDataServiceClient struct {
 
 func NewMonitorDataServiceClient(cc grpc.ClientConnInterface) MonitorDataServiceClient {
 	return &monitorDataServiceClient{cc}
+}
+
+func (c *monitorDataServiceClient) Enroll(ctx context.Context, in *EnrollRequest, opts ...grpc.CallOption) (*EnrollResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnrollResponse)
+	err := c.cc.Invoke(ctx, MonitorDataService_Enroll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *monitorDataServiceClient) HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error) {
@@ -162,6 +174,7 @@ func (c *monitorDataServiceClient) Alerts(ctx context.Context, in *AlertsRequest
 // for forward compatibility.
 type MonitorDataServiceServer interface {
 	// agent
+	Enroll(context.Context, *EnrollRequest) (*EnrollResponse, error)
 	HandlePing(context.Context, *ServerInfo) (*Message, error)
 	InitAgent(context.Context, *ServerInfo) (*Message, error)
 	HandleMonitorData(context.Context, *MonitorData) (*Message, error)
@@ -183,6 +196,9 @@ type MonitorDataServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMonitorDataServiceServer struct{}
 
+func (UnimplementedMonitorDataServiceServer) Enroll(context.Context, *EnrollRequest) (*EnrollResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Enroll not implemented")
+}
 func (UnimplementedMonitorDataServiceServer) HandlePing(context.Context, *ServerInfo) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandlePing not implemented")
 }
@@ -232,6 +248,24 @@ func RegisterMonitorDataServiceServer(s grpc.ServiceRegistrar, srv MonitorDataSe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&MonitorDataService_ServiceDesc, srv)
+}
+
+func _MonitorDataService_Enroll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrollRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Enroll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Enroll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Enroll(ctx, req.(*EnrollRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _MonitorDataService_HandlePing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -421,6 +455,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.MonitorDataService",
 	HandlerType: (*MonitorDataServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Enroll",
+			Handler:    _MonitorDataService_Enroll_Handler,
+		},
 		{
 			MethodName: "HandlePing",
 			Handler:    _MonitorDataService_HandlePing_Handler,

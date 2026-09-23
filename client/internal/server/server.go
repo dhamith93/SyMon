@@ -33,7 +33,7 @@ type server struct {
 func Run(address string) {
 	config := config.GetClient()
 
-	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
+	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath, transport.SharedKey())
 	if err != nil {
 		log.Fatal("cannot create collector client: ", err)
 	}

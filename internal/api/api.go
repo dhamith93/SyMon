@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/logger"
@@ -59,6 +60,24 @@ func agentStatus(host string, err error) error {
 	return toStatus(err)
 }
 
+// host names show up in URLs and commands, so keep them simple
+var validHostName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$`)
+
+func (s *Server) Enroll(ctx context.Context, in *EnrollRequest) (*EnrollResponse, error) {
+	if !validHostName.MatchString(in.HostName) {
+		return nil, status.Error(codes.InvalidArgument, "host names may use letters, digits, dots, dashes and underscores, up to 63 characters")
+	}
+	key, err := s.Store.Enroll(ctx, in.Token, in.HostName, in.Timezone)
+	if errors.Is(err, store.ErrBadToken) {
+		return nil, status.Error(codes.PermissionDenied, err.Error())
+	}
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	logger.Log("info", "enrolled "+in.HostName)
+	return &EnrollResponse{HostName: in.HostName, AgentKey: key}, nil
+}
+
 func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error) {
 	logger.Log("info", "initializing agent for "+in.ServerName)
 	if err := s.Store.AddHost(ctx, in.ServerName, in.Timezone); err != nil {
@@ -68,8 +87,12 @@ func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error
 }
 
 func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*Message, error) {
-	if err := s.Store.Heartbeat(ctx, in.ServerName, time.Now()); err != nil {
-		return nil, agentStatus(in.ServerName, err)
+	host := in.ServerName
+	if authenticated, ok := agentHost(ctx); ok {
+		host = authenticated
+	}
+	if err := s.Store.Heartbeat(ctx, host, time.Now()); err != nil {
+		return nil, agentStatus(host, err)
 	}
 	return &Message{Body: "pong"}, nil
 }
@@ -78,6 +101,9 @@ func (s *Server) HandleMonitorData(ctx context.Context, in *MonitorData) (*Messa
 	var monitorData monitor.MonitorData
 	if err := json.Unmarshal([]byte(in.MonitorData), &monitorData); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "cannot parse monitor data: "+err.Error())
+	}
+	if host, ok := agentHost(ctx); ok {
+		monitorData.ServerId = host
 	}
 	if err := s.Store.SaveSnapshot(ctx, &monitorData); err != nil {
 		return nil, agentStatus(monitorData.ServerId, err)
@@ -89,6 +115,9 @@ func (s *Server) HandleCustomMonitorData(ctx context.Context, in *MonitorData) (
 	var customMetric monitor.CustomMetric
 	if err := json.Unmarshal([]byte(in.MonitorData), &customMetric); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "cannot parse custom metric: "+err.Error())
+	}
+	if host, ok := agentHost(ctx); ok {
+		customMetric.ServerId = host
 	}
 	if err := s.Store.SaveCustomMetric(ctx, &customMetric); err != nil {
 		return nil, agentStatus(customMetric.ServerId, err)

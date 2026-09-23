@@ -58,7 +58,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer, err := transport.NewServer(config.TLSEnabled, config.CertPath, config.KeyPath)
+	grpcServer, err := transport.NewServer(config.TLSEnabled, config.CertPath, config.KeyPath, transport.AuthInterceptor)
 	if err != nil {
 		log.Fatal(err)
 	}
