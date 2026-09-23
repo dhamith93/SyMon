@@ -54,6 +54,12 @@ Client component is the user interface component of SyMon which is accessible fr
 
 Client component can show all collected data as tables or graphs, which includes the custom metrics pushed by the agents. Currently this does not require any user authentication, but authentication and HTTPS can be set up using Apache or nginx. Which is recommended if this is used in public networks. 
 
+## Local development
+
+`docker compose up --build` starts MariaDB, the Collector, the Alert processor, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. The stack is for development only.
+
+Building from source needs Go 1.26 or newer. `make build-all` builds every component, and `go test ./...` runs the tests.
+
 ## Installing and usage
 
 ### TLS support
