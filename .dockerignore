@@ -1,0 +1,6 @@
+.git
+release
+*/release
+**/*_linux_x86_64
+**/.env
+png

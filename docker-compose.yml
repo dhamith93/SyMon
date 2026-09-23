@@ -1,0 +1,80 @@
+# Local development stack. Not meant for production.
+#   docker compose up --build
+# Dashboard: http://localhost:8080
+# The agent reports on its own container, not the host.
+
+x-symon-key: &symon-key
+  SYMON_KEY: ${SYMON_KEY:-dev-only-key}
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: symon
+      MARIADB_USER: symon
+      MARIADB_PASSWORD: symon
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - ./collector/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/dev-seed.sql:/docker-entrypoint-initdb.d/02-dev-seed.sql:ro
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 20
+
+  collector:
+    build:
+      context: .
+      target: collector
+    environment:
+      <<: *symon-key
+      SYMON_PORT: "9000"
+      SYMON_ALERT_ENDPOINT: alertprocessor:9001
+      SYMON_DB_USER: symon
+      SYMON_DB_PASSWORD: symon
+      SYMON_DB_HOST: db
+      SYMON_DB_NAME: symon
+      SYMON_ALERTS_CONFIG_PATH: alerts.json
+    depends_on:
+      db:
+        condition: service_healthy
+      alertprocessor:
+        condition: service_started
+
+  alertprocessor:
+    build:
+      context: .
+      target: alertprocessor
+    environment:
+      <<: *symon-key
+      SYMON_ALERT_PORT: "9001"
+
+  client:
+    build:
+      context: .
+      target: client
+    environment:
+      <<: *symon-key
+      SYMON_CLIENT_PORT: "8080"
+      SYMON_CLIENT_COLLECTOR_ENDPOINT: collector:9000
+      SYMON_CLIENT_ALERT_ENDPOINT: alertprocessor:9001
+    ports:
+      - "8080:8080"
+    depends_on:
+      - collector
+
+  agent:
+    build:
+      context: .
+      target: agent
+    environment:
+      <<: *symon-key
+      SYMON_SERVER_ID: test
+      SYMON_MONITOR_INTERVAL_SECONDS: "15"
+      SYMON_COLLECTOR_ENDPOINT: collector:9000
+    depends_on:
+      - collector
+
+volumes:
+  db-data:
