@@ -1,29 +1,19 @@
 package server
 
 import (
-	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
-	"time"
 
 	"github.com/dhamith93/SyMon/internal/alertapi"
 	"github.com/dhamith93/SyMon/internal/api"
-	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
 
 type Agents struct {
@@ -39,127 +29,153 @@ type IsUp struct {
 	IsUp bool
 }
 
+type server struct {
+	collector api.MonitorDataServiceClient
+	alerts    alertapi.AlertServiceClient
+}
+
 // Run starts the server in given port
 func Run(port string) {
-	handleRequests(port)
+	config := config.GetClient()
+
+	collectorConn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
+	if err != nil {
+		log.Fatal("cannot create collector client: ", err)
+	}
+	defer collectorConn.Close()
+
+	alertConn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath)
+	if err != nil {
+		log.Fatal("cannot create alert processor client: ", err)
+	}
+	defer alertConn.Close()
+
+	s := &server{
+		collector: api.NewMonitorDataServiceClient(collectorConn),
+		alerts:    alertapi.NewAlertServiceClient(alertConn),
+	}
+	s.handleRequests(port)
 }
 
-func handleRequests(port string) {
+func (s *server) handleRequests(port string) {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/agents", returnAgents)
-	router.HandleFunc("/isup", returnIsUp)
-	router.HandleFunc("/system", returnSystem)
-	router.HandleFunc("/memory", returnMemory)
-	router.HandleFunc("/swap", returnSwap)
-	router.HandleFunc("/disks", returnDisks)
-	router.HandleFunc("/proc", returnProc)
-	router.HandleFunc("/network", returnNetwork)
-	router.HandleFunc("/processes", returnProcesses)
-	router.HandleFunc("/processor-usage-historical", returnProcHistorical)
-	router.HandleFunc("/memory-historical", returnMemoryHistorical)
-	router.HandleFunc("/disks-historical", returnDisksHistorical)
-	router.HandleFunc("/services", returnServices)
-	router.HandleFunc("/custom", returnCustom)
-	router.HandleFunc("/custom-metric-names", returnCustomMetricNames)
-	router.HandleFunc("/alerts", returnAlerts)
+	router.HandleFunc("/agents", s.returnAgents)
+	router.HandleFunc("/isup", s.returnIsUp)
+	router.HandleFunc("/system", s.returnSystem)
+	router.HandleFunc("/memory", s.returnMemory)
+	router.HandleFunc("/swap", s.returnSwap)
+	router.HandleFunc("/disks", s.returnDisks)
+	router.HandleFunc("/proc", s.returnProc)
+	router.HandleFunc("/network", s.returnNetwork)
+	router.HandleFunc("/processes", s.returnProcesses)
+	router.HandleFunc("/processor-usage-historical", s.returnProcHistorical)
+	router.HandleFunc("/memory-historical", s.returnMemoryHistorical)
+	router.HandleFunc("/disks-historical", s.returnDisksHistorical)
+	router.HandleFunc("/services", s.returnServices)
+	router.HandleFunc("/custom", s.returnCustom)
+	router.HandleFunc("/custom-metric-names", s.returnCustomMetricNames)
+	router.HandleFunc("/alerts", s.returnAlerts)
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./frontend/")))
 
-	server := http.Server{}
-	server.Addr = port
-	server.Handler = handlers.CompressHandler(router)
-	server.SetKeepAlivesEnabled(false)
+	httpServer := http.Server{}
+	httpServer.Addr = port
+	httpServer.Handler = handlers.CompressHandler(router)
+	httpServer.SetKeepAlivesEnabled(false)
 
 	logger.Log("info", "API started on port "+port)
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(httpServer.ListenAndServe())
 }
 
-func returnAgents(w http.ResponseWriter, r *http.Request) {
-	handleRequestForMeta("agents", w, r)
+func (s *server) returnAgents(w http.ResponseWriter, r *http.Request) {
+	s.handleRequestForMeta("agents", w, r)
 }
 
-func returnIsUp(w http.ResponseWriter, r *http.Request) {
-	handleRequestForPing(w, r)
+func (s *server) returnIsUp(w http.ResponseWriter, r *http.Request) {
+	s.handleRequestForPing(w, r)
 }
 
-func returnSystem(w http.ResponseWriter, r *http.Request) {
-	handleRequest("system", w, r, false)
+func (s *server) returnSystem(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("system", w, r, false)
 }
 
-func returnMemory(w http.ResponseWriter, r *http.Request) {
-	handleRequest("memory", w, r, false)
+func (s *server) returnMemory(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("memory", w, r, false)
 }
 
-func returnSwap(w http.ResponseWriter, r *http.Request) {
-	handleRequest("swap", w, r, false)
+func (s *server) returnSwap(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("swap", w, r, false)
 }
 
-func returnDisks(w http.ResponseWriter, r *http.Request) {
-	handleRequest("disks", w, r, false)
+func (s *server) returnDisks(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("disks", w, r, false)
 }
 
-func returnProc(w http.ResponseWriter, r *http.Request) {
-	handleRequest("procUsage", w, r, false)
+func (s *server) returnProc(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("procUsage", w, r, false)
 }
 
-func returnNetwork(w http.ResponseWriter, r *http.Request) {
-	handleRequest("networks", w, r, false)
+func (s *server) returnNetwork(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("networks", w, r, false)
 }
 
-func returnProcesses(w http.ResponseWriter, r *http.Request) {
-	handleRequest("processes", w, r, false)
+func (s *server) returnProcesses(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("processes", w, r, false)
 }
 
-func returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	handleRequest("procUsage", w, r, false)
+func (s *server) returnProcHistorical(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("procUsage", w, r, false)
 }
 
-func returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	handleRequest("memory-historical", w, r, false)
+func (s *server) returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("memory-historical", w, r, false)
 }
 
-func returnDisksHistorical(w http.ResponseWriter, r *http.Request) {
-	handleRequest("disks", w, r, false)
+func (s *server) returnDisksHistorical(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("disks", w, r, false)
 }
 
-func returnServices(w http.ResponseWriter, r *http.Request) {
-	handleRequest("services", w, r, false)
+func (s *server) returnServices(w http.ResponseWriter, r *http.Request) {
+	s.handleRequest("services", w, r, false)
 }
 
-func returnCustom(w http.ResponseWriter, r *http.Request) {
+func (s *server) returnCustom(w http.ResponseWriter, r *http.Request) {
 	customMetricName, _ := parseGETForCustomMetricName(r)
-	handleRequest(customMetricName, w, r, true)
+	s.handleRequest(customMetricName, w, r, true)
 }
 
-func returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
-	handleRequestForMeta("customMetricNames", w, r)
+func (s *server) returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
+	s.handleRequestForMeta("customMetricNames", w, r)
 }
 
-func returnAlerts(w http.ResponseWriter, r *http.Request) {
-	// handleRequestForMeta("customMetricNames", w, r)
-	config := config.GetClient()
+func (s *server) returnAlerts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	serverName, _ := parseGETForServerName(r)
-	received, _ := getActiveAlerts(serverName, &config)
-	alertData, err := json.Marshal(received.Alerts)
-	var data interface{}
 	var out output
+	received, err := s.getActiveAlerts(serverName)
 	if err != nil {
 		out.Status = "ERR"
 		json.NewEncoder(w).Encode(&out)
 		return
 	}
-	out.Status = "OK"
+	alertData, err := json.Marshal(received.Alerts)
+	if err != nil {
+		out.Status = "ERR"
+		json.NewEncoder(w).Encode(&out)
+		return
+	}
+	var data interface{}
 	_ = json.Unmarshal(alertData, &data)
+	out.Status = "OK"
 	out.Data = data
 	json.NewEncoder(w).Encode(&out)
 }
 
-func handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCustomMetric bool) {
+func (s *server) handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCustomMetric bool) {
 	w.Header().Set("Content-Type", "application/json")
-	config := config.GetClient()
 	serverName, _ := parseGETForServerName(r)
-	time, _ := parseGETForTime(r)
+	at, _ := parseGETForTime(r)
 	from, to, _ := parseGETForDates(r)
-	received, err := getMonitorData(serverName, logType, from, to, time, &config, isCustomMetric)
+	received, err := s.getMonitorData(serverName, logType, from, to, at, isCustomMetric)
 	var data interface{}
 	var out output
 	out.Status = "OK"
@@ -173,17 +189,15 @@ func handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCus
 	json.NewEncoder(w).Encode(&out)
 }
 
-func handleRequestForPing(w http.ResponseWriter, r *http.Request) {
+func (s *server) handleRequestForPing(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	config := config.GetClient()
 	var out output
 	out.Status = "OK"
-	conn, c, ctx, cancel := createClient(&config)
-	defer conn.Close()
+	ctx, cancel := transport.Context()
 	defer cancel()
 	serverName, _ := parseGETForServerName(r)
 
-	isUp, err := c.IsUp(ctx, &api.ServerInfo{ServerName: serverName})
+	isUp, err := s.collector.IsUp(ctx, &api.ServerInfo{ServerName: serverName})
 
 	if err != nil {
 		out.Data = IsUp{IsUp: false}
@@ -195,13 +209,11 @@ func handleRequestForPing(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&out)
 }
 
-func handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Request) {
+func (s *server) handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	config := config.GetClient()
 	var out output
 	out.Status = "OK"
-	conn, c, ctx, cancel := createClient(&config)
-	defer conn.Close()
+	ctx, cancel := transport.Context()
 	defer cancel()
 
 	var meta *api.Message
@@ -209,10 +221,10 @@ func handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Reques
 
 	switch metaType {
 	case "agents":
-		meta, err = c.HandleAgentIdsRequest(ctx, &api.Void{})
+		meta, err = s.collector.HandleAgentIdsRequest(ctx, &api.Void{})
 	case "customMetricNames":
 		serverName, _ := parseGETForServerName(r)
-		meta, err = c.HandleCustomMetricNameRequest(ctx, &api.ServerInfo{ServerName: serverName})
+		meta, err = s.collector.HandleCustomMetricNameRequest(ctx, &api.ServerInfo{ServerName: serverName})
 	default:
 		break
 	}
@@ -230,47 +242,10 @@ func handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(&out)
 }
 
-func generateToken() string {
-	token, err := auth.GenerateJWT()
-	if err != nil {
-		logger.Log("error", "error generating token: "+err.Error())
-		os.Exit(1)
-	}
-	return token
-}
-
-func createClient(config *config.Client) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
-	var (
-		conn     *grpc.ClientConn
-		tlsCreds credentials.TransportCredentials
-		err      error
-	)
-
-	if len(config.CollectorEndpointCACertPath) > 0 {
-		tlsCreds, err = loadTLSCreds(config.CollectorEndpointCACertPath)
-		if err != nil {
-			log.Fatal("cannot load TLS credentials: ", err)
-		}
-		conn, err = grpc.Dial(config.CollectorEndpoint, grpc.WithTransportCredentials(tlsCreds))
-	} else {
-		conn, err = grpc.Dial(config.CollectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-
-	if err != nil {
-		logger.Log("error", "connection error: "+err.Error())
-		os.Exit(1)
-	}
-	c := api.NewMonitorDataServiceClient(conn)
-	token := generateToken()
-	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
-	return conn, c, ctx, cancel
-}
-
-func getMonitorData(serverName string, logType string, from int64, to int64, time int64, config *config.Client, isCustomMetric bool) (string, error) {
-	conn, c, ctx, cancel := createClient(config)
-	defer conn.Close()
+func (s *server) getMonitorData(serverName string, logType string, from int64, to int64, at int64, isCustomMetric bool) (string, error) {
+	ctx, cancel := transport.Context()
 	defer cancel()
-	monitorData, err := c.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: time, IsCustomMetric: isCustomMetric})
+	monitorData, err := s.collector.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: at, IsCustomMetric: isCustomMetric})
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
 		return "", err
@@ -278,35 +253,10 @@ func getMonitorData(serverName string, logType string, from int64, to int64, tim
 	return monitorData.MonitorData, nil
 }
 
-func getActiveAlerts(serverName string, config *config.Client) (*alertapi.AlertArray, error) {
-	var (
-		conn     *grpc.ClientConn
-		tlsCreds credentials.TransportCredentials
-		err      error
-	)
-
-	if len(config.AlertEndpointCACertPath) > 0 {
-		tlsCreds, err = loadTLSCreds(config.AlertEndpointCACertPath)
-		if err != nil {
-			log.Fatal("cannot load TLS credentials: ", err)
-		}
-		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(tlsCreds))
-	} else {
-		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-
-	if err != nil {
-		logger.Log("error", "connection error: "+err.Error())
-		os.Exit(1)
-	}
-	token := generateToken()
-	c := alertapi.NewAlertServiceClient(conn)
-	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
-	defer conn.Close()
+func (s *server) getActiveAlerts(serverName string) (*alertapi.AlertArray, error) {
+	ctx, cancel := transport.Context()
 	defer cancel()
-
-	alerts, err := c.AlertRequest(ctx, &alertapi.Request{ServerName: serverName})
-
+	alerts, err := s.alerts.AlertRequest(ctx, &alertapi.Request{ServerName: serverName})
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
 		return &alertapi.AlertArray{}, err
@@ -369,22 +319,4 @@ func parseGETForCustomMetricName(r *http.Request) (string, error) {
 	}
 
 	return customMetricNameArr[0], nil
-}
-
-func loadTLSCreds(path string) (credentials.TransportCredentials, error) {
-	cert, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(cert) {
-		return nil, fmt.Errorf("failed to add server CA cert")
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs: certPool,
-	}
-
-	return credentials.NewTLS(tlsConfig), nil
 }

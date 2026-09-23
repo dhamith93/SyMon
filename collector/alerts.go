@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -10,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,20 +17,26 @@ import (
 	"github.com/dhamith93/SyMon/internal/alertapi"
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/alertstatus"
-	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 	"github.com/dhamith93/systats"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
 
+// alertClient is created once in handleAlerts and shared by all alert checks
+var alertClient alertapi.AlertServiceClient
+
 func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, mysql *database.MySql) {
+	conn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath)
+	if err != nil {
+		log.Fatal("cannot create alert processor client: ", err)
+	}
+	defer conn.Close()
+	alertClient = alertapi.NewAlertServiceClient(conn)
+
 	mysql.ClearAllAlertsWithNullEnd()
 	ticker := time.NewTicker(15 * time.Second)
 	endpointTicker := time.NewTicker(time.Duration(config.EndpointCheckInterval) * time.Second)
@@ -47,7 +51,7 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 
 	wg.Add(delta)
 	logger.Log("info", "starting alert checker")
-	err := incidentTracker.Create(
+	err = incidentTracker.Create(
 		"alert",
 		memdb.Col{Name: "server_name", Type: memdb.String},
 		memdb.Col{Name: "metric_type", Type: memdb.String},
@@ -164,7 +168,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Colle
 			if (currTime - prevTime) >= int64(alertStatus.Alert.TriggerIntveral) {
 				err = mysql.SetAlertEndLog(&alertStatus, previousAlert[6])
 				// queue an alert resolved
-				sendAlert(buildAlertToSend(server, alert, alertStatus), config)
+				sendAlert(buildAlertToSend(server, alert, alertStatus))
 				if err != nil {
 					logger.Log("error", "Error updating alert: "+err.Error())
 				}
@@ -181,7 +185,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Colle
 				logger.Log("error", "Error updating alert: "+err.Error())
 			}
 			// queue an alert status changed
-			sendAlert(buildAlertToSend(server, alert, alertStatus), config)
+			sendAlert(buildAlertToSend(server, alert, alertStatus))
 		}
 		return
 	}
@@ -212,7 +216,7 @@ func processAlert(alert *alerts.AlertConfig, server string, config *config.Colle
 		if (currTime - prevTime) >= int64(alertStatus.Alert.TriggerIntveral) {
 			err = mysql.AddAlert(&alertStatus)
 			// queue a new alert
-			sendAlert(buildAlertToSend(server, alert, alertStatus), config)
+			sendAlert(buildAlertToSend(server, alert, alertStatus))
 			if err != nil {
 				logger.Log("error", "Error adding alert: "+err.Error())
 			}
@@ -290,14 +294,14 @@ func checkEndpoint(alert *alerts.AlertConfig, incidentTracker *memdb.Database, c
 			if alert.ExpectedHTTPCode != existingActual && !alerted {
 				if diff > int64(alert.TriggerIntveral) {
 					alertToSend := buildEndpointAlert(alert, statusCode, errMsg, false, timeNow)
-					sendAlert(alertToSend, config)
+					sendAlert(alertToSend)
 					existingRecord.Update("alerted", true)
 				}
 			}
 		} else {
 			if alert.ExpectedHTTPCode != existingActual && alerted {
 				alertToSend := buildEndpointAlert(alert, statusCode, errMsg, true, timeNow)
-				sendAlert(alertToSend, config)
+				sendAlert(alertToSend)
 				existingRecord.Update("alerted", false)
 			}
 			existingRecord.Update("time", timeNow)
@@ -621,69 +625,11 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus, sendPagerdut
 	return &alertToSend
 }
 
-func sendAlert(alert *alertapi.Alert, config *config.Collector) {
-	conn, c, ctx, cancel := createClient(config)
-	if conn == nil {
-		logger.Log("error", "error creating connection")
-		return
-	}
-	defer conn.Close()
+func sendAlert(alert *alertapi.Alert) {
+	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err := c.HandleAlerts(ctx, alert)
+	_, err := alertClient.HandleAlerts(ctx, alert)
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
 	}
-}
-
-func generateToken() string {
-	token, err := auth.GenerateJWT()
-	if err != nil {
-		logger.Log("error", "error generating token: "+err.Error())
-		os.Exit(1)
-	}
-	return token
-}
-
-func createClient(config *config.Collector) (*grpc.ClientConn, alertapi.AlertServiceClient, context.Context, context.CancelFunc) {
-	var (
-		conn     *grpc.ClientConn
-		tlsCreds credentials.TransportCredentials
-		err      error
-	)
-
-	if len(config.AlertEndpointCACertPath) > 0 {
-		tlsCreds, err = loadTLSCredsAsClient(config)
-		if err != nil {
-			log.Fatal("cannot load TLS credentials: ", err)
-		}
-		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(tlsCreds))
-	} else {
-		conn, err = grpc.Dial(config.AlertEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-	if err != nil {
-		logger.Log("error", "connection error: "+err.Error())
-		return nil, nil, nil, nil
-	}
-	c := alertapi.NewAlertServiceClient(conn)
-	token := generateToken()
-	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
-	return conn, c, ctx, cancel
-}
-
-func loadTLSCredsAsClient(config *config.Collector) (credentials.TransportCredentials, error) {
-	cert, err := ioutil.ReadFile(config.AlertEndpointCACertPath)
-	if err != nil {
-		return nil, err
-	}
-
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(cert) {
-		return nil, fmt.Errorf("failed to add server CA cert")
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs: certPool,
-	}
-
-	return credentials.NewTLS(tlsConfig), nil
 }

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
@@ -16,11 +14,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
+	"github.com/dhamith93/SyMon/internal/transport"
 )
 
 func main() {
@@ -67,20 +61,9 @@ func main() {
 			log.Fatalf("failed to listen: %v", err)
 		}
 		s := api.Server{}
-		var grpcServer *grpc.Server
-
-		if config.TLSEnabled {
-			tlsCreds, err := loadTLSCreds(&config)
-			if err != nil {
-				log.Fatal("cannot load TLS credentials: ", err)
-				log.Fatalf("failed to load TLS cert %s, key %s: %v", config.KeyPath, config.KeyPath, err)
-			}
-			grpcServer = grpc.NewServer(
-				grpc.Creds(tlsCreds),
-				grpc.UnaryInterceptor(authInterceptor),
-			)
-		} else {
-			grpcServer = grpc.NewServer(grpc.UnaryInterceptor(authInterceptor))
+		grpcServer, err := transport.NewServer(config.TLSEnabled, config.CertPath, config.KeyPath)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		api.RegisterMonitorDataServiceServer(grpcServer, &s)
@@ -88,35 +71,6 @@ func main() {
 			log.Fatalf("failed to serve: %s", err)
 		}
 	}
-}
-
-func loadTLSCreds(config *config.Collector) (credentials.TransportCredentials, error) {
-	cert, err := tls.LoadX509KeyPair(config.CertPath, config.KeyPath)
-	if err != nil {
-		return nil, err
-	}
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.NoClientCert,
-	}
-	return credentials.NewTLS(tlsConfig), nil
-}
-
-func authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	meta, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		logger.Log("error", "cannot parse meta")
-		return nil, status.Error(codes.Unauthenticated, "INTERNAL_SERVER_ERROR")
-	}
-	if len(meta["jwt"]) != 1 {
-		logger.Log("error", "cannot parse meta - token empty")
-		return nil, status.Error(codes.Unauthenticated, "token empty")
-	}
-	if !auth.ValidToken(meta["jwt"][0]) {
-		logger.Log("error", "auth error")
-		return nil, status.Error(codes.PermissionDenied, "invalid auth token")
-	}
-	return handler(ctx, req)
 }
 
 func removeAgent(removeAgentVal string, config *config.Collector) {

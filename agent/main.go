@@ -1,13 +1,9 @@
 package main
 
 import (
-	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -15,15 +11,11 @@ import (
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/api"
-	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/dhamith93/systats"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -47,12 +39,19 @@ func main() {
 	flag.StringVar(&value, "value", "", "Value of the metric")
 	flag.Parse()
 
+	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
+	if err != nil {
+		log.Fatal("cannot create collector client: ", err)
+	}
+	defer conn.Close()
+	client := api.NewMonitorDataServiceClient(conn)
+
 	if *initPtr {
-		initAgent(&config)
+		initAgent(client, &config)
 		return
 	} else if *customPtr {
 		if len(name) > 0 && len(value) > 0 && len(unit) > 0 {
-			sendCustomMetric(name, unit, value, &config)
+			sendCustomMetric(client, name, unit, value, &config)
 		} else {
 			fmt.Println("Metric name, unit, and value all required")
 		}
@@ -73,7 +72,7 @@ func main() {
 			select {
 			case <-ticker.C:
 				monitorData := monitor.MonitorAsJSON(&config)
-				sendMonitorData(monitorData, &config)
+				sendMonitorData(client, monitorData, &config)
 			case <-quit:
 				ticker.Stop()
 				return
@@ -86,7 +85,7 @@ func main() {
 		for {
 			select {
 			case <-tickerForPing.C:
-				sendPing(&config)
+				sendPing(client, &config)
 			case <-quitForPing:
 				ticker.Stop()
 				return
@@ -98,16 +97,11 @@ func main() {
 	fmt.Println("Exiting")
 }
 
-func initAgent(config *config.Agent) {
-	conn, c, ctx, cancel := createClient(config)
-	if conn == nil {
-		logger.Log("error", "error creating connection")
-		return
-	}
-	defer conn.Close()
+func initAgent(client api.MonitorDataServiceClient, config *config.Agent) {
+	ctx, cancel := transport.Context()
 	defer cancel()
 	syStats := systats.New()
-	response, err := c.InitAgent(ctx, &api.ServerInfo{
+	response, err := client.InitAgent(ctx, &api.ServerInfo{
 		ServerName: config.ServerId,
 		Timezone:   monitor.GetSystem(&syStats).TimeZone,
 	})
@@ -118,35 +112,25 @@ func initAgent(config *config.Agent) {
 	fmt.Printf("%s \n", response.Body)
 }
 
-func sendPing(config *config.Agent) {
-	conn, c, ctx, cancel := createClient(config)
-	if conn == nil {
-		logger.Log("error", "error creating connection")
-		return
-	}
-	defer conn.Close()
+func sendPing(client api.MonitorDataServiceClient, config *config.Agent) {
+	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err := c.HandlePing(ctx, &api.ServerInfo{ServerName: config.ServerId})
+	_, err := client.HandlePing(ctx, &api.ServerInfo{ServerName: config.ServerId})
 	if err != nil {
 		logger.Log("error", "error sending ping: "+err.Error())
 	}
 }
 
-func sendMonitorData(monitorData string, config *config.Agent) {
-	conn, c, ctx, cancel := createClient(config)
-	if conn == nil {
-		logger.Log("error", "error creating connection")
-		return
-	}
-	defer conn.Close()
+func sendMonitorData(client api.MonitorDataServiceClient, monitorData string, config *config.Agent) {
+	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err := c.HandleMonitorData(ctx, &api.MonitorData{MonitorData: monitorData})
+	_, err := client.HandleMonitorData(ctx, &api.MonitorData{MonitorData: monitorData})
 	if err != nil {
 		logger.Log("error", "error sending data: "+err.Error())
 	}
 }
 
-func sendCustomMetric(name string, unit string, value string, config *config.Agent) {
+func sendCustomMetric(client api.MonitorDataServiceClient, name string, unit string, value string, config *config.Agent) {
 	customMetric := monitor.CustomMetric{
 		Name:     name,
 		Unit:     unit,
@@ -159,69 +143,11 @@ func sendCustomMetric(name string, unit string, value string, config *config.Age
 		fmt.Println(err.Error())
 		return
 	}
-	conn, c, ctx, cancel := createClient(config)
-	if conn == nil {
-		logger.Log("error", "error creating connection")
-		return
-	}
-	defer conn.Close()
+	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err = c.HandleCustomMonitorData(ctx, &api.MonitorData{MonitorData: string(jsonData)})
+	_, err = client.HandleCustomMonitorData(ctx, &api.MonitorData{MonitorData: string(jsonData)})
 	if err != nil {
 		logger.Log("error", "error sending custom data: "+err.Error())
 		os.Exit(1)
 	}
-}
-
-func generateToken() string {
-	token, err := auth.GenerateJWT()
-	if err != nil {
-		logger.Log("error", "error generating token: "+err.Error())
-		os.Exit(1)
-	}
-	return token
-}
-
-func createClient(config *config.Agent) (*grpc.ClientConn, api.MonitorDataServiceClient, context.Context, context.CancelFunc) {
-	var (
-		conn     *grpc.ClientConn
-		tlsCreds credentials.TransportCredentials
-		err      error
-	)
-
-	if len(config.CollectorEndpointCACertPath) > 0 {
-		tlsCreds, err = loadTLSCreds(config)
-		if err != nil {
-			log.Fatal("cannot load TLS credentials: ", err)
-		}
-		conn, err = grpc.Dial(config.CollectorEndpoint, grpc.WithTransportCredentials(tlsCreds))
-	} else {
-		conn, err = grpc.Dial(config.CollectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-	if err != nil {
-		logger.Log("error", "connection error: "+err.Error())
-		return nil, nil, nil, nil
-	}
-	c := api.NewMonitorDataServiceClient(conn)
-	token := generateToken()
-	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"jwt": token})), time.Second*10)
-	return conn, c, ctx, cancel
-}
-
-func loadTLSCreds(config *config.Agent) (credentials.TransportCredentials, error) {
-	cert, err := ioutil.ReadFile(config.CollectorEndpointCACertPath)
-	if err != nil {
-		return nil, err
-	}
-
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(cert) {
-		return nil, fmt.Errorf("failed to add server CA cert")
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs: certPool,
-	}
-
-	return credentials.NewTLS(tlsConfig), nil
 }
