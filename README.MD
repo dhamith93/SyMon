@@ -21,7 +21,7 @@ Currently, it gathers following metrics under the monitoring interval given in t
 * Alert setup for CPU/Memory/SWAP/Disk/Services/Custom metrics 
     * Push alerts to user via Email, PagerDuty, or Slack
 * Custom data retention period
-* Disk IO and network throughput, TCP connection states, pressure stall information (PSI) and temperature sensors. These are sent by the agent and stored by the collector, but the client does not show them yet
+* Disk IO and network throughput, TCP connection states, pressure stall information (PSI) and temperature sensors
 
 ### Screenshots
 
@@ -51,9 +51,9 @@ The Collector is a required component of SyMon. It stores the data sent by agent
 Alert processor is an optional component of SyMon. You can skip the Alert processor if you wish only to collect and visualize metrics and custom data. However, if you wish to set up alerts, you can use the Alert processor to push out incoming alerts or alert status changes to Email, PagerDuty, and Slack. The UI element, or the Client component of SyMon also uses the Alert processor to get raised alerts. 
 
 ### Client
-Client component is the user interface component of SyMon which is accessible from browsers. It requests data from the Collector and displays data as graphs or tables. It also can be used to see which are the active servers and which are not active or have trouble connecting to the Collector. 
+Client component is the user interface component of SyMon which is accessible from browsers. It shows every host with its status, usage and open alerts, and a page per host with charts for CPU (overall and per core), load, memory, pressure, disks, disk IO, network, TCP connections and temperatures, plus the top processes at any point in time. Charts share one time range, from 15 minutes to 30 days or a custom window, and dragging across a chart zooms in. There is also an alerts page with open alerts and history, and a page for each host's custom metrics. The dashboard follows the system light or dark theme, and every chart can be switched to a table. 
 
-Client component can show all collected data as tables or graphs, which includes the custom metrics pushed by the agents. Currently this does not require any user authentication, but authentication and HTTPS can be set up using Apache or nginx. Which is recommended if this is used in public networks. 
+Currently the Client does not require any user authentication, but authentication and HTTPS can be set up using Apache or nginx. Which is recommended if this is used in public networks. 
 
 ## Local development
 
@@ -109,37 +109,25 @@ Set up the environment variables as shown in `.env-example` file with configurat
 `./alertprocessor_linux_x86_64`
 
 ### Clients
-To run the Client, fill the relevent environment variables as shown in `.env-example` and start the Client with the below command. You can use Apache, or nginx to set up SSL and user authentication if needed.
+To run the Client, fill the relevent environment variables as shown in `.env-example` and start the Client with the below command. The dashboard is built into the binary. You can use Apache, or nginx to set up SSL and user authentication if needed.
 
 `./client_linux_x86_64`
 
+Building the Client from source needs Node.js 22 or newer for the dashboard: `make build-client` runs `make web` first. `npm run dev` in `client/web` serves the dashboard with live reload against a Client running on port 8080.
+
 ### API documentation
-Client also exposes an REST API to retrieve collection data. 
-#### End points
-* `/system`
-    * Returns system info
-* `/memory`
-    * Returns memory info/usage
-* `/swap`
-    * Returns swap info/usage
-* `/disks`
-    * Return disk info/usage per disk
-* `/network`
-    * Return disk info/usage per interface
-* `/processes`
-    * Returns list of processes using most CPU/RAM 
-* `/processor-usage-historical`
-    * CPU load avg
-* `/memory-historical`
-    * Memory usage
-* `/services`
-    * List of services enabled to monitor in agent's service.json
-* `/custom-metric-names`
-    * Names of custom metrics
-* `/custom?custom-metric=name`
-    * Custom metric values
-* Required GET parameters
-    * `serverId=` ID of the server
-* Optional GET parameters
-    * `from=[unix timestamp]&to=[unix timestamp]` values within a time range
-    * `time=[unix timestamp]` value(s) at a certain time (depends on availability of data)
+The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors return a JSON body `{"error": "..."}` with a 4xx or 5xx status.
+
+* `GET /api/v1/fleet`
+    * Every host with its status, latest usage and number of open alerts
+* `GET /api/v1/hosts/{host}`
+    * The host's latest snapshot as the agent sent it, with `up` and `lastSeen`
+* `GET /api/v1/hosts/{host}/series?metric=cpu&from=&to=`
+    * A metric over time. `from` and `to` default to the last hour. `label` keeps one series (a mount point, interface, sensor or custom metric name), `maxPoints` sets the most points per series (default 1000) and `max=1` returns the peak of each bucket instead of the average
+    * Metrics: `cpu`, `cpu_core`, `load1`, `load5`, `load15`, `memory`, `memory_used`, `swap`, `swap_used`, `psi_cpu`, `psi_memory`, `psi_memory_full`, `psi_io`, `psi_io_full`, `tcp_established`, `tcp_time_wait`, `tcp_close_wait`, `tcp_listen`, `tcp_total`, `disk_used`, `disk_inodes`, `disk_read`, `disk_write`, `disk_util`, `net_rx`, `net_tx`, `temperature`, `custom`
+* `GET /api/v1/hosts/{host}/processes?at=`
+    * Top processes by CPU and by memory at or before `at`, or the latest
+* `GET /api/v1/hosts/{host}/custom-metrics`
+    * Names of the host's custom metrics
+* `GET /api/v1/alerts?host=&open=1&from=&to=`
+    * Alerts, newest first. `open=1` leaves out resolved ones
