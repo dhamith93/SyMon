@@ -8,18 +8,15 @@ x-symon-key: &symon-key
 
 services:
   db:
-    image: mariadb:11.4
+    image: timescale/timescaledb:2.30.1-pg18
     environment:
-      MARIADB_DATABASE: symon
-      MARIADB_USER: symon
-      MARIADB_PASSWORD: symon
-      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      POSTGRES_USER: symon
+      POSTGRES_PASSWORD: symon
+      POSTGRES_DB: symon
     volumes:
-      - ./collector/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./docker/dev-seed.sql:/docker-entrypoint-initdb.d/02-dev-seed.sql:ro
-      - db-data:/var/lib/mysql
+      - db-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "pg_isready", "-U", "symon", "-d", "symon"]
       interval: 5s
       retries: 20
 
@@ -31,11 +28,12 @@ services:
       <<: *symon-key
       SYMON_PORT: "9000"
       SYMON_ALERT_ENDPOINT: alertprocessor:9001
-      SYMON_DB_USER: symon
-      SYMON_DB_PASSWORD: symon
-      SYMON_DB_HOST: db
-      SYMON_DB_NAME: symon
+      SYMON_DATABASE_URL: postgres://symon:symon@db:5432/symon?sslmode=disable
       SYMON_ALERTS_CONFIG_PATH: alerts.json
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9000"]
+      interval: 5s
+      retries: 20
     depends_on:
       db:
         condition: service_healthy
@@ -68,13 +66,16 @@ services:
     build:
       context: .
       target: agent
+    # register first. On restarts -init reports the agent exists, which is fine.
+    command: ["sh", "-c", "./agent -init; exec ./agent"]
     environment:
       <<: *symon-key
       SYMON_SERVER_ID: test
       SYMON_MONITOR_INTERVAL_SECONDS: "15"
       SYMON_COLLECTOR_ENDPOINT: collector:9000
     depends_on:
-      - collector
+      collector:
+        condition: service_healthy
 
 volumes:
   db-data:

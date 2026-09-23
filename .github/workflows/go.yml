@@ -10,6 +10,24 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+
+    services:
+      timescale:
+        image: timescale/timescaledb:2.30.1-pg18
+        env:
+          POSTGRES_USER: symon
+          POSTGRES_PASSWORD: symon
+          POSTGRES_DB: symon_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U symon -d symon_test"
+          --health-interval 5s
+          --health-retries 20
+
+    env:
+      SYMON_TEST_DATABASE_URL: postgres://symon:symon@localhost:5432/symon_test?sslmode=disable
+
     steps:
     - uses: actions/checkout@v4
 

@@ -45,7 +45,7 @@ SyMon has four major components users can use to collect metrics and process ale
 Agent has to be installed in the system you want to monitor. Once it is installed and configured, it will collect and send out metrics to the Collector in a given collection interval. It also can be used to send out custom metrics to the Collector. Custom metrics can be used to collect application, process data, or sensor data periodically through cron job or script/application.
 
 ### Collector
-The Collector is a required component of SyMon. Collector requires MariaDB version >= 10.5 to store the data which is sent to it by collectors. Once set up, it can collect monitor data from multiple servers. It also checks alerts given by the alert config file. If an alert is raised, status changed, or resolved it will push them to the Alert processor. Collected monitor data will be purged every 60 days by default. However, it can be configured through the config file. 
+The Collector is a required component of SyMon. It stores the data sent by agents in TimescaleDB (PostgreSQL with the TimescaleDB extension). Once set up, it can collect monitor data from multiple servers. It also checks alerts given by the alert config file. If an alert is raised, status changed, or resolved it will push them to the Alert processor. Raw data is kept for 7 days, 1 minute averages for 30 days and 1 hour averages for a year by default. These can be changed with the `SYMON_RETENTION_*` environment variables. 
 
 ### Alert Processor
 Alert processor is an optional component of SyMon. You can skip the Alert processor if you wish only to collect and visualize metrics and custom data. However, if you wish to set up alerts, you can use the Alert processor to push out incoming alerts or alert status changes to Email, PagerDuty, and Slack. The UI element, or the Client component of SyMon also uses the Alert processor to get raised alerts. 
@@ -57,7 +57,7 @@ Client component can show all collected data as tables or graphs, which includes
 
 ## Local development
 
-`docker compose up --build` starts MariaDB, the Collector, the Alert processor, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. The stack is for development only.
+`docker compose up --build` starts TimescaleDB, the Collector, the Alert processor, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. The stack is for development only.
 
 Building from source needs Go 1.26 or newer. `make build-all` builds every component, and `go test ./...` runs the tests.
 
@@ -75,9 +75,9 @@ Communication between the Client and end user should be encrypted using Apache/n
 
 ### Collector
 
-First step is to install MariaDB (`version >= 10.15`) and create a database. Once it is set up, environment variables as per the `.env-example` file should be set up with the required configurations. Which includes database name, user, password, and host information. `alerts.json` should be used to set up alerting rules. Setting up alert rules is optional and can be skipped if alerting is not used. 
+First step is to install PostgreSQL with the [TimescaleDB extension](https://docs.timescale.com/self-hosted/latest/install/) and create a database and a user that owns it. A superuser then has to run `CREATE EXTENSION IF NOT EXISTS timescaledb;` in that database. Once it is set up, environment variables as per the `.env-example` file should be set up with the required configurations. `SYMON_DATABASE_URL` is the connection string, for example `postgres://symon:password@localhost:5432/symon`. `alerts.json` should be used to set up alerting rules. Setting up alert rules is optional and can be skipped if alerting is not used. 
 
-Once everything is set up, you have to initialize the collector by running the below command. It will create the database tables and print the `key` string as well as set the `key` as an environment variable `SYMON_KEY`.
+Once everything is set up, you have to initialize the collector by running the below command. It will create the database tables and print the `key` string. Set it as the `SYMON_KEY` environment variable for every component. The collector also updates the database schema by itself when it starts.
 
 `./collector_linux_x86_64 --init`
 
