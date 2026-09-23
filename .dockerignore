@@ -4,3 +4,5 @@ release
 **/*_linux_x86_64
 **/.env
 png
+**/node_modules
+client/web/dist

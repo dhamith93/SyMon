@@ -1,9 +1,12 @@
-.PHONY: proto clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
+.PHONY: proto web clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
 
 proto:
 	cd internal && protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		api/api.proto alertapi/alertapi.proto
+
+web:
+	cd client/web && npm ci && npm run build
 
 clean:	
 	rm -f agent/agent_linux_x86_64
@@ -31,7 +34,7 @@ build-agent:
 build-alertprocessor:
 	cd alertprocessor && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o alertprocessor_linux_x86_64
 
-build-client:
+build-client: web
 	cd client && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o client_linux_x86_64
 
 pack-all: pack-collector pack-agent pack-alertprocessor pack-client
@@ -62,8 +65,6 @@ pack-client: build-client
 	mkdir -p release/client_linux_x86_64
 	cp client/client_linux_x86_64 release/client_linux_x86_64
 	cp client/.env-example release/client_linux_x86_64
-	cp -r client/frontend release/client_linux_x86_64
 	cp client/Dockerfile release/client_linux_x86_64
-	sh client/fetch-assets.sh release/client_linux_x86_64/frontend
 	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
 	rm -rf release/client_linux_x86_64

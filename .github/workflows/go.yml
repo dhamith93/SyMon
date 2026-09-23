@@ -36,8 +36,19 @@ jobs:
       with:
         go-version: '1.26.x'
 
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: client/web/package-lock.json
+
     - name: Build all
       run: make build-all
+
+    - name: Check dashboard
+      working-directory: client/web
+      run: npm run check && npm test
 
     - name: Gofmt
       run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
