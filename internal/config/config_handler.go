@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -89,14 +89,20 @@ func GetAgent() Agent {
 
 func GetServicesToMonitor(path string) []ServiceToMonitor {
 	services := []ServiceToMonitor{}
-	file, err := ioutil.ReadFile(path)
-	config := Agent{}
-
-	if err != nil {
+	if len(path) == 0 {
 		return services
 	}
 
-	_ = json.Unmarshal([]byte(file), &config)
+	file, err := os.ReadFile(path)
+	if err != nil {
+		log.Println("error cannot read service list: " + err.Error())
+		return services
+	}
+
+	if err := json.Unmarshal(file, &services); err != nil {
+		log.Println("error cannot parse service list: " + err.Error())
+		return []ServiceToMonitor{}
+	}
 
 	return services
 }
@@ -159,8 +165,4 @@ func GetAlertProcessor() AlertProcessor {
 		LogFileEnabled: strings.ToUpper(os.Getenv("SYMON_ALERT_LOG_FILE_ENABLED")) == "TRUE",
 		LogFilePath:    os.Getenv("SYMON_ALERT_LOG_FILE_PATH"),
 	}
-}
-
-func LogFileEnabled() bool {
-	return GetAgent().LogFileEnabled || GetAlertProcessor().LogFileEnabled || GetCollector().LogFileEnabled || GetClient().LogFileEnabled
 }
