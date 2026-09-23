@@ -18,6 +18,10 @@ COPY --from=web /web/dist ./client/web/dist
 RUN for c in agent collector alertprocessor client; do \
         CGO_ENABLED=0 go build -o /out/$c ./$c || exit 1; \
     done
+# agent builds that new hosts download from the dashboard
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/downloads/agent-linux-amd64 ./agent \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/downloads/agent-linux-arm64 ./agent \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -o /out/downloads/agent-linux-arm ./agent
 
 FROM alpine:3.22 AS collector
 RUN adduser -D -H symon
@@ -40,6 +44,7 @@ FROM alpine:3.22 AS client
 RUN adduser -D -H symon
 WORKDIR /app
 COPY --from=build /out/client ./client
+COPY --from=build /out/downloads ./downloads
 USER symon
 EXPOSE 8080
 CMD ["./client"]

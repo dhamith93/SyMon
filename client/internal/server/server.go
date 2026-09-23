@@ -27,6 +27,10 @@ type server struct {
 	collector      api.MonitorDataServiceClient
 	refreshSeconds int
 	files          fs.FS
+	// for the agent install script
+	collectorEndpoint string
+	agentCollector    string
+	downloadsDir      string
 }
 
 // Run starts the server on the given address, like ":8080"
@@ -40,9 +44,12 @@ func Run(address string) {
 	defer conn.Close()
 
 	s := &server{
-		collector:      api.NewMonitorDataServiceClient(conn),
-		refreshSeconds: config.RefreshSeconds,
-		files:          web.Files(),
+		collector:         api.NewMonitorDataServiceClient(conn),
+		refreshSeconds:    config.RefreshSeconds,
+		files:             web.Files(),
+		collectorEndpoint: config.CollectorEndpoint,
+		agentCollector:    config.AgentCollectorEndpoint,
+		downloadsDir:      config.DownloadsDir,
 	}
 	httpServer := &http.Server{
 		Addr:              address,
@@ -65,6 +72,8 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
+	mux.HandleFunc("GET /install.sh", s.getInstallScript)
+	mux.HandleFunc("GET /downloads/{file}", s.getDownload)
 	mux.Handle("/", s.app())
 	return mux
 }

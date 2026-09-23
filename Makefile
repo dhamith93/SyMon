@@ -61,9 +61,14 @@ pack-alertprocessor: build-alertprocessor
 	cd release/ && tar -cvf alertprocessor_linux_x86_64.tar.gz alertprocessor_linux_x86_64
 	rm -rf release/alertprocessor_linux_x86_64
 
+# the agent builds are what new hosts download from the dashboard.
+# GOARM=6 also runs on ARMv7, so one arm build covers every Raspberry Pi.
 pack-client: build-client
-	mkdir -p release/client_linux_x86_64
+	mkdir -p release/client_linux_x86_64/downloads
 	cp client/client_linux_x86_64 release/client_linux_x86_64
+	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ../release/client_linux_x86_64/downloads/agent-linux-amd64
+	cd agent && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o ../release/client_linux_x86_64/downloads/agent-linux-arm64
+	cd agent && GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -o ../release/client_linux_x86_64/downloads/agent-linux-arm
 	cp client/.env-example release/client_linux_x86_64
 	cp client/Dockerfile release/client_linux_x86_64
 	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
