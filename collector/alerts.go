@@ -23,7 +23,6 @@ import (
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/dhamith93/SyMon/pkg/memdb"
-	"github.com/dhamith93/systats"
 )
 
 // alertClient is created once in handleAlerts and shared by all alert checks
@@ -397,7 +396,7 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 
 	switch alert.MetricName {
 	case monitor.PROC_USAGE:
-		var cpu systats.CPU
+		var cpu monitor.CPU
 		err := json.Unmarshal([]byte(metricLogs[0][1]), &cpu)
 		if err != nil {
 			logger.Log("error", err.Error())
@@ -407,7 +406,7 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.Value = float32(cpu.LoadAvg)
 		alertStatus.Type = getAlertType(alert, float64(cpu.LoadAvg))
 	case monitor.MEMORY:
-		var mem systats.Memory
+		var mem monitor.Memory
 		err := json.Unmarshal([]byte(metricLogs[0][1]), &mem)
 		if err != nil {
 			logger.Log("error", err.Error())
@@ -417,7 +416,7 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.Value = float32(mem.PercentageUsed)
 		alertStatus.Type = getAlertType(alert, mem.PercentageUsed)
 	case monitor.SWAP:
-		var swap systats.Swap
+		var swap monitor.Swap
 		err := json.Unmarshal([]byte(metricLogs[0][1]), &swap)
 		if err != nil {
 			logger.Log("error", err.Error())
@@ -427,7 +426,7 @@ func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.
 		alertStatus.Value = float32(swap.PercentageUsed)
 		alertStatus.Type = getAlertType(alert, swap.PercentageUsed)
 	case monitor.DISKS:
-		var disk systats.Disk
+		var disk monitor.Disk
 		err := json.Unmarshal([]byte(metricLogs[0][1]), &disk)
 		if err != nil {
 			logger.Log("error", err.Error())

@@ -196,6 +196,20 @@ func handleMonitorData(monitorData *monitor.MonitorData) error {
 	data["procUsage"] = &monitorData.ProcUsage
 	data["processes"] = &monitorData.Processes
 
+	// optional sections, only present when the agent collected them
+	if len(monitorData.DiskIO) > 0 {
+		data[monitor.DISK_IO] = &monitorData.DiskIO
+	}
+	if monitorData.TCPStates != nil {
+		data[monitor.TCP_STATES] = monitorData.TCPStates
+	}
+	if monitorData.Pressure != nil {
+		data[monitor.PRESSURE] = monitorData.Pressure
+	}
+	if len(monitorData.Temperatures) > 0 {
+		data[monitor.TEMPERATURES] = &monitorData.Temperatures
+	}
+
 	for key, item := range data {
 		err := saveToDB(item, mysql, serverName, time, key, "")
 		if err != nil {

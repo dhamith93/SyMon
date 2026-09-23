@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,7 +16,6 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/transport"
-	"github.com/dhamith93/systats"
 )
 
 func main() {
@@ -58,7 +58,9 @@ func main() {
 		return
 	}
 
-	ticker := time.NewTicker(time.Duration(config.MonitorIntervalSeconds) * time.Second)
+	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
+	collector := monitor.NewCollector(&config)
+	ticker := time.NewTicker(interval)
 	tickerForPing := time.NewTicker(time.Minute)
 	quit := make(chan struct{})
 	quitForPing := make(chan bool)
@@ -71,7 +73,10 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				monitorData := monitor.MonitorAsJSON(&config)
+				// leave room so a slow collection does not run into the next tick
+				ctx, cancel := context.WithTimeout(context.Background(), interval*3/4)
+				monitorData := collector.CollectJSON(ctx)
+				cancel()
 				sendMonitorData(client, monitorData, &config)
 			case <-quit:
 				ticker.Stop()
@@ -100,10 +105,9 @@ func main() {
 func initAgent(client api.MonitorDataServiceClient, config *config.Agent) {
 	ctx, cancel := transport.Context()
 	defer cancel()
-	syStats := systats.New()
 	response, err := client.InitAgent(ctx, &api.ServerInfo{
 		ServerName: config.ServerId,
-		Timezone:   monitor.GetSystem(&syStats).TimeZone,
+		Timezone:   monitor.TimeZone(),
 	})
 	if err != nil {
 		logger.Log("error", "error adding agent: "+err.Error())
