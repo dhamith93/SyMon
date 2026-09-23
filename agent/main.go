@@ -19,6 +19,19 @@ import (
 )
 
 func main() {
+	var name, value, unit string
+
+	initPtr := flag.Bool("init", false, "Initialize agent")
+	customPtr := flag.Bool("custom", false, "Send custom metrics")
+	flag.StringVar(&name, "name", "", "Name of the metric")
+	flag.StringVar(&unit, "unit", "", "Unit of the metric")
+	flag.StringVar(&value, "value", "", "Value of the metric")
+	envFile := flag.String("env", config.DefaultEnvFile("agent"), "Settings file with KEY=value lines, loaded if it exists")
+	flag.Parse()
+	if err := config.LoadEnvFile(*envFile); err != nil {
+		log.Fatal(err)
+	}
+
 	config := config.GetAgent()
 
 	if config.LogFileEnabled {
@@ -29,15 +42,6 @@ func main() {
 		defer file.Close()
 		log.SetOutput(file)
 	}
-
-	var name, value, unit string
-
-	initPtr := flag.Bool("init", false, "Initialize agent")
-	customPtr := flag.Bool("custom", false, "Send custom metrics")
-	flag.StringVar(&name, "name", "", "Name of the metric")
-	flag.StringVar(&unit, "unit", "", "Unit of the metric")
-	flag.StringVar(&value, "value", "", "Value of the metric")
-	flag.Parse()
 
 	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
 	if err != nil {

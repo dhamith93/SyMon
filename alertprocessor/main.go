@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 	"os"
@@ -13,6 +14,12 @@ import (
 )
 
 func main() {
+	envFile := flag.String("env", config.DefaultEnvFile("alertprocessor"), "Settings file with KEY=value lines, loaded if it exists")
+	flag.Parse()
+	if err := config.LoadEnvFile(*envFile); err != nil {
+		log.Fatal(err)
+	}
+
 	config := config.GetAlertProcessor()
 
 	if config.LogFileEnabled {

@@ -24,7 +24,11 @@ func main() {
 	var alertConfig []alerts.AlertConfig
 	initPtr := flag.Bool("init", false, "Create the database schema and print a new SYMON_KEY")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove an agent. Its metrics are kept until retention drops them.")
+	envFile := flag.String("env", config.DefaultEnvFile("collector"), "Settings file with KEY=value lines, loaded if it exists")
 	flag.Parse()
+	if err := config.LoadEnvFile(*envFile); err != nil {
+		log.Fatal(err)
+	}
 
 	config := config.GetCollector()
 	if config.LogFileEnabled {
