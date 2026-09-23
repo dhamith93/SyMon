@@ -6,9 +6,9 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -234,7 +234,7 @@ func checkEndpoint(alert *alerts.AlertConfig, incidentTracker *memdb.Database, c
 	client := &http.Client{}
 
 	if customCACertUsed {
-		caCert, err := ioutil.ReadFile(alert.CustomCACert)
+		caCert, err := os.ReadFile(alert.CustomCACert)
 		if err != nil {
 			logger.Log("error", err.Error())
 			return

@@ -2,7 +2,7 @@ package alerts
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 const ENDPOINT_METHOD_GET string = "GET"
@@ -47,7 +47,7 @@ type Alert struct {
 }
 
 func GetAlertConfig(path string) []AlertConfig {
-	file, err := ioutil.ReadFile(path)
+	file, err := os.ReadFile(path)
 	alertConfig := []AlertConfig{}
 
 	if err != nil {
