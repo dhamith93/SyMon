@@ -88,7 +88,7 @@ func (table *Table) Insert(cols string, values ...interface{}) error {
 			}
 			row.Columns[col] = newCol
 		} else {
-			return fmt.Errorf("column " + col + " not found")
+			return fmt.Errorf("column %s not found", col)
 		}
 	}
 
@@ -118,7 +118,7 @@ func (table *Table) Select(cols string) Result {
 		for _, c := range colArr {
 			_, ok := table.Columns[strings.TrimSpace(c)]
 			if !ok {
-				res.Error = fmt.Errorf("column " + c + " not found")
+				res.Error = fmt.Errorf("column %s not found", c)
 				return res
 			}
 		}

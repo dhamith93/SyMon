@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/stringops"
-	"golang.org/x/net/context"
 )
 
 type Server struct {
@@ -138,7 +138,7 @@ func initAgent(agentId string, timezone string, config *config.Collector) error 
 
 	if mysql.AgentIDExists(agentId) {
 		logger.Log("error", "agent id "+agentId+" exists")
-		return fmt.Errorf("agent id " + agentId + " exists")
+		return fmt.Errorf("agent id %s exists", agentId)
 	}
 
 	err := mysql.AddAgent(agentId, timezone)
