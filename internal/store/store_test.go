@@ -440,3 +440,54 @@ func TestPolicies(t *testing.T) {
 		}
 	}
 }
+
+// data that arrives hours late, like after a collector outage, must still
+// reach the rollups the charts read
+func TestLateDataIsRolledUp(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	if err := st.AddHost(ctx, "web1", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+
+	// the minute rollup policy, run by hand the way the scheduler would
+	var job int
+	err := st.pool.QueryRow(ctx, `
+		SELECT j.job_id FROM timescaledb_information.jobs j
+		LEFT JOIN timescaledb_information.continuous_aggregates c
+		  ON c.materialization_hypertable_schema = j.hypertable_schema
+		 AND c.materialization_hypertable_name = j.hypertable_name
+		WHERE j.proc_name = 'policy_refresh_continuous_aggregate'
+		  AND ((j.hypertable_schema = current_schema() AND j.hypertable_name = 'host_metrics_1m')
+		    OR (c.view_schema = current_schema() AND c.view_name = 'host_metrics_1m'))`).Scan(&job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runJob := func() {
+		t.Helper()
+		if _, err := st.pool.Exec(ctx, "CALL run_job($1)", job); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// the collector has been running, so the rollup is current up to a
+	// recent snapshot
+	if err := st.SaveSnapshot(ctx, testSnapshot("web1", time.Now().Add(-10*time.Minute))); err != nil {
+		t.Fatal(err)
+	}
+	runJob()
+	// then a snapshot from 5 hours ago arrives
+	at := time.Now().Add(-5 * time.Hour).Truncate(time.Minute)
+	if err := st.SaveSnapshot(ctx, testSnapshot("web1", at)); err != nil {
+		t.Fatal(err)
+	}
+	runJob()
+
+	result, err := st.QuerySeries(ctx, SeriesQuery{Host: "web1", Metric: "cpu", From: at.Add(-time.Hour), To: at.Add(time.Hour), MaxPoints: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Source != "1m" || len(result.Series) != 1 || result.Series[0].Points[0].Value != 37 {
+		t.Errorf("expected the late point from the minute rollup, got %+v", result)
+	}
+}
