@@ -42,12 +42,9 @@ USER symon
 EXPOSE 8080
 CMD ["./client"]
 
-# systats shells out to gnu ps, df, ip, who and friends, so the agent
-# needs a debian base instead of busybox
-FROM debian:bookworm-slim AS agent
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends procps iproute2 \
-    && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.22 AS agent
+RUN adduser -D -H symon
 WORKDIR /app
 COPY --from=build /out/agent ./agent
+USER symon
 CMD ["./agent"]

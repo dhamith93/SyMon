@@ -21,6 +21,7 @@ Currently, it gathers following metrics under the monitoring interval given in t
 * Alert setup for CPU/Memory/SWAP/Disk/Services/Custom metrics 
     * Push alerts to user via Email, PagerDuty, or Slack
 * Custom data retention period
+* Disk IO and network throughput, TCP connection states, pressure stall information (PSI) and temperature sensors. These are sent by the agent and stored by the collector, but the client does not show them yet
 
 ### Screenshots
 
