@@ -13,7 +13,13 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/stringops"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+// errNoData is returned when a query matches nothing. It is a normal
+// result, for example a host with no services configured.
+var errNoData = status.Error(codes.NotFound, "no data found")
 
 type Server struct {
 	UnimplementedMonitorDataServiceServer
@@ -92,7 +98,7 @@ func (s *Server) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRe
 	}
 	monitorData := getMonitorLogs(in.ServerName, in.LogType, in.From, in.To, in.Time, &config, convertToJsonArr, in.IsCustomMetric)
 	if len(monitorData) == 0 {
-		return &MonitorData{MonitorData: "no data"}, fmt.Errorf("no data found")
+		return &MonitorData{MonitorData: "no data"}, errNoData
 	}
 	return &MonitorData{MonitorData: monitorData}, nil
 }
@@ -104,7 +110,7 @@ func (s *Server) HandleAgentIdsRequest(context.Context, *Void) (*Message, error)
 	agents := Agents{}
 	agents.AgentIDs = mysql.GetAgents()
 	if len(agents.AgentIDs) == 0 {
-		return &Message{Body: "no data"}, fmt.Errorf("no data found")
+		return &Message{Body: "no data"}, errNoData
 	}
 	out, err := json.Marshal(agents)
 	if err != nil {
@@ -121,7 +127,7 @@ func (s *Server) HandleCustomMetricNameRequest(ctx context.Context, in *ServerIn
 	customMetrics := CustomMetrics{}
 	customMetrics.CustomMetrics = mysql.GetCustomMetricNames(in.ServerName)
 	if len(customMetrics.CustomMetrics) == 0 {
-		return &Message{Body: "no data"}, fmt.Errorf("no data found")
+		return &Message{Body: "no data"}, errNoData
 	}
 	out, err := json.Marshal(customMetrics)
 	if err != nil {

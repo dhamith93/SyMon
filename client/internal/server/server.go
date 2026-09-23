@@ -14,6 +14,8 @@ import (
 	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Agents struct {
@@ -247,7 +249,10 @@ func (s *server) getMonitorData(serverName string, logType string, from int64, t
 	defer cancel()
 	monitorData, err := s.collector.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: at, IsCustomMetric: isCustomMetric})
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		// NotFound only means the query matched nothing, e.g. no services configured
+		if status.Code(err) != codes.NotFound {
+			logger.Log("error", "cannot get "+logType+" for "+serverName+": "+err.Error())
+		}
 		return "", err
 	}
 	return monitorData.MonitorData, nil
@@ -258,7 +263,7 @@ func (s *server) getActiveAlerts(serverName string) (*alertapi.AlertArray, error
 	defer cancel()
 	alerts, err := s.alerts.AlertRequest(ctx, &alertapi.Request{ServerName: serverName})
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("error", "cannot get alerts for "+serverName+": "+err.Error())
 		return &alertapi.AlertArray{}, err
 	}
 	return alerts, nil
