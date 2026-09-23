@@ -124,7 +124,9 @@ func TestMappedSizesEncodeAsIntegers(t *testing.T) {
 	var old struct {
 		Memory struct{ Total, Used, Free, Available uint64 }
 		Swap   struct{ Total, Used, Free uint64 }
-		Disk   []struct{ Usage struct{ Size, Used, Available uint64 } }
+		Disk   []struct {
+			Usage struct{ Size, Used, Available uint64 }
+		}
 	}
 	if err := json.Unmarshal(encoded, &old); err != nil {
 		t.Fatalf("payload does not decode into the old integer fields: %v", err)
