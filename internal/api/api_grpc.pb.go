@@ -19,20 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MonitorDataService_HandlePing_FullMethodName                    = "/api.MonitorDataService/HandlePing"
-	MonitorDataService_InitAgent_FullMethodName                     = "/api.MonitorDataService/InitAgent"
-	MonitorDataService_HandleMonitorData_FullMethodName             = "/api.MonitorDataService/HandleMonitorData"
-	MonitorDataService_HandleCustomMonitorData_FullMethodName       = "/api.MonitorDataService/HandleCustomMonitorData"
-	MonitorDataService_Fleet_FullMethodName                         = "/api.MonitorDataService/Fleet"
-	MonitorDataService_Snapshot_FullMethodName                      = "/api.MonitorDataService/Snapshot"
-	MonitorDataService_QuerySeries_FullMethodName                   = "/api.MonitorDataService/QuerySeries"
-	MonitorDataService_Processes_FullMethodName                     = "/api.MonitorDataService/Processes"
-	MonitorDataService_CustomMetricNames_FullMethodName             = "/api.MonitorDataService/CustomMetricNames"
-	MonitorDataService_Alerts_FullMethodName                        = "/api.MonitorDataService/Alerts"
-	MonitorDataService_IsUp_FullMethodName                          = "/api.MonitorDataService/IsUp"
-	MonitorDataService_HandleMonitorDataRequest_FullMethodName      = "/api.MonitorDataService/HandleMonitorDataRequest"
-	MonitorDataService_HandleCustomMetricNameRequest_FullMethodName = "/api.MonitorDataService/HandleCustomMetricNameRequest"
-	MonitorDataService_HandleAgentIdsRequest_FullMethodName         = "/api.MonitorDataService/HandleAgentIdsRequest"
+	MonitorDataService_HandlePing_FullMethodName              = "/api.MonitorDataService/HandlePing"
+	MonitorDataService_InitAgent_FullMethodName               = "/api.MonitorDataService/InitAgent"
+	MonitorDataService_HandleMonitorData_FullMethodName       = "/api.MonitorDataService/HandleMonitorData"
+	MonitorDataService_HandleCustomMonitorData_FullMethodName = "/api.MonitorDataService/HandleCustomMonitorData"
+	MonitorDataService_Fleet_FullMethodName                   = "/api.MonitorDataService/Fleet"
+	MonitorDataService_Snapshot_FullMethodName                = "/api.MonitorDataService/Snapshot"
+	MonitorDataService_QuerySeries_FullMethodName             = "/api.MonitorDataService/QuerySeries"
+	MonitorDataService_Processes_FullMethodName               = "/api.MonitorDataService/Processes"
+	MonitorDataService_CustomMetricNames_FullMethodName       = "/api.MonitorDataService/CustomMetricNames"
+	MonitorDataService_Alerts_FullMethodName                  = "/api.MonitorDataService/Alerts"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -51,12 +47,6 @@ type MonitorDataServiceClient interface {
 	Processes(ctx context.Context, in *ProcessesRequest, opts ...grpc.CallOption) (*ProcessesResponse, error)
 	CustomMetricNames(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*NameList, error)
 	Alerts(ctx context.Context, in *AlertsRequest, opts ...grpc.CallOption) (*AlertList, error)
-	// legacy, used by the old client.
-	// HandleMonitorDataRequest is no longer served.
-	IsUp(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*IsActive, error)
-	HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest, opts ...grpc.CallOption) (*MonitorData, error)
-	HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
-	HandleAgentIdsRequest(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error)
 }
 
 type monitorDataServiceClient struct {
@@ -167,46 +157,6 @@ func (c *monitorDataServiceClient) Alerts(ctx context.Context, in *AlertsRequest
 	return out, nil
 }
 
-func (c *monitorDataServiceClient) IsUp(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*IsActive, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IsActive)
-	err := c.cc.Invoke(ctx, MonitorDataService_IsUp_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *monitorDataServiceClient) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest, opts ...grpc.CallOption) (*MonitorData, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MonitorData)
-	err := c.cc.Invoke(ctx, MonitorDataService_HandleMonitorDataRequest_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *monitorDataServiceClient) HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Message)
-	err := c.cc.Invoke(ctx, MonitorDataService_HandleCustomMetricNameRequest_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *monitorDataServiceClient) HandleAgentIdsRequest(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Message)
-	err := c.cc.Invoke(ctx, MonitorDataService_HandleAgentIdsRequest_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -223,12 +173,6 @@ type MonitorDataServiceServer interface {
 	Processes(context.Context, *ProcessesRequest) (*ProcessesResponse, error)
 	CustomMetricNames(context.Context, *HostRequest) (*NameList, error)
 	Alerts(context.Context, *AlertsRequest) (*AlertList, error)
-	// legacy, used by the old client.
-	// HandleMonitorDataRequest is no longer served.
-	IsUp(context.Context, *ServerInfo) (*IsActive, error)
-	HandleMonitorDataRequest(context.Context, *MonitorDataRequest) (*MonitorData, error)
-	HandleCustomMetricNameRequest(context.Context, *ServerInfo) (*Message, error)
-	HandleAgentIdsRequest(context.Context, *Void) (*Message, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -268,18 +212,6 @@ func (UnimplementedMonitorDataServiceServer) CustomMetricNames(context.Context, 
 }
 func (UnimplementedMonitorDataServiceServer) Alerts(context.Context, *AlertsRequest) (*AlertList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Alerts not implemented")
-}
-func (UnimplementedMonitorDataServiceServer) IsUp(context.Context, *ServerInfo) (*IsActive, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsUp not implemented")
-}
-func (UnimplementedMonitorDataServiceServer) HandleMonitorDataRequest(context.Context, *MonitorDataRequest) (*MonitorData, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HandleMonitorDataRequest not implemented")
-}
-func (UnimplementedMonitorDataServiceServer) HandleCustomMetricNameRequest(context.Context, *ServerInfo) (*Message, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HandleCustomMetricNameRequest not implemented")
-}
-func (UnimplementedMonitorDataServiceServer) HandleAgentIdsRequest(context.Context, *Void) (*Message, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HandleAgentIdsRequest not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -482,78 +414,6 @@ func _MonitorDataService_Alerts_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MonitorDataService_IsUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ServerInfo)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitorDataServiceServer).IsUp(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MonitorDataService_IsUp_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitorDataServiceServer).IsUp(ctx, req.(*ServerInfo))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MonitorDataService_HandleMonitorDataRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MonitorDataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitorDataServiceServer).HandleMonitorDataRequest(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MonitorDataService_HandleMonitorDataRequest_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitorDataServiceServer).HandleMonitorDataRequest(ctx, req.(*MonitorDataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MonitorDataService_HandleCustomMetricNameRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ServerInfo)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitorDataServiceServer).HandleCustomMetricNameRequest(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MonitorDataService_HandleCustomMetricNameRequest_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitorDataServiceServer).HandleCustomMetricNameRequest(ctx, req.(*ServerInfo))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MonitorDataService_HandleAgentIdsRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Void)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitorDataServiceServer).HandleAgentIdsRequest(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MonitorDataService_HandleAgentIdsRequest_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitorDataServiceServer).HandleAgentIdsRequest(ctx, req.(*Void))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -600,22 +460,6 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Alerts",
 			Handler:    _MonitorDataService_Alerts_Handler,
-		},
-		{
-			MethodName: "IsUp",
-			Handler:    _MonitorDataService_IsUp_Handler,
-		},
-		{
-			MethodName: "HandleMonitorDataRequest",
-			Handler:    _MonitorDataService_HandleMonitorDataRequest_Handler,
-		},
-		{
-			MethodName: "HandleCustomMetricNameRequest",
-			Handler:    _MonitorDataService_HandleCustomMetricNameRequest_Handler,
-		},
-		{
-			MethodName: "HandleAgentIdsRequest",
-			Handler:    _MonitorDataService_HandleAgentIdsRequest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

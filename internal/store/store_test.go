@@ -190,16 +190,16 @@ func TestSnapshotAndQueries(t *testing.T) {
 	}
 
 	t.Run("latest snapshot", func(t *testing.T) {
-		snapshotTime, snapshot, err := st.LatestSnapshot(ctx, "web1")
+		latest, err := st.LatestSnapshot(ctx, "web1")
 		if err != nil {
 			t.Fatal(err)
 		}
 		var data monitor.MonitorData
-		if err := json.Unmarshal(snapshot, &data); err != nil {
+		if err := json.Unmarshal(latest.Snapshot, &data); err != nil {
 			t.Fatal(err)
 		}
-		if !snapshotTime.Equal(at) || data.System.OS != "Debian 13" || len(data.Disk) != 2 {
-			t.Errorf("unexpected snapshot at %v: %+v", snapshotTime, data)
+		if !latest.Time.Equal(at) || latest.LastSeen.IsZero() || data.System.OS != "Debian 13" || len(data.Disk) != 2 {
+			t.Errorf("unexpected snapshot at %v: %+v", latest.Time, data)
 		}
 	})
 
@@ -365,8 +365,8 @@ func TestAlerts(t *testing.T) {
 	}
 
 	fleet, _ := st.FleetSummary(ctx)
-	if len(fleet) != 1 || fleet[0].ActiveAlerts != 1 {
-		t.Errorf("expected one active alert in the summary, got %+v", fleet)
+	if len(fleet) != 1 || fleet[0].ActiveAlerts != 1 || fleet[0].WorstSeverity != 2 {
+		t.Errorf("expected one critical alert in the summary, got %+v", fleet)
 	}
 
 	if err := st.ResolveAlert(ctx, id, 50, start.Add(5*time.Minute)); err != nil {

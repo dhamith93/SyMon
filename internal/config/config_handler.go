@@ -10,6 +10,7 @@ import (
 
 const DEFAULT_INTERVAL_SECS int = 30
 const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
+const DEFAULT_REFRESH_SECS int = 15
 
 type Collector struct {
 	TLSEnabled                bool
@@ -36,10 +37,10 @@ type Client struct {
 	LogFileEnabled              bool
 	Port                        string
 	CollectorEndpoint           string
-	AlertEndpoint               string
 	CollectorEndpointCACertPath string
-	AlertEndpointCACertPath     string
 	LogFilePath                 string
+	// RefreshSeconds is how often the dashboard reloads live data
+	RefreshSeconds int
 }
 
 type AlertProcessor struct {
@@ -162,14 +163,17 @@ func GetCollector() Collector {
 }
 
 func GetClient() Client {
+	refreshSeconds := positiveInt(os.Getenv("SYMON_CLIENT_REFRESH_SECONDS"))
+	if refreshSeconds == 0 {
+		refreshSeconds = DEFAULT_REFRESH_SECS
+	}
 	return Client{
 		Port:                        os.Getenv("SYMON_CLIENT_PORT"),
 		CollectorEndpoint:           os.Getenv("SYMON_CLIENT_COLLECTOR_ENDPOINT"),
 		CollectorEndpointCACertPath: os.Getenv("SYMON_CLIENT_COLLECTOR_ENDPOINT_CA_CERT_PATH"),
-		AlertEndpoint:               os.Getenv("SYMON_CLIENT_ALERT_ENDPOINT"),
-		AlertEndpointCACertPath:     os.Getenv("SYMON_CLIENT_ALERT_ENDPOINT_CERT_PATH"),
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_CLIENT_LOG_FILE_ENABLED")) == "TRUE",
 		LogFilePath:                 os.Getenv("SYMON_CLIENT_LOG_FILE_PATH"),
+		RefreshSeconds:              refreshSeconds,
 	}
 }
 

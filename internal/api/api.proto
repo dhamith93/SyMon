@@ -11,10 +11,6 @@ message Message {
     string body = 1;
 }
 
-message IsActive {
-    bool isUp = 1;
-}
-
 message ServerInfo {
     string serverName = 1;
     string timezone = 2;
@@ -22,15 +18,6 @@ message ServerInfo {
 
 message MonitorData {
     string monitorData = 1;
-}
-
-message MonitorDataRequest {
-    string serverName = 1;
-    string logType = 2;
-    int64 from = 3;
-    int64 to = 4;
-    int64 time = 5;
-    bool isCustomMetric = 6;
 }
 
 // Query API. Times are unix seconds.
@@ -49,6 +36,8 @@ message HostSummary {
     double rxBps = 11;
     double txBps = 12;
     int32 activeAlerts = 13;
+    // highest severity of the open alerts, 0 when there are none
+    int32 worstSeverity = 14;
 }
 
 message FleetSummary {
@@ -64,6 +53,8 @@ message HostSnapshot {
     string host = 1;
     int64 time = 2;
     string snapshotJson = 3;
+    int64 lastSeen = 4;
+    bool up = 5;
 }
 
 message SeriesRequest {
@@ -153,11 +144,4 @@ service MonitorDataService {
     rpc Processes(ProcessesRequest) returns (ProcessesResponse) {}
     rpc CustomMetricNames(HostRequest) returns (NameList) {}
     rpc Alerts(AlertsRequest) returns (AlertList) {}
-
-    // legacy, used by the old client.
-    // HandleMonitorDataRequest is no longer served.
-    rpc IsUp(ServerInfo) returns (IsActive) {}
-    rpc HandleMonitorDataRequest(MonitorDataRequest) returns (MonitorData) {}
-    rpc HandleCustomMetricNameRequest(ServerInfo) returns (Message) {}
-    rpc HandleAgentIdsRequest(Void) returns (Message) {}
 }

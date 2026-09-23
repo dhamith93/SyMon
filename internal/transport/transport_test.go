@@ -27,8 +27,8 @@ type fakeCollector struct {
 	api.UnimplementedMonitorDataServiceServer
 }
 
-func (fakeCollector) IsUp(ctx context.Context, in *api.ServerInfo) (*api.IsActive, error) {
-	return &api.IsActive{IsUp: true}, nil
+func (fakeCollector) Fleet(ctx context.Context, in *api.Void) (*api.FleetSummary, error) {
+	return &api.FleetSummary{}, nil
 }
 
 // startServer runs a collector stub and returns its address
@@ -49,7 +49,7 @@ func startServer(t *testing.T, tlsEnabled bool, certPath string, keyPath string)
 	return lis.Addr().String()
 }
 
-func callIsUp(t *testing.T, addr string, caPath string) error {
+func callFleet(t *testing.T, addr string, caPath string) error {
 	t.Helper()
 	conn, err := transport.Dial(addr, caPath)
 	if err != nil {
@@ -58,7 +58,7 @@ func callIsUp(t *testing.T, addr string, caPath string) error {
 	defer conn.Close()
 	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err = api.NewMonitorDataServiceClient(conn).IsUp(ctx, &api.ServerInfo{ServerName: "test"})
+	_, err = api.NewMonitorDataServiceClient(conn).Fleet(ctx, &api.Void{})
 	return err
 }
 
@@ -66,7 +66,7 @@ func TestDialPlaintext(t *testing.T) {
 	t.Setenv("SYMON_KEY", "test-key")
 	addr := startServer(t, false, "", "")
 
-	if err := callIsUp(t, addr, ""); err != nil {
+	if err := callFleet(t, addr, ""); err != nil {
 		t.Fatalf("expected call to succeed, got: %v", err)
 	}
 }
@@ -82,7 +82,7 @@ func TestMissingTokenRejected(t *testing.T) {
 	defer conn.Close()
 	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err = api.NewMonitorDataServiceClient(conn).IsUp(ctx, &api.ServerInfo{})
+	_, err = api.NewMonitorDataServiceClient(conn).Fleet(ctx, &api.Void{})
 
 	if status.Code(err) != codes.Unauthenticated {
 		t.Errorf("expected Unauthenticated, got: %v", err)
@@ -94,7 +94,7 @@ func TestDialTLS(t *testing.T) {
 	certPath, keyPath := writeSelfSignedCert(t)
 	addr := startServer(t, true, certPath, keyPath)
 
-	if err := callIsUp(t, addr, certPath); err != nil {
+	if err := callFleet(t, addr, certPath); err != nil {
 		t.Fatalf("expected TLS call to succeed, got: %v", err)
 	}
 }

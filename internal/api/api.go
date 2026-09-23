@@ -26,14 +26,6 @@ type Server struct {
 	Store *store.Store
 }
 
-type Agents struct {
-	AgentIDs []string
-}
-
-type CustomMetrics struct {
-	CustomMetrics []string
-}
-
 // toStatus turns a store error into a grpc status. Unexpected errors are
 // logged here and not passed on, so callers do not see database details.
 func toStatus(err error) error {
@@ -46,6 +38,12 @@ func toStatus(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, store.ErrInvalid):
 		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, context.Canceled):
+		// the caller went away, nothing to report
+		return status.Error(codes.Canceled, "canceled")
+	case errors.Is(err, context.DeadlineExceeded):
+		logger.Log("error", "database query timed out")
+		return status.Error(codes.DeadlineExceeded, "timed out")
 	default:
 		logger.Log("error", err.Error())
 		return status.Error(codes.Internal, "internal error")
@@ -120,17 +118,24 @@ func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
 			RxBps:         summary.RxBps,
 			TxBps:         summary.TxBps,
 			ActiveAlerts:  int32(summary.ActiveAlerts),
+			WorstSeverity: int32(summary.WorstSeverity),
 		})
 	}
 	return fleet, nil
 }
 
 func (s *Server) Snapshot(ctx context.Context, in *HostRequest) (*HostSnapshot, error) {
-	at, snapshot, err := s.Store.LatestSnapshot(ctx, in.Host)
+	latest, err := s.Store.LatestSnapshot(ctx, in.Host)
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &HostSnapshot{Host: in.Host, Time: at.Unix(), SnapshotJson: string(snapshot)}, nil
+	return &HostSnapshot{
+		Host:         in.Host,
+		Time:         latest.Time.Unix(),
+		SnapshotJson: string(latest.Snapshot),
+		LastSeen:     unix(latest.LastSeen),
+		Up:           isUp(latest.LastSeen, time.Now()),
+	}, nil
 }
 
 func (s *Server) QuerySeries(ctx context.Context, in *SeriesRequest) (*SeriesResponse, error) {
@@ -210,48 +215,6 @@ func (s *Server) Alerts(ctx context.Context, in *AlertsRequest) (*AlertList, err
 		list.Alerts = append(list.Alerts, record)
 	}
 	return list, nil
-}
-
-func (s *Server) IsUp(ctx context.Context, in *ServerInfo) (*IsActive, error) {
-	lastSeen, err := s.Store.LastSeen(ctx, in.ServerName)
-	if err != nil {
-		return &IsActive{IsUp: false}, toStatus(err)
-	}
-	return &IsActive{IsUp: isUp(lastSeen, time.Now())}, nil
-}
-
-func (s *Server) HandleAgentIdsRequest(ctx context.Context, in *Void) (*Message, error) {
-	hosts, err := s.Store.Hosts(ctx)
-	if err != nil {
-		return nil, toStatus(err)
-	}
-	agents := Agents{AgentIDs: []string{}}
-	for _, host := range hosts {
-		agents.AgentIDs = append(agents.AgentIDs, host.Name)
-	}
-	if len(agents.AgentIDs) == 0 {
-		return nil, errNoData
-	}
-	out, err := json.Marshal(agents)
-	if err != nil {
-		return nil, toStatus(err)
-	}
-	return &Message{Body: string(out)}, nil
-}
-
-func (s *Server) HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo) (*Message, error) {
-	names, err := s.Store.CustomMetricNames(ctx, in.ServerName)
-	if err != nil {
-		return nil, toStatus(err)
-	}
-	if len(names) == 0 {
-		return nil, errNoData
-	}
-	out, err := json.Marshal(CustomMetrics{CustomMetrics: names})
-	if err != nil {
-		return nil, toStatus(err)
-	}
-	return &Message{Body: string(out)}, nil
 }
 
 func isUp(lastSeen time.Time, now time.Time) bool {

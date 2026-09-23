@@ -56,7 +56,6 @@ services:
       <<: *symon-key
       SYMON_CLIENT_PORT: "8080"
       SYMON_CLIENT_COLLECTOR_ENDPOINT: collector:9000
-      SYMON_CLIENT_ALERT_ENDPOINT: alertprocessor:9001
     ports:
       - "8080:8080"
     depends_on:

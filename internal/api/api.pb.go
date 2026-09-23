@@ -101,50 +101,6 @@ func (x *Message) GetBody() string {
 	return ""
 }
 
-type IsActive struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	IsUp          bool                   `protobuf:"varint,1,opt,name=isUp,proto3" json:"isUp,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *IsActive) Reset() {
-	*x = IsActive{}
-	mi := &file_api_api_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *IsActive) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*IsActive) ProtoMessage() {}
-
-func (x *IsActive) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use IsActive.ProtoReflect.Descriptor instead.
-func (*IsActive) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *IsActive) GetIsUp() bool {
-	if x != nil {
-		return x.IsUp
-	}
-	return false
-}
-
 type ServerInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ServerName    string                 `protobuf:"bytes,1,opt,name=serverName,proto3" json:"serverName,omitempty"`
@@ -155,7 +111,7 @@ type ServerInfo struct {
 
 func (x *ServerInfo) Reset() {
 	*x = ServerInfo{}
-	mi := &file_api_api_proto_msgTypes[3]
+	mi := &file_api_api_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -167,7 +123,7 @@ func (x *ServerInfo) String() string {
 func (*ServerInfo) ProtoMessage() {}
 
 func (x *ServerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[3]
+	mi := &file_api_api_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -180,7 +136,7 @@ func (x *ServerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerInfo.ProtoReflect.Descriptor instead.
 func (*ServerInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{3}
+	return file_api_api_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ServerInfo) GetServerName() string {
@@ -206,7 +162,7 @@ type MonitorData struct {
 
 func (x *MonitorData) Reset() {
 	*x = MonitorData{}
-	mi := &file_api_api_proto_msgTypes[4]
+	mi := &file_api_api_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -218,7 +174,7 @@ func (x *MonitorData) String() string {
 func (*MonitorData) ProtoMessage() {}
 
 func (x *MonitorData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[4]
+	mi := &file_api_api_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -231,7 +187,7 @@ func (x *MonitorData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MonitorData.ProtoReflect.Descriptor instead.
 func (*MonitorData) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{4}
+	return file_api_api_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MonitorData) GetMonitorData() string {
@@ -239,90 +195,6 @@ func (x *MonitorData) GetMonitorData() string {
 		return x.MonitorData
 	}
 	return ""
-}
-
-type MonitorDataRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ServerName     string                 `protobuf:"bytes,1,opt,name=serverName,proto3" json:"serverName,omitempty"`
-	LogType        string                 `protobuf:"bytes,2,opt,name=logType,proto3" json:"logType,omitempty"`
-	From           int64                  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
-	To             int64                  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
-	Time           int64                  `protobuf:"varint,5,opt,name=time,proto3" json:"time,omitempty"`
-	IsCustomMetric bool                   `protobuf:"varint,6,opt,name=isCustomMetric,proto3" json:"isCustomMetric,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *MonitorDataRequest) Reset() {
-	*x = MonitorDataRequest{}
-	mi := &file_api_api_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MonitorDataRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MonitorDataRequest) ProtoMessage() {}
-
-func (x *MonitorDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MonitorDataRequest.ProtoReflect.Descriptor instead.
-func (*MonitorDataRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *MonitorDataRequest) GetServerName() string {
-	if x != nil {
-		return x.ServerName
-	}
-	return ""
-}
-
-func (x *MonitorDataRequest) GetLogType() string {
-	if x != nil {
-		return x.LogType
-	}
-	return ""
-}
-
-func (x *MonitorDataRequest) GetFrom() int64 {
-	if x != nil {
-		return x.From
-	}
-	return 0
-}
-
-func (x *MonitorDataRequest) GetTo() int64 {
-	if x != nil {
-		return x.To
-	}
-	return 0
-}
-
-func (x *MonitorDataRequest) GetTime() int64 {
-	if x != nil {
-		return x.Time
-	}
-	return 0
-}
-
-func (x *MonitorDataRequest) GetIsCustomMetric() bool {
-	if x != nil {
-		return x.IsCustomMetric
-	}
-	return false
 }
 
 type HostSummary struct {
@@ -340,13 +212,15 @@ type HostSummary struct {
 	RxBps         float64                `protobuf:"fixed64,11,opt,name=rxBps,proto3" json:"rxBps,omitempty"`
 	TxBps         float64                `protobuf:"fixed64,12,opt,name=txBps,proto3" json:"txBps,omitempty"`
 	ActiveAlerts  int32                  `protobuf:"varint,13,opt,name=activeAlerts,proto3" json:"activeAlerts,omitempty"`
+	// highest severity of the open alerts, 0 when there are none
+	WorstSeverity int32 `protobuf:"varint,14,opt,name=worstSeverity,proto3" json:"worstSeverity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HostSummary) Reset() {
 	*x = HostSummary{}
-	mi := &file_api_api_proto_msgTypes[6]
+	mi := &file_api_api_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +232,7 @@ func (x *HostSummary) String() string {
 func (*HostSummary) ProtoMessage() {}
 
 func (x *HostSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[6]
+	mi := &file_api_api_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +245,7 @@ func (x *HostSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostSummary.ProtoReflect.Descriptor instead.
 func (*HostSummary) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{6}
+	return file_api_api_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *HostSummary) GetName() string {
@@ -465,6 +339,13 @@ func (x *HostSummary) GetActiveAlerts() int32 {
 	return 0
 }
 
+func (x *HostSummary) GetWorstSeverity() int32 {
+	if x != nil {
+		return x.WorstSeverity
+	}
+	return 0
+}
+
 type FleetSummary struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Hosts         []*HostSummary         `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
@@ -474,7 +355,7 @@ type FleetSummary struct {
 
 func (x *FleetSummary) Reset() {
 	*x = FleetSummary{}
-	mi := &file_api_api_proto_msgTypes[7]
+	mi := &file_api_api_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -486,7 +367,7 @@ func (x *FleetSummary) String() string {
 func (*FleetSummary) ProtoMessage() {}
 
 func (x *FleetSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[7]
+	mi := &file_api_api_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -499,7 +380,7 @@ func (x *FleetSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FleetSummary.ProtoReflect.Descriptor instead.
 func (*FleetSummary) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{7}
+	return file_api_api_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *FleetSummary) GetHosts() []*HostSummary {
@@ -518,7 +399,7 @@ type HostRequest struct {
 
 func (x *HostRequest) Reset() {
 	*x = HostRequest{}
-	mi := &file_api_api_proto_msgTypes[8]
+	mi := &file_api_api_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -530,7 +411,7 @@ func (x *HostRequest) String() string {
 func (*HostRequest) ProtoMessage() {}
 
 func (x *HostRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[8]
+	mi := &file_api_api_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -543,7 +424,7 @@ func (x *HostRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostRequest.ProtoReflect.Descriptor instead.
 func (*HostRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{8}
+	return file_api_api_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *HostRequest) GetHost() string {
@@ -559,13 +440,15 @@ type HostSnapshot struct {
 	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	Time          int64                  `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
 	SnapshotJson  string                 `protobuf:"bytes,3,opt,name=snapshotJson,proto3" json:"snapshotJson,omitempty"`
+	LastSeen      int64                  `protobuf:"varint,4,opt,name=lastSeen,proto3" json:"lastSeen,omitempty"`
+	Up            bool                   `protobuf:"varint,5,opt,name=up,proto3" json:"up,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HostSnapshot) Reset() {
 	*x = HostSnapshot{}
-	mi := &file_api_api_proto_msgTypes[9]
+	mi := &file_api_api_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -577,7 +460,7 @@ func (x *HostSnapshot) String() string {
 func (*HostSnapshot) ProtoMessage() {}
 
 func (x *HostSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[9]
+	mi := &file_api_api_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -590,7 +473,7 @@ func (x *HostSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostSnapshot.ProtoReflect.Descriptor instead.
 func (*HostSnapshot) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{9}
+	return file_api_api_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *HostSnapshot) GetHost() string {
@@ -614,6 +497,20 @@ func (x *HostSnapshot) GetSnapshotJson() string {
 	return ""
 }
 
+func (x *HostSnapshot) GetLastSeen() int64 {
+	if x != nil {
+		return x.LastSeen
+	}
+	return 0
+}
+
+func (x *HostSnapshot) GetUp() bool {
+	if x != nil {
+		return x.Up
+	}
+	return false
+}
+
 type SeriesRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Host   string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
@@ -631,7 +528,7 @@ type SeriesRequest struct {
 
 func (x *SeriesRequest) Reset() {
 	*x = SeriesRequest{}
-	mi := &file_api_api_proto_msgTypes[10]
+	mi := &file_api_api_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -643,7 +540,7 @@ func (x *SeriesRequest) String() string {
 func (*SeriesRequest) ProtoMessage() {}
 
 func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[10]
+	mi := &file_api_api_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -656,7 +553,7 @@ func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesRequest.ProtoReflect.Descriptor instead.
 func (*SeriesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{10}
+	return file_api_api_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SeriesRequest) GetHost() string {
@@ -718,7 +615,7 @@ type Point struct {
 
 func (x *Point) Reset() {
 	*x = Point{}
-	mi := &file_api_api_proto_msgTypes[11]
+	mi := &file_api_api_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -730,7 +627,7 @@ func (x *Point) String() string {
 func (*Point) ProtoMessage() {}
 
 func (x *Point) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[11]
+	mi := &file_api_api_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -743,7 +640,7 @@ func (x *Point) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Point.ProtoReflect.Descriptor instead.
 func (*Point) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{11}
+	return file_api_api_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Point) GetTime() int64 {
@@ -770,7 +667,7 @@ type Series struct {
 
 func (x *Series) Reset() {
 	*x = Series{}
-	mi := &file_api_api_proto_msgTypes[12]
+	mi := &file_api_api_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -782,7 +679,7 @@ func (x *Series) String() string {
 func (*Series) ProtoMessage() {}
 
 func (x *Series) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[12]
+	mi := &file_api_api_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -795,7 +692,7 @@ func (x *Series) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Series.ProtoReflect.Descriptor instead.
 func (*Series) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{12}
+	return file_api_api_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Series) GetLabel() string {
@@ -825,7 +722,7 @@ type SeriesResponse struct {
 
 func (x *SeriesResponse) Reset() {
 	*x = SeriesResponse{}
-	mi := &file_api_api_proto_msgTypes[13]
+	mi := &file_api_api_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -837,7 +734,7 @@ func (x *SeriesResponse) String() string {
 func (*SeriesResponse) ProtoMessage() {}
 
 func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[13]
+	mi := &file_api_api_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -850,7 +747,7 @@ func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesResponse.ProtoReflect.Descriptor instead.
 func (*SeriesResponse) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{13}
+	return file_api_api_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SeriesResponse) GetMetric() string {
@@ -892,7 +789,7 @@ type ProcessesRequest struct {
 
 func (x *ProcessesRequest) Reset() {
 	*x = ProcessesRequest{}
-	mi := &file_api_api_proto_msgTypes[14]
+	mi := &file_api_api_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -904,7 +801,7 @@ func (x *ProcessesRequest) String() string {
 func (*ProcessesRequest) ProtoMessage() {}
 
 func (x *ProcessesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[14]
+	mi := &file_api_api_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -917,7 +814,7 @@ func (x *ProcessesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessesRequest.ProtoReflect.Descriptor instead.
 func (*ProcessesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{14}
+	return file_api_api_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ProcessesRequest) GetHost() string {
@@ -945,7 +842,7 @@ type ProcessesResponse struct {
 
 func (x *ProcessesResponse) Reset() {
 	*x = ProcessesResponse{}
-	mi := &file_api_api_proto_msgTypes[15]
+	mi := &file_api_api_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -957,7 +854,7 @@ func (x *ProcessesResponse) String() string {
 func (*ProcessesResponse) ProtoMessage() {}
 
 func (x *ProcessesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[15]
+	mi := &file_api_api_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -970,7 +867,7 @@ func (x *ProcessesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessesResponse.ProtoReflect.Descriptor instead.
 func (*ProcessesResponse) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{15}
+	return file_api_api_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ProcessesResponse) GetTime() int64 {
@@ -996,7 +893,7 @@ type NameList struct {
 
 func (x *NameList) Reset() {
 	*x = NameList{}
-	mi := &file_api_api_proto_msgTypes[16]
+	mi := &file_api_api_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1008,7 +905,7 @@ func (x *NameList) String() string {
 func (*NameList) ProtoMessage() {}
 
 func (x *NameList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[16]
+	mi := &file_api_api_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1021,7 +918,7 @@ func (x *NameList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NameList.ProtoReflect.Descriptor instead.
 func (*NameList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{16}
+	return file_api_api_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NameList) GetNames() []string {
@@ -1044,7 +941,7 @@ type AlertsRequest struct {
 
 func (x *AlertsRequest) Reset() {
 	*x = AlertsRequest{}
-	mi := &file_api_api_proto_msgTypes[17]
+	mi := &file_api_api_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +953,7 @@ func (x *AlertsRequest) String() string {
 func (*AlertsRequest) ProtoMessage() {}
 
 func (x *AlertsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[17]
+	mi := &file_api_api_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +966,7 @@ func (x *AlertsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertsRequest.ProtoReflect.Descriptor instead.
 func (*AlertsRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{17}
+	return file_api_api_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AlertsRequest) GetHost() string {
@@ -1120,7 +1017,7 @@ type AlertRecord struct {
 
 func (x *AlertRecord) Reset() {
 	*x = AlertRecord{}
-	mi := &file_api_api_proto_msgTypes[18]
+	mi := &file_api_api_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1132,7 +1029,7 @@ func (x *AlertRecord) String() string {
 func (*AlertRecord) ProtoMessage() {}
 
 func (x *AlertRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[18]
+	mi := &file_api_api_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1145,7 +1042,7 @@ func (x *AlertRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertRecord.ProtoReflect.Descriptor instead.
 func (*AlertRecord) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{18}
+	return file_api_api_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AlertRecord) GetId() int64 {
@@ -1227,7 +1124,7 @@ type AlertList struct {
 
 func (x *AlertList) Reset() {
 	*x = AlertList{}
-	mi := &file_api_api_proto_msgTypes[19]
+	mi := &file_api_api_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1239,7 +1136,7 @@ func (x *AlertList) String() string {
 func (*AlertList) ProtoMessage() {}
 
 func (x *AlertList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[19]
+	mi := &file_api_api_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1252,7 +1149,7 @@ func (x *AlertList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertList.ProtoReflect.Descriptor instead.
 func (*AlertList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{19}
+	return file_api_api_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AlertList) GetAlerts() []*AlertRecord {
@@ -1269,9 +1166,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\rapi/api.proto\x12\x03api\"\x06\n" +
 	"\x04Void\"\x1d\n" +
 	"\aMessage\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\tR\x04body\"\x1e\n" +
-	"\bIsActive\x12\x12\n" +
-	"\x04isUp\x18\x01 \x01(\bR\x04isUp\"H\n" +
+	"\x04body\x18\x01 \x01(\tR\x04body\"H\n" +
 	"\n" +
 	"ServerInfo\x12\x1e\n" +
 	"\n" +
@@ -1279,16 +1174,7 @@ const file_api_api_proto_rawDesc = "" +
 	"serverName\x12\x1a\n" +
 	"\btimezone\x18\x02 \x01(\tR\btimezone\"/\n" +
 	"\vMonitorData\x12 \n" +
-	"\vmonitorData\x18\x01 \x01(\tR\vmonitorData\"\xae\x01\n" +
-	"\x12MonitorDataRequest\x12\x1e\n" +
-	"\n" +
-	"serverName\x18\x01 \x01(\tR\n" +
-	"serverName\x12\x18\n" +
-	"\alogType\x18\x02 \x01(\tR\alogType\x12\x12\n" +
-	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
-	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x12\n" +
-	"\x04time\x18\x05 \x01(\x03R\x04time\x12&\n" +
-	"\x0eisCustomMetric\x18\x06 \x01(\bR\x0eisCustomMetric\"\xe3\x02\n" +
+	"\vmonitorData\x18\x01 \x01(\tR\vmonitorData\"\x89\x03\n" +
 	"\vHostSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
 	"\x02up\x18\x02 \x01(\bR\x02up\x12\x1a\n" +
@@ -1305,15 +1191,18 @@ const file_api_api_proto_rawDesc = "" +
 	" \x01(\x01R\vdiskUsedPct\x12\x14\n" +
 	"\x05rxBps\x18\v \x01(\x01R\x05rxBps\x12\x14\n" +
 	"\x05txBps\x18\f \x01(\x01R\x05txBps\x12\"\n" +
-	"\factiveAlerts\x18\r \x01(\x05R\factiveAlerts\"6\n" +
+	"\factiveAlerts\x18\r \x01(\x05R\factiveAlerts\x12$\n" +
+	"\rworstSeverity\x18\x0e \x01(\x05R\rworstSeverity\"6\n" +
 	"\fFleetSummary\x12&\n" +
 	"\x05hosts\x18\x01 \x03(\v2\x10.api.HostSummaryR\x05hosts\"!\n" +
 	"\vHostRequest\x12\x12\n" +
-	"\x04host\x18\x01 \x01(\tR\x04host\"Z\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\"\x86\x01\n" +
 	"\fHostSnapshot\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
 	"\x04time\x18\x02 \x01(\x03R\x04time\x12\"\n" +
-	"\fsnapshotJson\x18\x03 \x01(\tR\fsnapshotJson\"\xa5\x01\n" +
+	"\fsnapshotJson\x18\x03 \x01(\tR\fsnapshotJson\x12\x1a\n" +
+	"\blastSeen\x18\x04 \x01(\x03R\blastSeen\x12\x0e\n" +
+	"\x02up\x18\x05 \x01(\bR\x02up\"\xa5\x01\n" +
 	"\rSeriesRequest\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x16\n" +
 	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x14\n" +
@@ -1362,7 +1251,7 @@ const file_api_api_proto_rawDesc = "" +
 	" \x01(\x03R\n" +
 	"resolvedAt\"5\n" +
 	"\tAlertList\x12(\n" +
-	"\x06alerts\x18\x01 \x03(\v2\x10.api.AlertRecordR\x06alerts2\x8a\x06\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x10.api.AlertRecordR\x06alerts2\xa1\x04\n" +
 	"\x12MonitorDataService\x12-\n" +
 	"\n" +
 	"HandlePing\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x12,\n" +
@@ -1374,11 +1263,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\vQuerySeries\x12\x12.api.SeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x12<\n" +
 	"\tProcesses\x12\x15.api.ProcessesRequest\x1a\x16.api.ProcessesResponse\"\x00\x126\n" +
 	"\x11CustomMetricNames\x12\x10.api.HostRequest\x1a\r.api.NameList\"\x00\x12.\n" +
-	"\x06Alerts\x12\x12.api.AlertsRequest\x1a\x0e.api.AlertList\"\x00\x12(\n" +
-	"\x04IsUp\x12\x0f.api.ServerInfo\x1a\r.api.IsActive\"\x00\x12G\n" +
-	"\x18HandleMonitorDataRequest\x12\x17.api.MonitorDataRequest\x1a\x10.api.MonitorData\"\x00\x12@\n" +
-	"\x1dHandleCustomMetricNameRequest\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x122\n" +
-	"\x15HandleAgentIdsRequest\x12\t.api.Void\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"\x06Alerts\x12\x12.api.AlertsRequest\x1a\x0e.api.AlertList\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -1392,64 +1277,54 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_api_api_proto_goTypes = []any{
-	(*Void)(nil),               // 0: api.Void
-	(*Message)(nil),            // 1: api.Message
-	(*IsActive)(nil),           // 2: api.IsActive
-	(*ServerInfo)(nil),         // 3: api.ServerInfo
-	(*MonitorData)(nil),        // 4: api.MonitorData
-	(*MonitorDataRequest)(nil), // 5: api.MonitorDataRequest
-	(*HostSummary)(nil),        // 6: api.HostSummary
-	(*FleetSummary)(nil),       // 7: api.FleetSummary
-	(*HostRequest)(nil),        // 8: api.HostRequest
-	(*HostSnapshot)(nil),       // 9: api.HostSnapshot
-	(*SeriesRequest)(nil),      // 10: api.SeriesRequest
-	(*Point)(nil),              // 11: api.Point
-	(*Series)(nil),             // 12: api.Series
-	(*SeriesResponse)(nil),     // 13: api.SeriesResponse
-	(*ProcessesRequest)(nil),   // 14: api.ProcessesRequest
-	(*ProcessesResponse)(nil),  // 15: api.ProcessesResponse
-	(*NameList)(nil),           // 16: api.NameList
-	(*AlertsRequest)(nil),      // 17: api.AlertsRequest
-	(*AlertRecord)(nil),        // 18: api.AlertRecord
-	(*AlertList)(nil),          // 19: api.AlertList
+	(*Void)(nil),              // 0: api.Void
+	(*Message)(nil),           // 1: api.Message
+	(*ServerInfo)(nil),        // 2: api.ServerInfo
+	(*MonitorData)(nil),       // 3: api.MonitorData
+	(*HostSummary)(nil),       // 4: api.HostSummary
+	(*FleetSummary)(nil),      // 5: api.FleetSummary
+	(*HostRequest)(nil),       // 6: api.HostRequest
+	(*HostSnapshot)(nil),      // 7: api.HostSnapshot
+	(*SeriesRequest)(nil),     // 8: api.SeriesRequest
+	(*Point)(nil),             // 9: api.Point
+	(*Series)(nil),            // 10: api.Series
+	(*SeriesResponse)(nil),    // 11: api.SeriesResponse
+	(*ProcessesRequest)(nil),  // 12: api.ProcessesRequest
+	(*ProcessesResponse)(nil), // 13: api.ProcessesResponse
+	(*NameList)(nil),          // 14: api.NameList
+	(*AlertsRequest)(nil),     // 15: api.AlertsRequest
+	(*AlertRecord)(nil),       // 16: api.AlertRecord
+	(*AlertList)(nil),         // 17: api.AlertList
 }
 var file_api_api_proto_depIdxs = []int32{
-	6,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
-	11, // 1: api.Series.points:type_name -> api.Point
-	12, // 2: api.SeriesResponse.series:type_name -> api.Series
-	18, // 3: api.AlertList.alerts:type_name -> api.AlertRecord
-	3,  // 4: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	3,  // 5: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	4,  // 6: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	4,  // 7: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	4,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
+	9,  // 1: api.Series.points:type_name -> api.Point
+	10, // 2: api.SeriesResponse.series:type_name -> api.Series
+	16, // 3: api.AlertList.alerts:type_name -> api.AlertRecord
+	2,  // 4: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 5: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	3,  // 6: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	3,  // 7: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
 	0,  // 8: api.MonitorDataService.Fleet:input_type -> api.Void
-	8,  // 9: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	10, // 10: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	14, // 11: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	8,  // 12: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	17, // 13: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	3,  // 14: api.MonitorDataService.IsUp:input_type -> api.ServerInfo
-	5,  // 15: api.MonitorDataService.HandleMonitorDataRequest:input_type -> api.MonitorDataRequest
-	3,  // 16: api.MonitorDataService.HandleCustomMetricNameRequest:input_type -> api.ServerInfo
-	0,  // 17: api.MonitorDataService.HandleAgentIdsRequest:input_type -> api.Void
-	1,  // 18: api.MonitorDataService.HandlePing:output_type -> api.Message
-	1,  // 19: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 20: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 21: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	7,  // 22: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	9,  // 23: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	13, // 24: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	15, // 25: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	16, // 26: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	19, // 27: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	2,  // 28: api.MonitorDataService.IsUp:output_type -> api.IsActive
-	4,  // 29: api.MonitorDataService.HandleMonitorDataRequest:output_type -> api.MonitorData
-	1,  // 30: api.MonitorDataService.HandleCustomMetricNameRequest:output_type -> api.Message
-	1,  // 31: api.MonitorDataService.HandleAgentIdsRequest:output_type -> api.Message
-	18, // [18:32] is the sub-list for method output_type
-	4,  // [4:18] is the sub-list for method input_type
+	6,  // 9: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	8,  // 10: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	12, // 11: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	6,  // 12: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	15, // 13: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	1,  // 14: api.MonitorDataService.HandlePing:output_type -> api.Message
+	1,  // 15: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 16: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 17: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	5,  // 18: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	7,  // 19: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	11, // 20: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	13, // 21: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	14, // 22: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	17, // 23: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	14, // [14:24] is the sub-list for method output_type
+	4,  // [4:14] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1466,7 +1341,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

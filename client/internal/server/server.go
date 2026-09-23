@@ -1,327 +1,346 @@
+// Package server serves the dashboard and its JSON API. The API reads
+// everything from the collector over gRPC.
 package server
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	"io/fs"
 	"log"
 	"net/http"
+	"path"
 	"strconv"
+	"strings"
+	"time"
 
-	"github.com/dhamith93/SyMon/internal/alertapi"
+	"github.com/dhamith93/SyMon/client/web"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type Agents struct {
-	AgentIDs []string
-}
-
-type output struct {
-	Status string
-	Data   interface{}
-}
-
-type IsUp struct {
-	IsUp bool
-}
-
 type server struct {
-	collector api.MonitorDataServiceClient
-	alerts    alertapi.AlertServiceClient
+	collector      api.MonitorDataServiceClient
+	refreshSeconds int
+	files          fs.FS
 }
 
-// Run starts the server in given port
-func Run(port string) {
+// Run starts the server on the given address, like ":8080"
+func Run(address string) {
 	config := config.GetClient()
 
-	collectorConn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
+	conn, err := transport.Dial(config.CollectorEndpoint, config.CollectorEndpointCACertPath)
 	if err != nil {
 		log.Fatal("cannot create collector client: ", err)
 	}
-	defer collectorConn.Close()
-
-	alertConn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath)
-	if err != nil {
-		log.Fatal("cannot create alert processor client: ", err)
-	}
-	defer alertConn.Close()
+	defer conn.Close()
 
 	s := &server{
-		collector: api.NewMonitorDataServiceClient(collectorConn),
-		alerts:    alertapi.NewAlertServiceClient(alertConn),
+		collector:      api.NewMonitorDataServiceClient(conn),
+		refreshSeconds: config.RefreshSeconds,
+		files:          web.Files(),
 	}
-	s.handleRequests(port)
-}
-
-func (s *server) handleRequests(port string) {
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/agents", s.returnAgents)
-	router.HandleFunc("/isup", s.returnIsUp)
-	router.HandleFunc("/system", s.returnSystem)
-	router.HandleFunc("/memory", s.returnMemory)
-	router.HandleFunc("/swap", s.returnSwap)
-	router.HandleFunc("/disks", s.returnDisks)
-	router.HandleFunc("/proc", s.returnProc)
-	router.HandleFunc("/network", s.returnNetwork)
-	router.HandleFunc("/processes", s.returnProcesses)
-	router.HandleFunc("/processor-usage-historical", s.returnProcHistorical)
-	router.HandleFunc("/memory-historical", s.returnMemoryHistorical)
-	router.HandleFunc("/disks-historical", s.returnDisksHistorical)
-	router.HandleFunc("/services", s.returnServices)
-	router.HandleFunc("/custom", s.returnCustom)
-	router.HandleFunc("/custom-metric-names", s.returnCustomMetricNames)
-	router.HandleFunc("/alerts", s.returnAlerts)
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./frontend/")))
-
-	httpServer := http.Server{}
-	httpServer.Addr = port
-	httpServer.Handler = handlers.CompressHandler(router)
-	httpServer.SetKeepAlivesEnabled(false)
-
-	logger.Log("info", "API started on port "+port)
+	httpServer := &http.Server{
+		Addr:              address,
+		Handler:           handlers.CompressHandler(s.routes()),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	logger.Log("info", "dashboard started on "+address)
 	log.Fatal(httpServer.ListenAndServe())
 }
 
-func (s *server) returnAgents(w http.ResponseWriter, r *http.Request) {
-	s.handleRequestForMeta("agents", w, r)
+func (s *server) routes() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/v1/config", s.getConfig)
+	mux.HandleFunc("GET /api/v1/fleet", s.getFleet)
+	mux.HandleFunc("GET /api/v1/hosts/{host}", s.getHost)
+	mux.HandleFunc("GET /api/v1/hosts/{host}/series", s.getSeries)
+	mux.HandleFunc("GET /api/v1/hosts/{host}/processes", s.getProcesses)
+	mux.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
+	mux.HandleFunc("GET /api/v1/alerts", s.getAlerts)
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+		writeError(w, http.StatusNotFound, "no such endpoint")
+	})
+	mux.Handle("/", s.app())
+	return mux
 }
 
-func (s *server) returnIsUp(w http.ResponseWriter, r *http.Request) {
-	s.handleRequestForPing(w, r)
+func (s *server) getConfig(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]int{"refreshSeconds": s.refreshSeconds})
 }
 
-func (s *server) returnSystem(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("system", w, r, false)
+type hostSummary struct {
+	Name          string  `json:"name"`
+	Up            bool    `json:"up"`
+	LastSeen      int64   `json:"lastSeen"`
+	Time          int64   `json:"time"`
+	OS            string  `json:"os"`
+	UptimeSeconds float64 `json:"uptimeSeconds"`
+	CPUPct        float64 `json:"cpuPct"`
+	MemUsedPct    float64 `json:"memUsedPct"`
+	SwapUsedPct   float64 `json:"swapUsedPct"`
+	DiskUsedPct   float64 `json:"diskUsedPct"`
+	RxBps         float64 `json:"rxBps"`
+	TxBps         float64 `json:"txBps"`
+	ActiveAlerts  int32   `json:"activeAlerts"`
+	WorstSeverity int32   `json:"worstSeverity"`
 }
 
-func (s *server) returnMemory(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("memory", w, r, false)
-}
-
-func (s *server) returnSwap(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("swap", w, r, false)
-}
-
-func (s *server) returnDisks(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("disks", w, r, false)
-}
-
-func (s *server) returnProc(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("procUsage", w, r, false)
-}
-
-func (s *server) returnNetwork(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("networks", w, r, false)
-}
-
-func (s *server) returnProcesses(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("processes", w, r, false)
-}
-
-func (s *server) returnProcHistorical(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("procUsage", w, r, false)
-}
-
-func (s *server) returnMemoryHistorical(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("memory-historical", w, r, false)
-}
-
-func (s *server) returnDisksHistorical(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("disks", w, r, false)
-}
-
-func (s *server) returnServices(w http.ResponseWriter, r *http.Request) {
-	s.handleRequest("services", w, r, false)
-}
-
-func (s *server) returnCustom(w http.ResponseWriter, r *http.Request) {
-	customMetricName, _ := parseGETForCustomMetricName(r)
-	s.handleRequest(customMetricName, w, r, true)
-}
-
-func (s *server) returnCustomMetricNames(w http.ResponseWriter, r *http.Request) {
-	s.handleRequestForMeta("customMetricNames", w, r)
-}
-
-func (s *server) returnAlerts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	serverName, _ := parseGETForServerName(r)
-	var out output
-	received, err := s.getActiveAlerts(serverName)
+func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
+	fleet, err := s.collector.Fleet(r.Context(), &api.Void{})
 	if err != nil {
-		out.Status = "ERR"
-		json.NewEncoder(w).Encode(&out)
+		writeGRPCError(w, "fleet", err)
 		return
 	}
-	alertData, err := json.Marshal(received.Alerts)
-	if err != nil {
-		out.Status = "ERR"
-		json.NewEncoder(w).Encode(&out)
-		return
+	hosts := make([]hostSummary, 0, len(fleet.Hosts))
+	for _, h := range fleet.Hosts {
+		hosts = append(hosts, hostSummary{
+			Name:          h.Name,
+			Up:            h.Up,
+			LastSeen:      h.LastSeen,
+			Time:          h.Time,
+			OS:            h.Os,
+			UptimeSeconds: h.UptimeSeconds,
+			CPUPct:        h.CpuPct,
+			MemUsedPct:    h.MemUsedPct,
+			SwapUsedPct:   h.SwapUsedPct,
+			DiskUsedPct:   h.DiskUsedPct,
+			RxBps:         h.RxBps,
+			TxBps:         h.TxBps,
+			ActiveAlerts:  h.ActiveAlerts,
+			WorstSeverity: h.WorstSeverity,
+		})
 	}
-	var data interface{}
-	_ = json.Unmarshal(alertData, &data)
-	out.Status = "OK"
-	out.Data = data
-	json.NewEncoder(w).Encode(&out)
+	writeJSON(w, map[string]any{"hosts": hosts})
 }
 
-func (s *server) handleRequest(logType string, w http.ResponseWriter, r *http.Request, isCustomMetric bool) {
-	w.Header().Set("Content-Type", "application/json")
-	serverName, _ := parseGETForServerName(r)
-	at, _ := parseGETForTime(r)
-	from, to, _ := parseGETForDates(r)
-	received, err := s.getMonitorData(serverName, logType, from, to, at, isCustomMetric)
-	var data interface{}
-	var out output
-	out.Status = "OK"
+// getHost returns the host's latest snapshot as the agent sent it
+func (s *server) getHost(w http.ResponseWriter, r *http.Request) {
+	host := r.PathValue("host")
+	snapshot, err := s.collector.Snapshot(r.Context(), &api.HostRequest{Host: host})
 	if err != nil {
-		out.Status = "ERR"
-		json.NewEncoder(w).Encode(&out)
+		writeGRPCError(w, "snapshot of "+host, err)
 		return
 	}
-	_ = json.Unmarshal([]byte(received), &data)
-	out.Data = data
-	json.NewEncoder(w).Encode(&out)
+	writeJSON(w, map[string]any{
+		"host":     snapshot.Host,
+		"time":     snapshot.Time,
+		"lastSeen": snapshot.LastSeen,
+		"up":       snapshot.Up,
+		"snapshot": json.RawMessage(snapshot.SnapshotJson),
+	})
 }
 
-func (s *server) handleRequestForPing(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var out output
-	out.Status = "OK"
-	ctx, cancel := transport.Context()
-	defer cancel()
-	serverName, _ := parseGETForServerName(r)
+type series struct {
+	Label string `json:"label"`
+	// Points are [unix seconds, value] pairs
+	Points [][2]float64 `json:"points"`
+}
 
-	isUp, err := s.collector.IsUp(ctx, &api.ServerInfo{ServerName: serverName})
-
+func (s *server) getSeries(w http.ResponseWriter, r *http.Request) {
+	host := r.PathValue("host")
+	query := r.URL.Query()
+	from, to, err := timeRange(query.Get("from"), query.Get("to"))
 	if err != nil {
-		out.Data = IsUp{IsUp: false}
-		json.NewEncoder(w).Encode(&out)
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	maxPoints, _ := strconv.Atoi(query.Get("maxPoints"))
+
+	response, err := s.collector.QuerySeries(r.Context(), &api.SeriesRequest{
+		Host:      host,
+		Metric:    query.Get("metric"),
+		Label:     query.Get("label"),
+		From:      from,
+		To:        to,
+		MaxPoints: int32(maxPoints),
+		Max:       query.Get("max") == "1",
+	})
+	if err != nil {
+		writeGRPCError(w, query.Get("metric")+" for "+host, err)
 		return
 	}
 
-	out.Data = IsUp{IsUp: isUp.IsUp}
-	json.NewEncoder(w).Encode(&out)
-}
-
-func (s *server) handleRequestForMeta(metaType string, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var out output
-	out.Status = "OK"
-	ctx, cancel := transport.Context()
-	defer cancel()
-
-	var meta *api.Message
-	var err error
-
-	switch metaType {
-	case "agents":
-		meta, err = s.collector.HandleAgentIdsRequest(ctx, &api.Void{})
-	case "customMetricNames":
-		serverName, _ := parseGETForServerName(r)
-		meta, err = s.collector.HandleCustomMetricNameRequest(ctx, &api.ServerInfo{ServerName: serverName})
-	default:
-		break
-	}
-
-	if err != nil {
-		out.Status = "ERR"
-		out.Data = err.Error()
-		json.NewEncoder(w).Encode(&out)
-		return
-	}
-
-	var data interface{}
-	_ = json.Unmarshal([]byte(meta.Body), &data)
-	out.Data = data
-	json.NewEncoder(w).Encode(&out)
-}
-
-func (s *server) getMonitorData(serverName string, logType string, from int64, to int64, at int64, isCustomMetric bool) (string, error) {
-	ctx, cancel := transport.Context()
-	defer cancel()
-	monitorData, err := s.collector.HandleMonitorDataRequest(ctx, &api.MonitorDataRequest{ServerName: serverName, LogType: logType, From: from, To: to, Time: at, IsCustomMetric: isCustomMetric})
-	if err != nil {
-		// NotFound only means the query matched nothing, e.g. no services configured
-		if status.Code(err) != codes.NotFound {
-			logger.Log("error", "cannot get "+logType+" for "+serverName+": "+err.Error())
+	out := make([]series, 0, len(response.Series))
+	for _, s := range response.Series {
+		points := make([][2]float64, 0, len(s.Points))
+		for _, p := range s.Points {
+			points = append(points, [2]float64{float64(p.Time), p.Value})
 		}
-		return "", err
+		out = append(out, series{Label: s.Label, Points: points})
 	}
-	return monitorData.MonitorData, nil
+	writeJSON(w, map[string]any{
+		"metric":      response.Metric,
+		"source":      response.Source,
+		"stepSeconds": response.StepSeconds,
+		"series":      out,
+	})
 }
 
-func (s *server) getActiveAlerts(serverName string) (*alertapi.AlertArray, error) {
-	ctx, cancel := transport.Context()
-	defer cancel()
-	alerts, err := s.alerts.AlertRequest(ctx, &alertapi.Request{ServerName: serverName})
+func (s *server) getProcesses(w http.ResponseWriter, r *http.Request) {
+	host := r.PathValue("host")
+	at, _ := strconv.ParseInt(r.URL.Query().Get("at"), 10, 64)
+	response, err := s.collector.Processes(r.Context(), &api.ProcessesRequest{Host: host, At: at})
 	if err != nil {
-		logger.Log("error", "cannot get alerts for "+serverName+": "+err.Error())
-		return &alertapi.AlertArray{}, err
+		writeGRPCError(w, "processes of "+host, err)
+		return
 	}
-	return alerts, nil
+	writeJSON(w, map[string]any{
+		"time":      response.Time,
+		"processes": json.RawMessage(response.ProcessesJson),
+	})
 }
 
-func parseGETForTime(r *http.Request) (int64, error) {
-	timeArr, ok := r.URL.Query()["time"]
-
-	if !ok {
-		return 0, fmt.Errorf("error parsing get vars")
-	}
-
-	timeInt, err := strconv.ParseInt(timeArr[0], 10, 64)
-
+func (s *server) getCustomMetrics(w http.ResponseWriter, r *http.Request) {
+	host := r.PathValue("host")
+	names, err := s.collector.CustomMetricNames(r.Context(), &api.HostRequest{Host: host})
 	if err != nil {
-		return 0, fmt.Errorf("error parsing get vars")
+		writeGRPCError(w, "custom metrics of "+host, err)
+		return
 	}
-
-	return timeInt, nil
+	writeJSON(w, map[string]any{"names": nonNil(names.Names)})
 }
 
-func parseGETForDates(r *http.Request) (int64, int64, error) {
-	from, okFrom := r.URL.Query()["from"]
-	to, okTo := r.URL.Query()["to"]
-
-	if !okFrom || !okTo {
-		return 0, 0, fmt.Errorf("error parsing get vars")
-	}
-
-	fromTime, err1 := strconv.ParseInt(from[0], 10, 64)
-	toTime, err2 := strconv.ParseInt(to[0], 10, 64)
-
-	if err1 != nil || err2 != nil {
-		return 0, 0, fmt.Errorf("error parsing get vars")
-	}
-
-	return fromTime, toTime, nil
+type alert struct {
+	ID         int64   `json:"id"`
+	Host       string  `json:"host"`
+	Rule       string  `json:"rule"`
+	Metric     string  `json:"metric"`
+	Target     string  `json:"target"`
+	Severity   int32   `json:"severity"`
+	Value      float64 `json:"value"`
+	StartedAt  int64   `json:"startedAt"`
+	UpdatedAt  int64   `json:"updatedAt"`
+	ResolvedAt int64   `json:"resolvedAt"`
 }
 
-func parseGETForServerName(r *http.Request) (string, error) {
-	serverIdArr, ok := r.URL.Query()["serverId"]
-	if !ok || len(serverIdArr) == 0 {
-		logger.Log("ERROR", "cannot parse for server ID")
-		return "", fmt.Errorf("cannot parse for server id")
+func (s *server) getAlerts(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	request := &api.AlertsRequest{Host: query.Get("host"), OpenOnly: query.Get("open") == "1"}
+	if query.Get("from") != "" || query.Get("to") != "" {
+		from, to, err := timeRange(query.Get("from"), query.Get("to"))
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		request.From, request.To = from, to
 	}
-	return serverIdArr[0], nil
+
+	response, err := s.collector.Alerts(r.Context(), request)
+	if err != nil {
+		writeGRPCError(w, "alerts", err)
+		return
+	}
+	alerts := make([]alert, 0, len(response.Alerts))
+	for _, a := range response.Alerts {
+		alerts = append(alerts, alert{
+			ID:         a.Id,
+			Host:       a.Host,
+			Rule:       a.Rule,
+			Metric:     a.Metric,
+			Target:     a.Target,
+			Severity:   a.Severity,
+			Value:      a.Value,
+			StartedAt:  a.StartedAt,
+			UpdatedAt:  a.UpdatedAt,
+			ResolvedAt: a.ResolvedAt,
+		})
+	}
+	writeJSON(w, map[string]any{"alerts": alerts})
 }
 
-func parseGETForCustomMetricName(r *http.Request) (string, error) {
-	customMetricNameArr, ok := r.URL.Query()["custom-metric"]
-
-	if !ok {
-		return "", fmt.Errorf("error parsing get vars")
+// timeRange parses unix second from and to values. An empty to means now
+// and an empty from means an hour before to.
+func timeRange(fromValue string, toValue string) (int64, int64, error) {
+	to := time.Now().Unix()
+	if toValue != "" {
+		parsed, err := strconv.ParseInt(toValue, 10, 64)
+		if err != nil {
+			return 0, 0, errors.New("to must be unix seconds")
+		}
+		to = parsed
 	}
-
-	if len(customMetricNameArr) == 0 {
-		return "", fmt.Errorf("error parsing get vars")
+	from := to - 3600
+	if fromValue != "" {
+		parsed, err := strconv.ParseInt(fromValue, 10, 64)
+		if err != nil {
+			return 0, 0, errors.New("from must be unix seconds")
+		}
+		from = parsed
 	}
+	return from, to, nil
+}
 
-	return customMetricNameArr[0], nil
+// app serves the built dashboard. Paths that are not files get index.html,
+// so links into the app work.
+func (s *server) app() http.Handler {
+	fileServer := http.FileServerFS(s.files)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		name := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+		if name != "" && name != "index.html" {
+			if _, err := fs.Stat(s.files, name); err == nil {
+				// built assets have hashed names, so they never change
+				if strings.HasPrefix(name, "assets/") {
+					w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+				}
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		index, err := fs.ReadFile(s.files, "index.html")
+		if err != nil {
+			http.Error(w, "the dashboard is not built, run make web", http.StatusServiceUnavailable)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Write(index)
+	})
+}
+
+func writeJSON(w http.ResponseWriter, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		logger.Log("error", "cannot write response: "+err.Error())
+	}
+}
+
+func writeError(w http.ResponseWriter, code int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
+// writeGRPCError maps a collector error to an HTTP status. Only failures
+// that are not the caller's fault are logged.
+func writeGRPCError(w http.ResponseWriter, what string, err error) {
+	st := status.Convert(err)
+	switch st.Code() {
+	case codes.Canceled:
+		// the browser went away before the answer came back, 499 is the
+		// usual "client closed request" status
+		writeError(w, 499, "canceled")
+	case codes.NotFound:
+		writeError(w, http.StatusNotFound, st.Message())
+	case codes.InvalidArgument:
+		writeError(w, http.StatusBadRequest, st.Message())
+	case codes.Unavailable, codes.DeadlineExceeded:
+		logger.Log("error", "cannot get "+what+": "+err.Error())
+		writeError(w, http.StatusBadGateway, "the collector is not reachable")
+	default:
+		logger.Log("error", "cannot get "+what+": "+err.Error())
+		writeError(w, http.StatusInternalServerError, "internal error")
+	}
+}
+
+func nonNil(names []string) []string {
+	if names == nil {
+		return []string{}
+	}
+	return names
 }

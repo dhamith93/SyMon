@@ -27,14 +27,17 @@ type HostSummary struct {
 	RxBps        float64
 	TxBps        float64
 	ActiveAlerts int
+	// WorstSeverity is the highest severity of the open alerts, 0 if none
+	WorstSeverity int
 }
 
 func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT h.name, h.last_seen, l.time, l.snapshot,
-		       (SELECT count(*) FROM alerts a WHERE a.host_id = h.id AND a.resolved_at IS NULL)
+		SELECT h.name, h.last_seen, l.time, l.snapshot, count(a.id), coalesce(max(a.severity), 0)
 		FROM hosts h
 		LEFT JOIN host_latest l ON l.host_id = h.id
+		LEFT JOIN alerts a ON a.host_id = h.id AND a.resolved_at IS NULL
+		GROUP BY h.id, l.host_id
 		ORDER BY h.name`)
 	if err != nil {
 		return nil, err
@@ -46,7 +49,7 @@ func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
 		var summary HostSummary
 		var lastSeen, snapshotTime *time.Time
 		var snapshot []byte
-		if err := rows.Scan(&summary.Name, &lastSeen, &snapshotTime, &snapshot, &summary.ActiveAlerts); err != nil {
+		if err := rows.Scan(&summary.Name, &lastSeen, &snapshotTime, &snapshot, &summary.ActiveAlerts, &summary.WorstSeverity); err != nil {
 			return nil, err
 		}
 		if lastSeen != nil {
@@ -84,18 +87,28 @@ func fillSummary(summary *HostSummary, data *monitor.MonitorData) {
 	}
 }
 
-// LatestSnapshot returns a host's newest snapshot as the agent sent it
-func (s *Store) LatestSnapshot(ctx context.Context, host string) (time.Time, []byte, error) {
-	var at time.Time
-	var snapshot []byte
+type LatestSnapshot struct {
+	Time time.Time
+	// Snapshot is the MonitorData as the agent sent it
+	Snapshot []byte
+	LastSeen time.Time
+}
+
+// LatestSnapshot returns a host's newest snapshot and when it was last heard from
+func (s *Store) LatestSnapshot(ctx context.Context, host string) (LatestSnapshot, error) {
+	var latest LatestSnapshot
+	var lastSeen *time.Time
 	err := s.pool.QueryRow(ctx, `
-		SELECT l.time, l.snapshot FROM host_latest l
+		SELECT l.time, l.snapshot, h.last_seen FROM host_latest l
 		JOIN hosts h ON h.id = l.host_id
-		WHERE h.name = $1`, host).Scan(&at, &snapshot)
+		WHERE h.name = $1`, host).Scan(&latest.Time, &latest.Snapshot, &lastSeen)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return time.Time{}, nil, ErrNotFound
+		return LatestSnapshot{}, ErrNotFound
 	}
-	return at, snapshot, err
+	if lastSeen != nil {
+		latest.LastSeen = *lastSeen
+	}
+	return latest, err
 }
 
 // Processes returns the top process lists from the newest snapshot at or
