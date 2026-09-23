@@ -59,6 +59,8 @@ type Agent struct {
 	DisksToIgnore               string
 	ServerId                    string
 	Services                    []ServiceToMonitor
+	DisabledCollectors          []string
+	ContainerAware              bool
 }
 
 type ServiceToMonitor struct {
@@ -84,7 +86,21 @@ func GetAgent() Agent {
 		DisksToIgnore:               os.Getenv("SYMON_DISKS_TO_IGNORE"),
 		Services:                    GetServicesToMonitor(os.Getenv("SYMON_SERVICE_LIST_PATH")),
 		MonitorIntervalSeconds:      intervalSecsInt,
+		DisabledCollectors:          splitList(os.Getenv("SYMON_DISABLED_COLLECTORS")),
+		ContainerAware:              strings.ToUpper(os.Getenv("SYMON_CONTAINER_AWARE")) == "TRUE",
 	}
+}
+
+// splitList turns "a, B,,c" into [a b c]
+func splitList(value string) []string {
+	items := []string{}
+	for _, item := range strings.Split(value, ",") {
+		item = strings.ToLower(strings.TrimSpace(item))
+		if len(item) > 0 {
+			items = append(items, item)
+		}
+	}
+	return items
 }
 
 func GetServicesToMonitor(path string) []ServiceToMonitor {

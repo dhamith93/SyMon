@@ -41,3 +41,26 @@ func TestGetServicesToMonitorBadJSON(t *testing.T) {
 		t.Errorf("expected no services, got: %d", len(got))
 	}
 }
+
+func TestAgentCollectorSettings(t *testing.T) {
+	t.Setenv("SYMON_DISABLED_COLLECTORS", " Temps, ,tcp")
+	t.Setenv("SYMON_CONTAINER_AWARE", "true")
+
+	agent := config.GetAgent()
+	if len(agent.DisabledCollectors) != 2 || agent.DisabledCollectors[0] != "temps" || agent.DisabledCollectors[1] != "tcp" {
+		t.Errorf("disabled collectors were incorrect, got: %v", agent.DisabledCollectors)
+	}
+	if !agent.ContainerAware {
+		t.Error("expected container aware to be set")
+	}
+}
+
+func TestAgentCollectorDefaults(t *testing.T) {
+	t.Setenv("SYMON_DISABLED_COLLECTORS", "")
+	t.Setenv("SYMON_CONTAINER_AWARE", "")
+
+	agent := config.GetAgent()
+	if len(agent.DisabledCollectors) != 0 || agent.ContainerAware {
+		t.Errorf("expected no disabled collectors and container aware off, got: %+v", agent)
+	}
+}
