@@ -21,7 +21,7 @@ message ServerInfo {
 }
 
 message MonitorData {
-    string monitorData = 1; 
+    string monitorData = 1;
 }
 
 message MonitorDataRequest {
@@ -33,12 +33,130 @@ message MonitorDataRequest {
     bool isCustomMetric = 6;
 }
 
+// Query API. Times are unix seconds.
+
+message HostSummary {
+    string name = 1;
+    bool up = 2;
+    int64 lastSeen = 3;
+    int64 time = 4;
+    string os = 5;
+    double uptimeSeconds = 6;
+    double cpuPct = 7;
+    double memUsedPct = 8;
+    double swapUsedPct = 9;
+    double diskUsedPct = 10;
+    double rxBps = 11;
+    double txBps = 12;
+    int32 activeAlerts = 13;
+}
+
+message FleetSummary {
+    repeated HostSummary hosts = 1;
+}
+
+message HostRequest {
+    string host = 1;
+}
+
+// snapshotJson is the agent's latest MonitorData
+message HostSnapshot {
+    string host = 1;
+    int64 time = 2;
+    string snapshotJson = 3;
+}
+
+message SeriesRequest {
+    string host = 1;
+    string metric = 2;
+    // label keeps one series, for example a mount point or a custom metric
+    string label = 3;
+    int64 from = 4;
+    int64 to = 5;
+    int32 maxPoints = 6;
+    // max returns the peak of each bucket instead of the average
+    bool max = 7;
+}
+
+message Point {
+    int64 time = 1;
+    double value = 2;
+}
+
+message Series {
+    string label = 1;
+    repeated Point points = 2;
+}
+
+message SeriesResponse {
+    string metric = 1;
+    // source is raw, 1m or 1h
+    string source = 2;
+    int64 stepSeconds = 3;
+    repeated Series series = 4;
+}
+
+message ProcessesRequest {
+    string host = 1;
+    // at returns the newest snapshot at or before this time, 0 for latest
+    int64 at = 2;
+}
+
+// processesJson holds the CPU and Memory top process lists
+message ProcessesResponse {
+    int64 time = 1;
+    string processesJson = 2;
+}
+
+message NameList {
+    repeated string names = 1;
+}
+
+message AlertsRequest {
+    // host limits the list to one host, empty means all
+    string host = 1;
+    bool openOnly = 2;
+    int64 from = 3;
+    int64 to = 4;
+}
+
+message AlertRecord {
+    int64 id = 1;
+    string host = 2;
+    string rule = 3;
+    string metric = 4;
+    string target = 5;
+    // 1 is warning, 2 is critical
+    int32 severity = 6;
+    double value = 7;
+    int64 startedAt = 8;
+    int64 updatedAt = 9;
+    // 0 while the alert is open
+    int64 resolvedAt = 10;
+}
+
+message AlertList {
+    repeated AlertRecord alerts = 1;
+}
+
 service MonitorDataService {
+    // agent
     rpc HandlePing(ServerInfo) returns (Message) {}
-    rpc IsUp(ServerInfo) returns (IsActive) {}
     rpc InitAgent(ServerInfo) returns (Message) {}
     rpc HandleMonitorData(MonitorData) returns (Message) {}
     rpc HandleCustomMonitorData(MonitorData) returns (Message) {}
+
+    // query api
+    rpc Fleet(Void) returns (FleetSummary) {}
+    rpc Snapshot(HostRequest) returns (HostSnapshot) {}
+    rpc QuerySeries(SeriesRequest) returns (SeriesResponse) {}
+    rpc Processes(ProcessesRequest) returns (ProcessesResponse) {}
+    rpc CustomMetricNames(HostRequest) returns (NameList) {}
+    rpc Alerts(AlertsRequest) returns (AlertList) {}
+
+    // legacy, used by the old client.
+    // HandleMonitorDataRequest is no longer served.
+    rpc IsUp(ServerInfo) returns (IsActive) {}
     rpc HandleMonitorDataRequest(MonitorDataRequest) returns (MonitorData) {}
     rpc HandleCustomMetricNameRequest(ServerInfo) returns (Message) {}
     rpc HandleAgentIdsRequest(Void) returns (Message) {}

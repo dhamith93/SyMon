@@ -3,19 +3,19 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
-	"strconv"
+	"errors"
 	"time"
 
-	"github.com/dhamith93/SyMon/internal/config"
-	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
-	"github.com/dhamith93/SyMon/internal/stringops"
+	"github.com/dhamith93/SyMon/internal/store"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+// UpWindow is how recently a host must have been heard from to count as up.
+// Agents ping every minute and send data every monitor interval.
+const UpWindow = 61 * time.Second
 
 // errNoData is returned when a query matches nothing. It is a normal
 // result, for example a host with no services configured.
@@ -23,6 +23,7 @@ var errNoData = status.Error(codes.NotFound, "no data found")
 
 type Server struct {
 	UnimplementedMonitorDataServiceServer
+	Store *store.Store
 }
 
 type Agents struct {
@@ -33,280 +34,234 @@ type CustomMetrics struct {
 	CustomMetrics []string
 }
 
+// toStatus turns a store error into a grpc status. Unexpected errors are
+// logged here and not passed on, so callers do not see database details.
+func toStatus(err error) error {
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, store.ErrNotFound):
+		return errNoData
+	case errors.Is(err, store.ErrHostExists):
+		return status.Error(codes.AlreadyExists, err.Error())
+	case errors.Is(err, store.ErrInvalid):
+		return status.Error(codes.InvalidArgument, err.Error())
+	default:
+		logger.Log("error", err.Error())
+		return status.Error(codes.Internal, "internal error")
+	}
+}
+
+// agentStatus is toStatus for agent calls, where an unknown host means the
+// agent was never registered
+func agentStatus(host string, err error) error {
+	if errors.Is(err, store.ErrNotFound) {
+		return status.Error(codes.NotFound, "agent "+host+" is not registered, run the agent with -init")
+	}
+	return toStatus(err)
+}
+
 func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error) {
-	config := config.GetCollector()
-	err := initAgent(in.ServerName, in.Timezone, &config)
-	if err != nil {
-		return &Message{Body: err.Error()}, err
+	logger.Log("info", "initializing agent for "+in.ServerName)
+	if err := s.Store.AddHost(ctx, in.ServerName, in.Timezone); err != nil {
+		return nil, toStatus(err)
 	}
 	return &Message{Body: "agent added"}, nil
 }
 
 func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*Message, error) {
-	config := config.GetCollector()
-	err := handlePing(in.ServerName, &config)
-	if err != nil {
-		return &Message{Body: err.Error()}, err
+	if err := s.Store.Heartbeat(ctx, in.ServerName, time.Now()); err != nil {
+		return nil, agentStatus(in.ServerName, err)
 	}
 	return &Message{Body: "pong"}, nil
 }
 
-func (s *Server) IsUp(ctx context.Context, in *ServerInfo) (*IsActive, error) {
-	config := config.GetCollector()
-	upAndRunning, err := isUp(in.ServerName, &config)
-	if err != nil {
-		return &IsActive{IsUp: false}, err
-	}
-	return &IsActive{IsUp: upAndRunning}, nil
-}
-
 func (s *Server) HandleMonitorData(ctx context.Context, in *MonitorData) (*Message, error) {
-	var monitorData = monitor.MonitorData{}
-	err := json.Unmarshal([]byte(in.MonitorData), &monitorData)
-	if err != nil {
-		return &Message{Body: err.Error()}, err
+	var monitorData monitor.MonitorData
+	if err := json.Unmarshal([]byte(in.MonitorData), &monitorData); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "cannot parse monitor data: "+err.Error())
 	}
-	err = handleMonitorData(&monitorData)
-	if err != nil {
-		return &Message{Body: err.Error()}, err
+	if err := s.Store.SaveSnapshot(ctx, &monitorData); err != nil {
+		return nil, agentStatus(monitorData.ServerId, err)
 	}
 	return &Message{Body: "ok"}, nil
 }
 
 func (s *Server) HandleCustomMonitorData(ctx context.Context, in *MonitorData) (*Message, error) {
-	var customMetric = monitor.CustomMetric{}
-	err := json.Unmarshal([]byte(in.MonitorData), &customMetric)
-	if err != nil {
-		return &Message{Body: err.Error()}, err
+	var customMetric monitor.CustomMetric
+	if err := json.Unmarshal([]byte(in.MonitorData), &customMetric); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "cannot parse custom metric: "+err.Error())
 	}
-	err = handleCustomMetric(&customMetric)
-	if err != nil {
-		return &Message{Body: err.Error()}, err
+	if err := s.Store.SaveCustomMetric(ctx, &customMetric); err != nil {
+		return nil, agentStatus(customMetric.ServerId, err)
 	}
 	return &Message{Body: "ok"}, nil
 }
 
-func (s *Server) HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest) (*MonitorData, error) {
-	config := config.GetCollector()
-	convertToJsonArr := false
-	switch in.LogType {
-	case "networks", "procUsage":
-		convertToJsonArr = true
-	case "memory-historical":
-		convertToJsonArr = true
-		in.LogType = "memory"
+func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
+	summaries, err := s.Store.FleetSummary(ctx)
+	if err != nil {
+		return nil, toStatus(err)
 	}
-	monitorData := getMonitorLogs(in.ServerName, in.LogType, in.From, in.To, in.Time, &config, convertToJsonArr, in.IsCustomMetric)
-	if len(monitorData) == 0 {
-		return &MonitorData{MonitorData: "no data"}, errNoData
+	now := time.Now()
+	fleet := &FleetSummary{}
+	for _, summary := range summaries {
+		fleet.Hosts = append(fleet.Hosts, &HostSummary{
+			Name:          summary.Name,
+			Up:            isUp(summary.LastSeen, now),
+			LastSeen:      unix(summary.LastSeen),
+			Time:          unix(summary.Time),
+			Os:            summary.OS,
+			UptimeSeconds: summary.UptimeSeconds,
+			CpuPct:        summary.CPUPct,
+			MemUsedPct:    summary.MemUsedPct,
+			SwapUsedPct:   summary.SwapUsedPct,
+			DiskUsedPct:   summary.DiskUsedPct,
+			RxBps:         summary.RxBps,
+			TxBps:         summary.TxBps,
+			ActiveAlerts:  int32(summary.ActiveAlerts),
+		})
 	}
-	return &MonitorData{MonitorData: monitorData}, nil
+	return fleet, nil
 }
 
-func (s *Server) HandleAgentIdsRequest(context.Context, *Void) (*Message, error) {
-	config := config.GetCollector()
-	mysql := getMySQLConnection(&config)
-	defer mysql.Close()
-	agents := Agents{}
-	agents.AgentIDs = mysql.GetAgents()
+func (s *Server) Snapshot(ctx context.Context, in *HostRequest) (*HostSnapshot, error) {
+	at, snapshot, err := s.Store.LatestSnapshot(ctx, in.Host)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &HostSnapshot{Host: in.Host, Time: at.Unix(), SnapshotJson: string(snapshot)}, nil
+}
+
+func (s *Server) QuerySeries(ctx context.Context, in *SeriesRequest) (*SeriesResponse, error) {
+	result, err := s.Store.QuerySeries(ctx, store.SeriesQuery{
+		Host:      in.Host,
+		Metric:    in.Metric,
+		Label:     in.Label,
+		From:      time.Unix(in.From, 0),
+		To:        time.Unix(in.To, 0),
+		MaxPoints: int(in.MaxPoints),
+		Max:       in.Max,
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	response := &SeriesResponse{Metric: in.Metric, Source: result.Source, StepSeconds: int64(result.Step.Seconds())}
+	for _, series := range result.Series {
+		points := make([]*Point, 0, len(series.Points))
+		for _, point := range series.Points {
+			points = append(points, &Point{Time: point.Time.Unix(), Value: point.Value})
+		}
+		response.Series = append(response.Series, &Series{Label: series.Label, Points: points})
+	}
+	return response, nil
+}
+
+func (s *Server) Processes(ctx context.Context, in *ProcessesRequest) (*ProcessesResponse, error) {
+	at := time.Now()
+	if in.At > 0 {
+		at = time.Unix(in.At, 0)
+	}
+	snapshotTime, processes, err := s.Store.Processes(ctx, in.Host, at)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &ProcessesResponse{Time: snapshotTime.Unix(), ProcessesJson: string(processes)}, nil
+}
+
+func (s *Server) CustomMetricNames(ctx context.Context, in *HostRequest) (*NameList, error) {
+	names, err := s.Store.CustomMetricNames(ctx, in.Host)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &NameList{Names: names}, nil
+}
+
+func (s *Server) Alerts(ctx context.Context, in *AlertsRequest) (*AlertList, error) {
+	filter := store.AlertFilter{Host: in.Host, OpenOnly: in.OpenOnly}
+	if in.From > 0 {
+		filter.From = time.Unix(in.From, 0)
+	}
+	if in.To > 0 {
+		filter.To = time.Unix(in.To, 0)
+	}
+	alerts, err := s.Store.Alerts(ctx, filter)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	list := &AlertList{}
+	for _, alert := range alerts {
+		record := &AlertRecord{
+			Id:        alert.ID,
+			Host:      alert.Host,
+			Rule:      alert.Rule,
+			Metric:    alert.Metric,
+			Target:    alert.Target,
+			Severity:  int32(alert.Severity),
+			Value:     alert.Value,
+			StartedAt: alert.StartedAt.Unix(),
+			UpdatedAt: alert.UpdatedAt.Unix(),
+		}
+		if alert.ResolvedAt != nil {
+			record.ResolvedAt = alert.ResolvedAt.Unix()
+		}
+		list.Alerts = append(list.Alerts, record)
+	}
+	return list, nil
+}
+
+func (s *Server) IsUp(ctx context.Context, in *ServerInfo) (*IsActive, error) {
+	lastSeen, err := s.Store.LastSeen(ctx, in.ServerName)
+	if err != nil {
+		return &IsActive{IsUp: false}, toStatus(err)
+	}
+	return &IsActive{IsUp: isUp(lastSeen, time.Now())}, nil
+}
+
+func (s *Server) HandleAgentIdsRequest(ctx context.Context, in *Void) (*Message, error) {
+	hosts, err := s.Store.Hosts(ctx)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	agents := Agents{AgentIDs: []string{}}
+	for _, host := range hosts {
+		agents.AgentIDs = append(agents.AgentIDs, host.Name)
+	}
 	if len(agents.AgentIDs) == 0 {
-		return &Message{Body: "no data"}, errNoData
+		return nil, errNoData
 	}
 	out, err := json.Marshal(agents)
 	if err != nil {
-		return &Message{Body: "cannot parse data"}, fmt.Errorf("cannot parse data")
+		return nil, toStatus(err)
 	}
-
 	return &Message{Body: string(out)}, nil
 }
 
 func (s *Server) HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo) (*Message, error) {
-	config := config.GetCollector()
-	mysql := getMySQLConnection(&config)
-	defer mysql.Close()
-	customMetrics := CustomMetrics{}
-	customMetrics.CustomMetrics = mysql.GetCustomMetricNames(in.ServerName)
-	if len(customMetrics.CustomMetrics) == 0 {
-		return &Message{Body: "no data"}, errNoData
-	}
-	out, err := json.Marshal(customMetrics)
+	names, err := s.Store.CustomMetricNames(ctx, in.ServerName)
 	if err != nil {
-		return &Message{Body: "cannot parse data"}, fmt.Errorf("cannot parse data")
+		return nil, toStatus(err)
 	}
-
+	if len(names) == 0 {
+		return nil, errNoData
+	}
+	out, err := json.Marshal(CustomMetrics{CustomMetrics: names})
+	if err != nil {
+		return nil, toStatus(err)
+	}
 	return &Message{Body: string(out)}, nil
 }
 
-func initAgent(agentId string, timezone string, config *config.Collector) error {
-	logger.Log("info", "Initializing agent for "+agentId)
-
-	mysql := getMySQLConnection(config)
-	defer mysql.Close()
-
-	if mysql.AgentIDExists(agentId) {
-		logger.Log("error", "agent id "+agentId+" exists")
-		return fmt.Errorf("agent id %s exists", agentId)
-	}
-
-	err := mysql.AddAgent(agentId, timezone)
-	if err != nil {
-		logger.Log("error", err.Error())
-		return fmt.Errorf("error adding agent")
-	}
-
-	return nil
+func isUp(lastSeen time.Time, now time.Time) bool {
+	return !lastSeen.IsZero() && now.Sub(lastSeen) <= UpWindow
 }
 
-func handlePing(serverName string, config *config.Collector) error {
-	mysql := getMySQLConnection(config)
-	defer mysql.Close()
-	unixTime := strconv.FormatInt(time.Now().Unix(), 10)
-	err := mysql.Ping(serverName, unixTime)
-	if err != nil {
-		logger.Log("error", err.Error())
-		return fmt.Errorf("error saving ping from %s", serverName)
+// unix returns 0 for a zero time instead of a large negative number
+func unix(t time.Time) int64 {
+	if t.IsZero() {
+		return 0
 	}
-	return nil
-}
-
-func isUp(serverName string, config *config.Collector) (bool, error) {
-	mysql := getMySQLConnection(config)
-	defer mysql.Close()
-
-	serverPingTimeStr, err := mysql.ServerPingTime(serverName)
-	if err != nil {
-		// logger.Log("error", err.Error())
-		return false, fmt.Errorf("error loading ping time of %s", serverName)
-	}
-
-	serverPingTime, err := strconv.ParseInt(serverPingTimeStr, 10, 64)
-	if err != nil {
-		logger.Log("error", err.Error())
-		return false, fmt.Errorf("error loading ping time of %s", serverName)
-	}
-
-	return time.Now().Unix()-serverPingTime <= 61, nil // extra sec for delays ¯\_(ツ)_/¯
-}
-
-func handleMonitorData(monitorData *monitor.MonitorData) error {
-	serverName := monitorData.ServerId
-	time := monitorData.UnixTime
-	config := config.GetCollector()
-	mysql := getMySQLConnection(&config)
-	defer mysql.Close()
-
-	data := make(map[string]interface{})
-	data["system"] = &monitorData.System
-	data["memory"] = &monitorData.Memory
-	data["swap"] = &monitorData.Swap
-	data["procUsage"] = &monitorData.ProcUsage
-	data["processes"] = &monitorData.Processes
-
-	// optional sections, only present when the agent collected them
-	if len(monitorData.DiskIO) > 0 {
-		data[monitor.DISK_IO] = &monitorData.DiskIO
-	}
-	if monitorData.TCPStates != nil {
-		data[monitor.TCP_STATES] = monitorData.TCPStates
-	}
-	if monitorData.Pressure != nil {
-		data[monitor.PRESSURE] = monitorData.Pressure
-	}
-	if len(monitorData.Temperatures) > 0 {
-		data[monitor.TEMPERATURES] = &monitorData.Temperatures
-	}
-
-	for key, item := range data {
-		err := saveToDB(item, mysql, serverName, time, key, "")
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, disk := range monitorData.Disk {
-		err := saveToDB(disk, mysql, serverName, time, monitor.DISKS, disk.FileSystem)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, service := range monitorData.Services {
-		err := saveToDB(service, mysql, serverName, time, monitor.SERVICES, service.Name)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, network := range monitorData.Networks {
-		err := saveToDB(network, mysql, serverName, time, monitor.NETWORKS, network.Interface)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func saveToDB(item interface{}, mysql database.MySql, serverName string, time string, key string, logName string) error {
-	res, err := json.Marshal(item)
-	if err != nil {
-		return err
-	}
-
-	err = mysql.SaveLogToDB(serverName, time, string(res), key, logName, false)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func handleCustomMetric(customMetric *monitor.CustomMetric) error {
-	serverName := customMetric.ServerId
-	time := customMetric.Time
-	config := config.GetCollector()
-	mysql := getMySQLConnection(&config)
-	defer mysql.Close()
-
-	res, err := json.Marshal(&customMetric)
-	if err != nil {
-		return err
-	}
-	return mysql.SaveLogToDB(serverName, time, string(res), customMetric.Name, "", true)
-}
-
-func getMonitorLogs(serverName string, logType string, from int64, to int64, time int64, config *config.Collector, convertToJsonArr bool, isCustomMetric bool) string {
-	mysql := getMySQLConnection(config)
-	defer mysql.Close()
-	data := mysql.GetLogFromDB(serverName, logType, from, to, time, isCustomMetric)
-	if (convertToJsonArr || (to != 0 && from != 0)) && logType != "system" {
-		if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
-			var arr []string
-			for _, row := range data {
-				var newData []string
-				_ = json.Unmarshal([]byte(row), &newData)
-				arr = append(arr, stringops.StringArrToJSONArr(newData))
-			}
-			return stringops.StringArrToJSONArr(arr)
-		}
-		return stringops.StringArrToJSONArr(data)
-	} else {
-		if len(data) == 0 {
-			return ""
-		}
-
-		if logType == monitor.DISKS || logType == monitor.NETWORKS || logType == monitor.SERVICES {
-			var arr []string
-			_ = json.Unmarshal([]byte(data[0]), &arr)
-			str := stringops.StringArrToJSONArr(arr)
-			return str
-		}
-		return data[0]
-	}
-}
-
-func getMySQLConnection(c *config.Collector) database.MySql {
-	mysql := database.MySql{}
-	password := os.Getenv("SYMON_DB_PASSWORD")
-	mysql.Connect(c.MySQLUserName, password, c.MySQLHost, c.MySQLDatabaseName, false)
-	return mysql
+	return t.Unix()
 }

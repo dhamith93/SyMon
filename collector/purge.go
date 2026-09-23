@@ -1,38 +1,27 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"strconv"
-	"sync"
 	"time"
 
-	"github.com/dhamith93/SyMon/internal/config"
-	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/store"
 )
 
-func handleDataPurge(config *config.Collector, mysql *database.MySql) {
-	ticker := time.NewTicker(6 * time.Hour)
-	quit := make(chan struct{})
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				purgeDate := time.Now().AddDate(0, 0, -int(config.DataRetentionDays))
-				unixTime := strconv.FormatInt(purgeDate.Unix(), 10)
-				affectedRows, err := mysql.PurgeMonitorDataOlderThan(unixTime)
-				if err != nil {
-					logger.Log("error", "data-purge: "+err.Error())
-				}
-				logger.Log("info", "data-purge: purged "+strconv.FormatInt(affectedRows, 10)+" rows")
-			case <-quit:
-				ticker.Stop()
-				return
-			}
+// purgeResolvedAlerts deletes old resolved alerts once a day. Metric data
+// is dropped by timescale retention policies instead.
+func purgeResolvedAlerts(st *store.Store) {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for range ticker.C {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		deleted, err := st.PurgeResolvedAlerts(ctx)
+		cancel()
+		if err != nil {
+			logger.Log("error", "alert purge: "+err.Error())
+			continue
 		}
-	}()
-	wg.Wait()
-	fmt.Println("Exiting")
+		logger.Log("info", "alert purge: deleted "+strconv.FormatInt(deleted, 10)+" alerts")
+	}
 }

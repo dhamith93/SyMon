@@ -20,10 +20,16 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	MonitorDataService_HandlePing_FullMethodName                    = "/api.MonitorDataService/HandlePing"
-	MonitorDataService_IsUp_FullMethodName                          = "/api.MonitorDataService/IsUp"
 	MonitorDataService_InitAgent_FullMethodName                     = "/api.MonitorDataService/InitAgent"
 	MonitorDataService_HandleMonitorData_FullMethodName             = "/api.MonitorDataService/HandleMonitorData"
 	MonitorDataService_HandleCustomMonitorData_FullMethodName       = "/api.MonitorDataService/HandleCustomMonitorData"
+	MonitorDataService_Fleet_FullMethodName                         = "/api.MonitorDataService/Fleet"
+	MonitorDataService_Snapshot_FullMethodName                      = "/api.MonitorDataService/Snapshot"
+	MonitorDataService_QuerySeries_FullMethodName                   = "/api.MonitorDataService/QuerySeries"
+	MonitorDataService_Processes_FullMethodName                     = "/api.MonitorDataService/Processes"
+	MonitorDataService_CustomMetricNames_FullMethodName             = "/api.MonitorDataService/CustomMetricNames"
+	MonitorDataService_Alerts_FullMethodName                        = "/api.MonitorDataService/Alerts"
+	MonitorDataService_IsUp_FullMethodName                          = "/api.MonitorDataService/IsUp"
 	MonitorDataService_HandleMonitorDataRequest_FullMethodName      = "/api.MonitorDataService/HandleMonitorDataRequest"
 	MonitorDataService_HandleCustomMetricNameRequest_FullMethodName = "/api.MonitorDataService/HandleCustomMetricNameRequest"
 	MonitorDataService_HandleAgentIdsRequest_FullMethodName         = "/api.MonitorDataService/HandleAgentIdsRequest"
@@ -33,11 +39,21 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MonitorDataServiceClient interface {
+	// agent
 	HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
-	IsUp(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*IsActive, error)
 	InitAgent(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
 	HandleMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
 	HandleCustomMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
+	// query api
+	Fleet(ctx context.Context, in *Void, opts ...grpc.CallOption) (*FleetSummary, error)
+	Snapshot(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*HostSnapshot, error)
+	QuerySeries(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
+	Processes(ctx context.Context, in *ProcessesRequest, opts ...grpc.CallOption) (*ProcessesResponse, error)
+	CustomMetricNames(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*NameList, error)
+	Alerts(ctx context.Context, in *AlertsRequest, opts ...grpc.CallOption) (*AlertList, error)
+	// legacy, used by the old client.
+	// HandleMonitorDataRequest is no longer served.
+	IsUp(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*IsActive, error)
 	HandleMonitorDataRequest(ctx context.Context, in *MonitorDataRequest, opts ...grpc.CallOption) (*MonitorData, error)
 	HandleCustomMetricNameRequest(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
 	HandleAgentIdsRequest(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error)
@@ -55,16 +71,6 @@ func (c *monitorDataServiceClient) HandlePing(ctx context.Context, in *ServerInf
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Message)
 	err := c.cc.Invoke(ctx, MonitorDataService_HandlePing_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *monitorDataServiceClient) IsUp(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*IsActive, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IsActive)
-	err := c.cc.Invoke(ctx, MonitorDataService_IsUp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +101,76 @@ func (c *monitorDataServiceClient) HandleCustomMonitorData(ctx context.Context, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Message)
 	err := c.cc.Invoke(ctx, MonitorDataService_HandleCustomMonitorData_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Fleet(ctx context.Context, in *Void, opts ...grpc.CallOption) (*FleetSummary, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FleetSummary)
+	err := c.cc.Invoke(ctx, MonitorDataService_Fleet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Snapshot(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*HostSnapshot, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HostSnapshot)
+	err := c.cc.Invoke(ctx, MonitorDataService_Snapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) QuerySeries(ctx context.Context, in *SeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SeriesResponse)
+	err := c.cc.Invoke(ctx, MonitorDataService_QuerySeries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Processes(ctx context.Context, in *ProcessesRequest, opts ...grpc.CallOption) (*ProcessesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProcessesResponse)
+	err := c.cc.Invoke(ctx, MonitorDataService_Processes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) CustomMetricNames(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*NameList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NameList)
+	err := c.cc.Invoke(ctx, MonitorDataService_CustomMetricNames_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Alerts(ctx context.Context, in *AlertsRequest, opts ...grpc.CallOption) (*AlertList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AlertList)
+	err := c.cc.Invoke(ctx, MonitorDataService_Alerts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) IsUp(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*IsActive, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsActive)
+	err := c.cc.Invoke(ctx, MonitorDataService_IsUp_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -135,11 +211,21 @@ func (c *monitorDataServiceClient) HandleAgentIdsRequest(ctx context.Context, in
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
 type MonitorDataServiceServer interface {
+	// agent
 	HandlePing(context.Context, *ServerInfo) (*Message, error)
-	IsUp(context.Context, *ServerInfo) (*IsActive, error)
 	InitAgent(context.Context, *ServerInfo) (*Message, error)
 	HandleMonitorData(context.Context, *MonitorData) (*Message, error)
 	HandleCustomMonitorData(context.Context, *MonitorData) (*Message, error)
+	// query api
+	Fleet(context.Context, *Void) (*FleetSummary, error)
+	Snapshot(context.Context, *HostRequest) (*HostSnapshot, error)
+	QuerySeries(context.Context, *SeriesRequest) (*SeriesResponse, error)
+	Processes(context.Context, *ProcessesRequest) (*ProcessesResponse, error)
+	CustomMetricNames(context.Context, *HostRequest) (*NameList, error)
+	Alerts(context.Context, *AlertsRequest) (*AlertList, error)
+	// legacy, used by the old client.
+	// HandleMonitorDataRequest is no longer served.
+	IsUp(context.Context, *ServerInfo) (*IsActive, error)
 	HandleMonitorDataRequest(context.Context, *MonitorDataRequest) (*MonitorData, error)
 	HandleCustomMetricNameRequest(context.Context, *ServerInfo) (*Message, error)
 	HandleAgentIdsRequest(context.Context, *Void) (*Message, error)
@@ -156,9 +242,6 @@ type UnimplementedMonitorDataServiceServer struct{}
 func (UnimplementedMonitorDataServiceServer) HandlePing(context.Context, *ServerInfo) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandlePing not implemented")
 }
-func (UnimplementedMonitorDataServiceServer) IsUp(context.Context, *ServerInfo) (*IsActive, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsUp not implemented")
-}
 func (UnimplementedMonitorDataServiceServer) InitAgent(context.Context, *ServerInfo) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitAgent not implemented")
 }
@@ -167,6 +250,27 @@ func (UnimplementedMonitorDataServiceServer) HandleMonitorData(context.Context, 
 }
 func (UnimplementedMonitorDataServiceServer) HandleCustomMonitorData(context.Context, *MonitorData) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleCustomMonitorData not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Fleet(context.Context, *Void) (*FleetSummary, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Fleet not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Snapshot(context.Context, *HostRequest) (*HostSnapshot, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Snapshot not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) QuerySeries(context.Context, *SeriesRequest) (*SeriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QuerySeries not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Processes(context.Context, *ProcessesRequest) (*ProcessesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Processes not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) CustomMetricNames(context.Context, *HostRequest) (*NameList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CustomMetricNames not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Alerts(context.Context, *AlertsRequest) (*AlertList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Alerts not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) IsUp(context.Context, *ServerInfo) (*IsActive, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsUp not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) HandleMonitorDataRequest(context.Context, *MonitorDataRequest) (*MonitorData, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleMonitorDataRequest not implemented")
@@ -212,24 +316,6 @@ func _MonitorDataService_HandlePing_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MonitorDataServiceServer).HandlePing(ctx, req.(*ServerInfo))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MonitorDataService_IsUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ServerInfo)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MonitorDataServiceServer).IsUp(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MonitorDataService_IsUp_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MonitorDataServiceServer).IsUp(ctx, req.(*ServerInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -284,6 +370,132 @@ func _MonitorDataService_HandleCustomMonitorData_Handler(srv interface{}, ctx co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MonitorDataServiceServer).HandleCustomMonitorData(ctx, req.(*MonitorData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Fleet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Fleet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Fleet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Fleet(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Snapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Snapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Snapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Snapshot(ctx, req.(*HostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_QuerySeries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SeriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).QuerySeries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_QuerySeries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).QuerySeries(ctx, req.(*SeriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Processes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Processes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Processes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Processes(ctx, req.(*ProcessesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_CustomMetricNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).CustomMetricNames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_CustomMetricNames_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).CustomMetricNames(ctx, req.(*HostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Alerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AlertsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Alerts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Alerts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Alerts(ctx, req.(*AlertsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_IsUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServerInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).IsUp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_IsUp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).IsUp(ctx, req.(*ServerInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -354,10 +566,6 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MonitorDataService_HandlePing_Handler,
 		},
 		{
-			MethodName: "IsUp",
-			Handler:    _MonitorDataService_IsUp_Handler,
-		},
-		{
 			MethodName: "InitAgent",
 			Handler:    _MonitorDataService_InitAgent_Handler,
 		},
@@ -368,6 +576,34 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleCustomMonitorData",
 			Handler:    _MonitorDataService_HandleCustomMonitorData_Handler,
+		},
+		{
+			MethodName: "Fleet",
+			Handler:    _MonitorDataService_Fleet_Handler,
+		},
+		{
+			MethodName: "Snapshot",
+			Handler:    _MonitorDataService_Snapshot_Handler,
+		},
+		{
+			MethodName: "QuerySeries",
+			Handler:    _MonitorDataService_QuerySeries_Handler,
+		},
+		{
+			MethodName: "Processes",
+			Handler:    _MonitorDataService_Processes_Handler,
+		},
+		{
+			MethodName: "CustomMetricNames",
+			Handler:    _MonitorDataService_CustomMetricNames_Handler,
+		},
+		{
+			MethodName: "Alerts",
+			Handler:    _MonitorDataService_Alerts_Handler,
+		},
+		{
+			MethodName: "IsUp",
+			Handler:    _MonitorDataService_IsUp_Handler,
 		},
 		{
 			MethodName: "HandleMonitorDataRequest",

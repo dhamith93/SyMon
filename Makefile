@@ -39,7 +39,6 @@ pack-all: pack-collector pack-agent pack-alertprocessor pack-client
 pack-collector: build-collector
 	mkdir -p release/collector_linux_x86_64
 	cp collector/collector_linux_x86_64 release/collector_linux_x86_64
-	cp collector/init.sql release/collector_linux_x86_64
 	cp collector/.env-example release/collector_linux_x86_64
 	cp collector/alerts.json release/collector_linux_x86_64
 	cd release/ && tar -cvf collector_linux_x86_64.tar.gz collector_linux_x86_64

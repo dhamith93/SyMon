@@ -325,6 +325,943 @@ func (x *MonitorDataRequest) GetIsCustomMetric() bool {
 	return false
 }
 
+type HostSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Up            bool                   `protobuf:"varint,2,opt,name=up,proto3" json:"up,omitempty"`
+	LastSeen      int64                  `protobuf:"varint,3,opt,name=lastSeen,proto3" json:"lastSeen,omitempty"`
+	Time          int64                  `protobuf:"varint,4,opt,name=time,proto3" json:"time,omitempty"`
+	Os            string                 `protobuf:"bytes,5,opt,name=os,proto3" json:"os,omitempty"`
+	UptimeSeconds float64                `protobuf:"fixed64,6,opt,name=uptimeSeconds,proto3" json:"uptimeSeconds,omitempty"`
+	CpuPct        float64                `protobuf:"fixed64,7,opt,name=cpuPct,proto3" json:"cpuPct,omitempty"`
+	MemUsedPct    float64                `protobuf:"fixed64,8,opt,name=memUsedPct,proto3" json:"memUsedPct,omitempty"`
+	SwapUsedPct   float64                `protobuf:"fixed64,9,opt,name=swapUsedPct,proto3" json:"swapUsedPct,omitempty"`
+	DiskUsedPct   float64                `protobuf:"fixed64,10,opt,name=diskUsedPct,proto3" json:"diskUsedPct,omitempty"`
+	RxBps         float64                `protobuf:"fixed64,11,opt,name=rxBps,proto3" json:"rxBps,omitempty"`
+	TxBps         float64                `protobuf:"fixed64,12,opt,name=txBps,proto3" json:"txBps,omitempty"`
+	ActiveAlerts  int32                  `protobuf:"varint,13,opt,name=activeAlerts,proto3" json:"activeAlerts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostSummary) Reset() {
+	*x = HostSummary{}
+	mi := &file_api_api_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostSummary) ProtoMessage() {}
+
+func (x *HostSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostSummary.ProtoReflect.Descriptor instead.
+func (*HostSummary) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *HostSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *HostSummary) GetUp() bool {
+	if x != nil {
+		return x.Up
+	}
+	return false
+}
+
+func (x *HostSummary) GetLastSeen() int64 {
+	if x != nil {
+		return x.LastSeen
+	}
+	return 0
+}
+
+func (x *HostSummary) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *HostSummary) GetOs() string {
+	if x != nil {
+		return x.Os
+	}
+	return ""
+}
+
+func (x *HostSummary) GetUptimeSeconds() float64 {
+	if x != nil {
+		return x.UptimeSeconds
+	}
+	return 0
+}
+
+func (x *HostSummary) GetCpuPct() float64 {
+	if x != nil {
+		return x.CpuPct
+	}
+	return 0
+}
+
+func (x *HostSummary) GetMemUsedPct() float64 {
+	if x != nil {
+		return x.MemUsedPct
+	}
+	return 0
+}
+
+func (x *HostSummary) GetSwapUsedPct() float64 {
+	if x != nil {
+		return x.SwapUsedPct
+	}
+	return 0
+}
+
+func (x *HostSummary) GetDiskUsedPct() float64 {
+	if x != nil {
+		return x.DiskUsedPct
+	}
+	return 0
+}
+
+func (x *HostSummary) GetRxBps() float64 {
+	if x != nil {
+		return x.RxBps
+	}
+	return 0
+}
+
+func (x *HostSummary) GetTxBps() float64 {
+	if x != nil {
+		return x.TxBps
+	}
+	return 0
+}
+
+func (x *HostSummary) GetActiveAlerts() int32 {
+	if x != nil {
+		return x.ActiveAlerts
+	}
+	return 0
+}
+
+type FleetSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hosts         []*HostSummary         `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FleetSummary) Reset() {
+	*x = FleetSummary{}
+	mi := &file_api_api_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FleetSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FleetSummary) ProtoMessage() {}
+
+func (x *FleetSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FleetSummary.ProtoReflect.Descriptor instead.
+func (*FleetSummary) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FleetSummary) GetHosts() []*HostSummary {
+	if x != nil {
+		return x.Hosts
+	}
+	return nil
+}
+
+type HostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostRequest) Reset() {
+	*x = HostRequest{}
+	mi := &file_api_api_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostRequest) ProtoMessage() {}
+
+func (x *HostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostRequest.ProtoReflect.Descriptor instead.
+func (*HostRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *HostRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+// snapshotJson is the agent's latest MonitorData
+type HostSnapshot struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	Time          int64                  `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
+	SnapshotJson  string                 `protobuf:"bytes,3,opt,name=snapshotJson,proto3" json:"snapshotJson,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostSnapshot) Reset() {
+	*x = HostSnapshot{}
+	mi := &file_api_api_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostSnapshot) ProtoMessage() {}
+
+func (x *HostSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostSnapshot.ProtoReflect.Descriptor instead.
+func (*HostSnapshot) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *HostSnapshot) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *HostSnapshot) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *HostSnapshot) GetSnapshotJson() string {
+	if x != nil {
+		return x.SnapshotJson
+	}
+	return ""
+}
+
+type SeriesRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Host   string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	Metric string                 `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
+	// label keeps one series, for example a mount point or a custom metric
+	Label     string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	From      int64  `protobuf:"varint,4,opt,name=from,proto3" json:"from,omitempty"`
+	To        int64  `protobuf:"varint,5,opt,name=to,proto3" json:"to,omitempty"`
+	MaxPoints int32  `protobuf:"varint,6,opt,name=maxPoints,proto3" json:"maxPoints,omitempty"`
+	// max returns the peak of each bucket instead of the average
+	Max           bool `protobuf:"varint,7,opt,name=max,proto3" json:"max,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SeriesRequest) Reset() {
+	*x = SeriesRequest{}
+	mi := &file_api_api_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SeriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SeriesRequest) ProtoMessage() {}
+
+func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SeriesRequest.ProtoReflect.Descriptor instead.
+func (*SeriesRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SeriesRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *SeriesRequest) GetMetric() string {
+	if x != nil {
+		return x.Metric
+	}
+	return ""
+}
+
+func (x *SeriesRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *SeriesRequest) GetFrom() int64 {
+	if x != nil {
+		return x.From
+	}
+	return 0
+}
+
+func (x *SeriesRequest) GetTo() int64 {
+	if x != nil {
+		return x.To
+	}
+	return 0
+}
+
+func (x *SeriesRequest) GetMaxPoints() int32 {
+	if x != nil {
+		return x.MaxPoints
+	}
+	return 0
+}
+
+func (x *SeriesRequest) GetMax() bool {
+	if x != nil {
+		return x.Max
+	}
+	return false
+}
+
+type Point struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Time          int64                  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
+	Value         float64                `protobuf:"fixed64,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Point) Reset() {
+	*x = Point{}
+	mi := &file_api_api_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Point) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Point) ProtoMessage() {}
+
+func (x *Point) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Point.ProtoReflect.Descriptor instead.
+func (*Point) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *Point) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *Point) GetValue() float64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type Series struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Points        []*Point               `protobuf:"bytes,2,rep,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Series) Reset() {
+	*x = Series{}
+	mi := &file_api_api_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Series) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Series) ProtoMessage() {}
+
+func (x *Series) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Series.ProtoReflect.Descriptor instead.
+func (*Series) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Series) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *Series) GetPoints() []*Point {
+	if x != nil {
+		return x.Points
+	}
+	return nil
+}
+
+type SeriesResponse struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Metric string                 `protobuf:"bytes,1,opt,name=metric,proto3" json:"metric,omitempty"`
+	// source is raw, 1m or 1h
+	Source        string    `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
+	StepSeconds   int64     `protobuf:"varint,3,opt,name=stepSeconds,proto3" json:"stepSeconds,omitempty"`
+	Series        []*Series `protobuf:"bytes,4,rep,name=series,proto3" json:"series,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SeriesResponse) Reset() {
+	*x = SeriesResponse{}
+	mi := &file_api_api_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SeriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SeriesResponse) ProtoMessage() {}
+
+func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SeriesResponse.ProtoReflect.Descriptor instead.
+func (*SeriesResponse) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *SeriesResponse) GetMetric() string {
+	if x != nil {
+		return x.Metric
+	}
+	return ""
+}
+
+func (x *SeriesResponse) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *SeriesResponse) GetStepSeconds() int64 {
+	if x != nil {
+		return x.StepSeconds
+	}
+	return 0
+}
+
+func (x *SeriesResponse) GetSeries() []*Series {
+	if x != nil {
+		return x.Series
+	}
+	return nil
+}
+
+type ProcessesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Host  string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// at returns the newest snapshot at or before this time, 0 for latest
+	At            int64 `protobuf:"varint,2,opt,name=at,proto3" json:"at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessesRequest) Reset() {
+	*x = ProcessesRequest{}
+	mi := &file_api_api_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessesRequest) ProtoMessage() {}
+
+func (x *ProcessesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessesRequest.ProtoReflect.Descriptor instead.
+func (*ProcessesRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ProcessesRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *ProcessesRequest) GetAt() int64 {
+	if x != nil {
+		return x.At
+	}
+	return 0
+}
+
+// processesJson holds the CPU and Memory top process lists
+type ProcessesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Time          int64                  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
+	ProcessesJson string                 `protobuf:"bytes,2,opt,name=processesJson,proto3" json:"processesJson,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessesResponse) Reset() {
+	*x = ProcessesResponse{}
+	mi := &file_api_api_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessesResponse) ProtoMessage() {}
+
+func (x *ProcessesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessesResponse.ProtoReflect.Descriptor instead.
+func (*ProcessesResponse) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ProcessesResponse) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *ProcessesResponse) GetProcessesJson() string {
+	if x != nil {
+		return x.ProcessesJson
+	}
+	return ""
+}
+
+type NameList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Names         []string               `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NameList) Reset() {
+	*x = NameList{}
+	mi := &file_api_api_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NameList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NameList) ProtoMessage() {}
+
+func (x *NameList) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NameList.ProtoReflect.Descriptor instead.
+func (*NameList) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *NameList) GetNames() []string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+type AlertsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// host limits the list to one host, empty means all
+	Host          string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	OpenOnly      bool   `protobuf:"varint,2,opt,name=openOnly,proto3" json:"openOnly,omitempty"`
+	From          int64  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
+	To            int64  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlertsRequest) Reset() {
+	*x = AlertsRequest{}
+	mi := &file_api_api_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlertsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlertsRequest) ProtoMessage() {}
+
+func (x *AlertsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlertsRequest.ProtoReflect.Descriptor instead.
+func (*AlertsRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *AlertsRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *AlertsRequest) GetOpenOnly() bool {
+	if x != nil {
+		return x.OpenOnly
+	}
+	return false
+}
+
+func (x *AlertsRequest) GetFrom() int64 {
+	if x != nil {
+		return x.From
+	}
+	return 0
+}
+
+func (x *AlertsRequest) GetTo() int64 {
+	if x != nil {
+		return x.To
+	}
+	return 0
+}
+
+type AlertRecord struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Id     int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Host   string                 `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	Rule   string                 `protobuf:"bytes,3,opt,name=rule,proto3" json:"rule,omitempty"`
+	Metric string                 `protobuf:"bytes,4,opt,name=metric,proto3" json:"metric,omitempty"`
+	Target string                 `protobuf:"bytes,5,opt,name=target,proto3" json:"target,omitempty"`
+	// 1 is warning, 2 is critical
+	Severity  int32   `protobuf:"varint,6,opt,name=severity,proto3" json:"severity,omitempty"`
+	Value     float64 `protobuf:"fixed64,7,opt,name=value,proto3" json:"value,omitempty"`
+	StartedAt int64   `protobuf:"varint,8,opt,name=startedAt,proto3" json:"startedAt,omitempty"`
+	UpdatedAt int64   `protobuf:"varint,9,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
+	// 0 while the alert is open
+	ResolvedAt    int64 `protobuf:"varint,10,opt,name=resolvedAt,proto3" json:"resolvedAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlertRecord) Reset() {
+	*x = AlertRecord{}
+	mi := &file_api_api_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlertRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlertRecord) ProtoMessage() {}
+
+func (x *AlertRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlertRecord.ProtoReflect.Descriptor instead.
+func (*AlertRecord) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AlertRecord) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AlertRecord) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *AlertRecord) GetRule() string {
+	if x != nil {
+		return x.Rule
+	}
+	return ""
+}
+
+func (x *AlertRecord) GetMetric() string {
+	if x != nil {
+		return x.Metric
+	}
+	return ""
+}
+
+func (x *AlertRecord) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *AlertRecord) GetSeverity() int32 {
+	if x != nil {
+		return x.Severity
+	}
+	return 0
+}
+
+func (x *AlertRecord) GetValue() float64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *AlertRecord) GetStartedAt() int64 {
+	if x != nil {
+		return x.StartedAt
+	}
+	return 0
+}
+
+func (x *AlertRecord) GetUpdatedAt() int64 {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return 0
+}
+
+func (x *AlertRecord) GetResolvedAt() int64 {
+	if x != nil {
+		return x.ResolvedAt
+	}
+	return 0
+}
+
+type AlertList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Alerts        []*AlertRecord         `protobuf:"bytes,1,rep,name=alerts,proto3" json:"alerts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlertList) Reset() {
+	*x = AlertList{}
+	mi := &file_api_api_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlertList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlertList) ProtoMessage() {}
+
+func (x *AlertList) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlertList.ProtoReflect.Descriptor instead.
+func (*AlertList) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *AlertList) GetAlerts() []*AlertRecord {
+	if x != nil {
+		return x.Alerts
+	}
+	return nil
+}
+
 var File_api_api_proto protoreflect.FileDescriptor
 
 const file_api_api_proto_rawDesc = "" +
@@ -351,14 +1288,94 @@ const file_api_api_proto_rawDesc = "" +
 	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x12\n" +
 	"\x04time\x18\x05 \x01(\x03R\x04time\x12&\n" +
-	"\x0eisCustomMetric\x18\x06 \x01(\bR\x0eisCustomMetric2\xce\x03\n" +
+	"\x0eisCustomMetric\x18\x06 \x01(\bR\x0eisCustomMetric\"\xe3\x02\n" +
+	"\vHostSummary\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
+	"\x02up\x18\x02 \x01(\bR\x02up\x12\x1a\n" +
+	"\blastSeen\x18\x03 \x01(\x03R\blastSeen\x12\x12\n" +
+	"\x04time\x18\x04 \x01(\x03R\x04time\x12\x0e\n" +
+	"\x02os\x18\x05 \x01(\tR\x02os\x12$\n" +
+	"\ruptimeSeconds\x18\x06 \x01(\x01R\ruptimeSeconds\x12\x16\n" +
+	"\x06cpuPct\x18\a \x01(\x01R\x06cpuPct\x12\x1e\n" +
+	"\n" +
+	"memUsedPct\x18\b \x01(\x01R\n" +
+	"memUsedPct\x12 \n" +
+	"\vswapUsedPct\x18\t \x01(\x01R\vswapUsedPct\x12 \n" +
+	"\vdiskUsedPct\x18\n" +
+	" \x01(\x01R\vdiskUsedPct\x12\x14\n" +
+	"\x05rxBps\x18\v \x01(\x01R\x05rxBps\x12\x14\n" +
+	"\x05txBps\x18\f \x01(\x01R\x05txBps\x12\"\n" +
+	"\factiveAlerts\x18\r \x01(\x05R\factiveAlerts\"6\n" +
+	"\fFleetSummary\x12&\n" +
+	"\x05hosts\x18\x01 \x03(\v2\x10.api.HostSummaryR\x05hosts\"!\n" +
+	"\vHostRequest\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\"Z\n" +
+	"\fHostSnapshot\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
+	"\x04time\x18\x02 \x01(\x03R\x04time\x12\"\n" +
+	"\fsnapshotJson\x18\x03 \x01(\tR\fsnapshotJson\"\xa5\x01\n" +
+	"\rSeriesRequest\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x16\n" +
+	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x14\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\x12\x12\n" +
+	"\x04from\x18\x04 \x01(\x03R\x04from\x12\x0e\n" +
+	"\x02to\x18\x05 \x01(\x03R\x02to\x12\x1c\n" +
+	"\tmaxPoints\x18\x06 \x01(\x05R\tmaxPoints\x12\x10\n" +
+	"\x03max\x18\a \x01(\bR\x03max\"1\n" +
+	"\x05Point\x12\x12\n" +
+	"\x04time\x18\x01 \x01(\x03R\x04time\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x01R\x05value\"B\n" +
+	"\x06Series\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\"\n" +
+	"\x06points\x18\x02 \x03(\v2\n" +
+	".api.PointR\x06points\"\x87\x01\n" +
+	"\x0eSeriesResponse\x12\x16\n" +
+	"\x06metric\x18\x01 \x01(\tR\x06metric\x12\x16\n" +
+	"\x06source\x18\x02 \x01(\tR\x06source\x12 \n" +
+	"\vstepSeconds\x18\x03 \x01(\x03R\vstepSeconds\x12#\n" +
+	"\x06series\x18\x04 \x03(\v2\v.api.SeriesR\x06series\"6\n" +
+	"\x10ProcessesRequest\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x0e\n" +
+	"\x02at\x18\x02 \x01(\x03R\x02at\"M\n" +
+	"\x11ProcessesResponse\x12\x12\n" +
+	"\x04time\x18\x01 \x01(\x03R\x04time\x12$\n" +
+	"\rprocessesJson\x18\x02 \x01(\tR\rprocessesJson\" \n" +
+	"\bNameList\x12\x14\n" +
+	"\x05names\x18\x01 \x03(\tR\x05names\"c\n" +
+	"\rAlertsRequest\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x1a\n" +
+	"\bopenOnly\x18\x02 \x01(\bR\bopenOnly\x12\x12\n" +
+	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
+	"\x02to\x18\x04 \x01(\x03R\x02to\"\x83\x02\n" +
+	"\vAlertRecord\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04host\x18\x02 \x01(\tR\x04host\x12\x12\n" +
+	"\x04rule\x18\x03 \x01(\tR\x04rule\x12\x16\n" +
+	"\x06metric\x18\x04 \x01(\tR\x06metric\x12\x16\n" +
+	"\x06target\x18\x05 \x01(\tR\x06target\x12\x1a\n" +
+	"\bseverity\x18\x06 \x01(\x05R\bseverity\x12\x14\n" +
+	"\x05value\x18\a \x01(\x01R\x05value\x12\x1c\n" +
+	"\tstartedAt\x18\b \x01(\x03R\tstartedAt\x12\x1c\n" +
+	"\tupdatedAt\x18\t \x01(\x03R\tupdatedAt\x12\x1e\n" +
+	"\n" +
+	"resolvedAt\x18\n" +
+	" \x01(\x03R\n" +
+	"resolvedAt\"5\n" +
+	"\tAlertList\x12(\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x10.api.AlertRecordR\x06alerts2\x8a\x06\n" +
 	"\x12MonitorDataService\x12-\n" +
 	"\n" +
-	"HandlePing\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x12(\n" +
-	"\x04IsUp\x12\x0f.api.ServerInfo\x1a\r.api.IsActive\"\x00\x12,\n" +
+	"HandlePing\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x12,\n" +
 	"\tInitAgent\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x125\n" +
 	"\x11HandleMonitorData\x12\x10.api.MonitorData\x1a\f.api.Message\"\x00\x12;\n" +
-	"\x17HandleCustomMonitorData\x12\x10.api.MonitorData\x1a\f.api.Message\"\x00\x12G\n" +
+	"\x17HandleCustomMonitorData\x12\x10.api.MonitorData\x1a\f.api.Message\"\x00\x12'\n" +
+	"\x05Fleet\x12\t.api.Void\x1a\x11.api.FleetSummary\"\x00\x121\n" +
+	"\bSnapshot\x12\x10.api.HostRequest\x1a\x11.api.HostSnapshot\"\x00\x128\n" +
+	"\vQuerySeries\x12\x12.api.SeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x12<\n" +
+	"\tProcesses\x12\x15.api.ProcessesRequest\x1a\x16.api.ProcessesResponse\"\x00\x126\n" +
+	"\x11CustomMetricNames\x12\x10.api.HostRequest\x1a\r.api.NameList\"\x00\x12.\n" +
+	"\x06Alerts\x12\x12.api.AlertsRequest\x1a\x0e.api.AlertList\"\x00\x12(\n" +
+	"\x04IsUp\x12\x0f.api.ServerInfo\x1a\r.api.IsActive\"\x00\x12G\n" +
 	"\x18HandleMonitorDataRequest\x12\x17.api.MonitorDataRequest\x1a\x10.api.MonitorData\"\x00\x12@\n" +
 	"\x1dHandleCustomMetricNameRequest\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x122\n" +
 	"\x15HandleAgentIdsRequest\x12\t.api.Void\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
@@ -375,7 +1392,7 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),               // 0: api.Void
 	(*Message)(nil),            // 1: api.Message
@@ -383,29 +1400,59 @@ var file_api_api_proto_goTypes = []any{
 	(*ServerInfo)(nil),         // 3: api.ServerInfo
 	(*MonitorData)(nil),        // 4: api.MonitorData
 	(*MonitorDataRequest)(nil), // 5: api.MonitorDataRequest
+	(*HostSummary)(nil),        // 6: api.HostSummary
+	(*FleetSummary)(nil),       // 7: api.FleetSummary
+	(*HostRequest)(nil),        // 8: api.HostRequest
+	(*HostSnapshot)(nil),       // 9: api.HostSnapshot
+	(*SeriesRequest)(nil),      // 10: api.SeriesRequest
+	(*Point)(nil),              // 11: api.Point
+	(*Series)(nil),             // 12: api.Series
+	(*SeriesResponse)(nil),     // 13: api.SeriesResponse
+	(*ProcessesRequest)(nil),   // 14: api.ProcessesRequest
+	(*ProcessesResponse)(nil),  // 15: api.ProcessesResponse
+	(*NameList)(nil),           // 16: api.NameList
+	(*AlertsRequest)(nil),      // 17: api.AlertsRequest
+	(*AlertRecord)(nil),        // 18: api.AlertRecord
+	(*AlertList)(nil),          // 19: api.AlertList
 }
 var file_api_api_proto_depIdxs = []int32{
-	3, // 0: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	3, // 1: api.MonitorDataService.IsUp:input_type -> api.ServerInfo
-	3, // 2: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	4, // 3: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	4, // 4: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	5, // 5: api.MonitorDataService.HandleMonitorDataRequest:input_type -> api.MonitorDataRequest
-	3, // 6: api.MonitorDataService.HandleCustomMetricNameRequest:input_type -> api.ServerInfo
-	0, // 7: api.MonitorDataService.HandleAgentIdsRequest:input_type -> api.Void
-	1, // 8: api.MonitorDataService.HandlePing:output_type -> api.Message
-	2, // 9: api.MonitorDataService.IsUp:output_type -> api.IsActive
-	1, // 10: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1, // 11: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1, // 12: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	4, // 13: api.MonitorDataService.HandleMonitorDataRequest:output_type -> api.MonitorData
-	1, // 14: api.MonitorDataService.HandleCustomMetricNameRequest:output_type -> api.Message
-	1, // 15: api.MonitorDataService.HandleAgentIdsRequest:output_type -> api.Message
-	8, // [8:16] is the sub-list for method output_type
-	0, // [0:8] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
+	11, // 1: api.Series.points:type_name -> api.Point
+	12, // 2: api.SeriesResponse.series:type_name -> api.Series
+	18, // 3: api.AlertList.alerts:type_name -> api.AlertRecord
+	3,  // 4: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	3,  // 5: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	4,  // 6: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	4,  // 7: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 8: api.MonitorDataService.Fleet:input_type -> api.Void
+	8,  // 9: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	10, // 10: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	14, // 11: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	8,  // 12: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	17, // 13: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	3,  // 14: api.MonitorDataService.IsUp:input_type -> api.ServerInfo
+	5,  // 15: api.MonitorDataService.HandleMonitorDataRequest:input_type -> api.MonitorDataRequest
+	3,  // 16: api.MonitorDataService.HandleCustomMetricNameRequest:input_type -> api.ServerInfo
+	0,  // 17: api.MonitorDataService.HandleAgentIdsRequest:input_type -> api.Void
+	1,  // 18: api.MonitorDataService.HandlePing:output_type -> api.Message
+	1,  // 19: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 20: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 21: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	7,  // 22: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	9,  // 23: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	13, // 24: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	15, // 25: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	16, // 26: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	19, // 27: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	2,  // 28: api.MonitorDataService.IsUp:output_type -> api.IsActive
+	4,  // 29: api.MonitorDataService.HandleMonitorDataRequest:output_type -> api.MonitorData
+	1,  // 30: api.MonitorDataService.HandleCustomMetricNameRequest:output_type -> api.Message
+	1,  // 31: api.MonitorDataService.HandleAgentIdsRequest:output_type -> api.Message
+	18, // [18:32] is the sub-list for method output_type
+	4,  // [4:18] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -419,7 +1466,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

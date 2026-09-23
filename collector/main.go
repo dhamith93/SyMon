@@ -1,27 +1,29 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
-	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/store"
 	"github.com/dhamith93/SyMon/internal/transport"
 )
 
 func main() {
 	var removeAgentVal string
 	var alertConfig []alerts.AlertConfig
-	initPtr := flag.Bool("init", false, "Initialize the collector")
-	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove agent info from collector DB. Agent monitor data is not deleted.")
+	initPtr := flag.Bool("init", false, "Create the database schema and print a new SYMON_KEY")
+	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove an agent. Its metrics are kept until retention drops them.")
 	flag.Parse()
 
 	config := config.GetCollector()
@@ -41,73 +43,92 @@ func main() {
 		alertConfig = alerts.GetAlertConfig(config.AlertsFilePath)
 	}
 
+	ctx := context.Background()
+	st, err := openStore(ctx, &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer st.Close()
+
 	if *initPtr {
-		initCollector(&config)
-	} else if len(removeAgentVal) > 0 {
-		removeAgent(removeAgentVal, &config)
-	} else {
-
-		mysql := getMySQLConnection(&config, false)
-		defer mysql.Close()
-
-		if alertConfig != nil {
-			go handleAlerts(alertConfig, &config, &mysql)
-		}
-
-		go handleDataPurge(&config, &mysql)
-
-		lis, err := net.Listen("tcp", ":"+config.Port)
-		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
-		}
-		s := api.Server{}
-		grpcServer, err := transport.NewServer(config.TLSEnabled, config.CertPath, config.KeyPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		api.RegisterMonitorDataServiceServer(grpcServer, &s)
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %s", err)
-		}
+		initCollector(ctx, st)
+		return
 	}
-}
-
-func removeAgent(removeAgentVal string, config *config.Collector) {
-	fmt.Println("Removing agent " + removeAgentVal)
-	mysql := getMySQLConnection(config, false)
-	defer mysql.Close()
-
-	if mysql.SqlErr != nil {
-		fmt.Println(mysql.SqlErr.Error())
+	if len(removeAgentVal) > 0 {
+		removeAgent(ctx, st, removeAgentVal)
 		return
 	}
 
-	if !mysql.AgentIDExists(removeAgentVal) {
-		fmt.Println("Agent ID " + removeAgentVal + " doesn't exists...")
-		return
+	if err := st.Migrate(ctx); err != nil {
+		log.Fatal("cannot update database schema: ", err)
+	}
+	if err := st.ApplyRetention(ctx); err != nil {
+		log.Fatal("cannot set retention: ", err)
 	}
 
-	err := mysql.RemoveAgent(removeAgentVal)
+	if alertConfig != nil {
+		go handleAlerts(alertConfig, &config, st)
+	}
+	go purgeResolvedAlerts(st)
+
+	lis, err := net.Listen("tcp", ":"+config.Port)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("failed to listen: %v", err)
+	}
+	grpcServer, err := transport.NewServer(config.TLSEnabled, config.CertPath, config.KeyPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	api.RegisterMonitorDataServiceServer(grpcServer, &api.Server{Store: st})
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %s", err)
 	}
 }
 
-func initCollector(config *config.Collector) {
-	mysql := getMySQLConnection(config, true)
-	defer mysql.Close()
-	err := mysql.Init()
-	if err != nil {
-		fmt.Println(err.Error())
+func openStore(ctx context.Context, config *config.Collector) (*store.Store, error) {
+	if len(config.DatabaseURL) == 0 {
+		return nil, errors.New("SYMON_DATABASE_URL is not set")
+	}
+
+	retention := store.DefaultRetention
+	if config.RetentionRawDays > 0 {
+		retention.Raw = days(config.RetentionRawDays)
+	}
+	if config.RetentionMinuteDays > 0 {
+		retention.Minute = days(config.RetentionMinuteDays)
+	}
+	if config.RetentionHourDays > 0 {
+		retention.Hour = days(config.RetentionHourDays)
+	}
+	// the hourly rollups are built from the last 2 days of minute rollups
+	if retention.Minute < days(3) {
+		return nil, errors.New("SYMON_RETENTION_MINUTE_DAYS must be at least 3")
+	}
+
+	return store.Open(ctx, config.DatabaseURL, retention)
+}
+
+func days(n int) time.Duration {
+	return time.Duration(n) * 24 * time.Hour
+}
+
+func initCollector(ctx context.Context, st *store.Store) {
+	if err := st.Migrate(ctx); err != nil {
+		fmt.Println("cannot create database schema: " + err.Error())
+		os.Exit(1)
 	}
 	key := auth.GetKey(true)
-	os.Setenv("SYMON_KEY", key)
 	fmt.Printf("---\nSYMON_KEY: %s\n---\n", key)
 }
 
-func getMySQLConnection(c *config.Collector, isMultiStatement bool) database.MySql {
-	mysql := database.MySql{}
-	mysql.Connect(c.MySQLUserName, c.MySQLPassword, c.MySQLHost, c.MySQLDatabaseName, isMultiStatement)
-	return mysql
+func removeAgent(ctx context.Context, st *store.Store, name string) {
+	fmt.Println("Removing agent " + name)
+	err := st.RemoveHost(ctx, name)
+	if errors.Is(err, store.ErrNotFound) {
+		fmt.Println("Agent ID " + name + " doesn't exist")
+		return
+	}
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }

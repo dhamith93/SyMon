@@ -19,7 +19,7 @@ FROM alpine:3.22 AS collector
 RUN adduser -D -H symon
 WORKDIR /app
 COPY --from=build /out/collector ./collector
-COPY collector/init.sql collector/alerts.json ./
+COPY collector/alerts.json ./
 USER symon
 EXPOSE 9000
 CMD ["./collector"]

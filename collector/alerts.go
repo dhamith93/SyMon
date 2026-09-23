@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,9 +17,9 @@ import (
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/config"
-	"github.com/dhamith93/SyMon/internal/database"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/store"
 	"github.com/dhamith93/SyMon/internal/transport"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 )
@@ -28,7 +27,7 @@ import (
 // alertClient is created once in handleAlerts and shared by all alert checks
 var alertClient alertapi.AlertServiceClient
 
-func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, mysql *database.MySql) {
+func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, st *store.Store) {
 	conn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath)
 	if err != nil {
 		log.Fatal("cannot create alert processor client: ", err)
@@ -36,12 +35,12 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 	defer conn.Close()
 	alertClient = alertapi.NewAlertServiceClient(conn)
 
-	mysql.ClearAllAlertsWithNullEnd()
 	ticker := time.NewTicker(15 * time.Second)
 	endpointTicker := time.NewTicker(time.Duration(config.EndpointCheckInterval) * time.Second)
 	quit := make(chan struct{})
 	var wg sync.WaitGroup
 	incidentTracker := memdb.CreateDatabase("incident_tracker")
+	rules := newEvaluator(st, sendAlert)
 
 	delta := 1
 	if config.EndpointMonitoringEnabled {
@@ -50,37 +49,28 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 
 	wg.Add(delta)
 	logger.Log("info", "starting alert checker")
-	err = incidentTracker.Create(
-		"alert",
-		memdb.Col{Name: "server_name", Type: memdb.String},
-		memdb.Col{Name: "metric_type", Type: memdb.String},
-		memdb.Col{Name: "metric_name", Type: memdb.String},
-		memdb.Col{Name: "time", Type: memdb.String},
-		memdb.Col{Name: "status", Type: memdb.Int},
-		memdb.Col{Name: "value", Type: memdb.Float32},
-	)
-	if err != nil {
-		logger.Log("error", "memdb: "+err.Error())
-	} else {
-		go func() {
-			for {
-				select {
-				case <-ticker.C:
-					for _, alert := range alertConfigs {
-						if alert.MetricName == "endpoint" {
-							continue
-						}
-						for _, server := range alert.Servers {
-							processAlert(&alert, server, config, mysql, &incidentTracker)
-						}
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				for _, alert := range alertConfigs {
+					if alert.MetricName == "endpoint" {
+						continue
 					}
-				case <-quit:
-					ticker.Stop()
-					return
+					for _, server := range alert.Servers {
+						ctx, cancel := transport.Context()
+						if err := rules.evaluate(ctx, &alert, server); err != nil {
+							logger.Log("error", "alert "+alert.Name+" on "+server+": "+err.Error())
+						}
+						cancel()
+					}
 				}
+			case <-quit:
+				ticker.Stop()
+				return
 			}
-		}()
-	}
+		}
+	}()
 
 	if config.EndpointMonitoringEnabled {
 		logger.Log("info", "starting endpoint monitor")
@@ -117,111 +107,6 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, m
 	}
 	wg.Wait()
 	fmt.Println("Exiting")
-}
-
-func processAlert(alert *alerts.AlertConfig, server string, config *config.Collector, mysql *database.MySql, incidentTracker *memdb.Database) {
-	metricType := alert.MetricName
-	metricName := ""
-	if metricType == monitor.DISKS {
-		metricName = alert.Disk
-	}
-	if metricType == monitor.SERVICES {
-		metricName = alert.Service
-	}
-	alertStatus := buildAlertStatus(alert, &server, config, mysql)
-
-	// duplicate check
-	if metricType != monitor.PING {
-		alertFromDbForStartEvent := mysql.GetAlertByStartEvent(strconv.FormatInt(alertStatus.StartEvent, 10))
-		if alertFromDbForStartEvent != nil {
-			return
-		}
-	}
-
-	// check if an active alert is present in DB
-	previousAlert := mysql.GetPreviousOpenAlert(&alertStatus, alert.IsCustom)
-	if previousAlert != nil {
-		// if current alert status is normal, check if normal status continued for threshold period and update alert status in DB
-		if alertStatus.Type != alertstatus.Warning && alertStatus.Type != alertstatus.Critical {
-			res := incidentTracker.Tables["alert"].Where("server_name", "==", server).And("metric_type", "==", metricType).And("status", "==", int(alertstatus.Normal))
-			if metricType == monitor.DISKS || metricType == monitor.SERVICES {
-				res = res.And("metric_name", "==", metricName)
-			}
-			if res.RowCount == 0 {
-				err := incidentTracker.Tables["alert"].Insert("server_name, metric_type, metric_name, time, value, status", server, metricType, metricName, alertStatus.UnixTime, alertStatus.Value, int(alertstatus.Normal))
-				if err != nil {
-					logger.Log("error", "memdb: "+err.Error())
-				}
-				return
-			}
-
-			prevTime, err := strconv.ParseInt(res.Rows[0].Columns["time"].StringVal, 10, 64)
-			if err != nil {
-				logger.Log("error", err.Error())
-			}
-			currTime, err := strconv.ParseInt(alertStatus.UnixTime, 10, 64)
-			if err != nil {
-				logger.Log("error", err.Error())
-			}
-
-			if (currTime - prevTime) >= int64(alertStatus.Alert.TriggerIntveral) {
-				err = mysql.SetAlertEndLog(&alertStatus, previousAlert[6])
-				// queue an alert resolved
-				sendAlert(buildAlertToSend(server, alert, alertStatus))
-				if err != nil {
-					logger.Log("error", "Error updating alert: "+err.Error())
-				}
-				res.Delete()
-				return
-			}
-		}
-
-		// Alert status changed between warn & crit
-		prevAlertStatus, _ := strconv.Atoi(previousAlert[2])
-		if (alertStatus.Type == alertstatus.Critical && prevAlertStatus == int(alertstatus.Warning)) || (alertStatus.Type == alertstatus.Warning && prevAlertStatus == int(alertstatus.Critical)) {
-			err := mysql.UpdateAlert(&alertStatus, previousAlert[6])
-			if err != nil {
-				logger.Log("error", "Error updating alert: "+err.Error())
-			}
-			// queue an alert status changed
-			sendAlert(buildAlertToSend(server, alert, alertStatus))
-		}
-		return
-	}
-
-	if alertStatus.Type == alertstatus.Warning || alertStatus.Type == alertstatus.Critical {
-		res := incidentTracker.Tables["alert"].Where("server_name", "==", server).And("metric_type", "==", metricType).And("status", "!=", int(alertstatus.Normal))
-		if metricType == monitor.DISKS || metricType == monitor.SERVICES {
-			res = res.And("metric_name", "==", metricName)
-		}
-
-		if res.RowCount == 0 {
-			err := incidentTracker.Tables["alert"].Insert("server_name, metric_type, metric_name, time, value, status", server, metricType, metricName, alertStatus.UnixTime, alertStatus.Value, int(alertStatus.Type))
-			if err != nil {
-				logger.Log("error", "memdb: "+err.Error())
-			}
-			return
-		}
-
-		prevTime, err := strconv.ParseInt(res.Rows[0].Columns["time"].StringVal, 10, 64)
-		if err != nil {
-			logger.Log("error", err.Error())
-		}
-		currTime, err := strconv.ParseInt(alertStatus.UnixTime, 10, 64)
-		if err != nil {
-			logger.Log("error", err.Error())
-		}
-
-		if (currTime - prevTime) >= int64(alertStatus.Alert.TriggerIntveral) {
-			err = mysql.AddAlert(&alertStatus)
-			// queue a new alert
-			sendAlert(buildAlertToSend(server, alert, alertStatus))
-			if err != nil {
-				logger.Log("error", "Error adding alert: "+err.Error())
-			}
-			res.Delete()
-		}
-	}
 }
 
 func checkEndpoint(alert *alerts.AlertConfig, incidentTracker *memdb.Database, config *config.Collector) {
@@ -374,132 +259,6 @@ func buildAlertToSend(server string, alert *alerts.AlertConfig, alertStatus aler
 	return alertToSend
 }
 
-func buildAlertStatus(alert *alerts.AlertConfig, server *string, config *config.Collector, mysql *database.MySql) alertstatus.AlertStatus {
-	var alertStatus alertstatus.AlertStatus
-	logName := ""
-
-	switch alert.MetricName {
-	case monitor.DISKS:
-		logName = alert.Disk
-	case monitor.SERVICES:
-		logName = alert.Service
-	}
-
-	metricLogs := mysql.GetLogFromDBWithId(*server, alert.MetricName, logName, 0, 0, alert.IsCustom)
-	if len(metricLogs) == 0 {
-		return alertStatus
-	}
-	logId := metricLogs[0][0]
-	alertStatus.Alert = *alert
-	alertStatus.Server = *server
-	alertStatus.Type = alertstatus.Normal
-
-	switch alert.MetricName {
-	case monitor.PROC_USAGE:
-		var cpu monitor.CPU
-		err := json.Unmarshal([]byte(metricLogs[0][1]), &cpu)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-		alertStatus.UnixTime = strconv.FormatInt(cpu.Time, 10)
-		alertStatus.Value = float32(cpu.LoadAvg)
-		alertStatus.Type = getAlertType(alert, float64(cpu.LoadAvg))
-	case monitor.MEMORY:
-		var mem monitor.Memory
-		err := json.Unmarshal([]byte(metricLogs[0][1]), &mem)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-		alertStatus.UnixTime = strconv.FormatInt(mem.Time, 10)
-		alertStatus.Value = float32(mem.PercentageUsed)
-		alertStatus.Type = getAlertType(alert, mem.PercentageUsed)
-	case monitor.SWAP:
-		var swap monitor.Swap
-		err := json.Unmarshal([]byte(metricLogs[0][1]), &swap)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-		alertStatus.UnixTime = strconv.FormatInt(swap.Time, 10)
-		alertStatus.Value = float32(swap.PercentageUsed)
-		alertStatus.Type = getAlertType(alert, swap.PercentageUsed)
-	case monitor.DISKS:
-		var disk monitor.Disk
-		err := json.Unmarshal([]byte(metricLogs[0][1]), &disk)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-
-		if disk.FileSystem == alert.Disk {
-			valStr := strings.Replace(disk.Usage.Usage, "%", "", -1)
-			val, err := strconv.ParseFloat(valStr, 32)
-			if err != nil {
-				logger.Log("error", err.Error())
-				return alertStatus
-			}
-			alertStatus.Value = float32(val)
-			alertStatus.Type = getAlertType(alert, val)
-			alertStatus.UnixTime = strconv.FormatInt(disk.Time, 10)
-			break
-		}
-	case monitor.SERVICES:
-		var service monitor.Service
-		err := json.Unmarshal([]byte(metricLogs[0][1]), &service)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-
-		if service.Name == alert.Service {
-			val := 0.0
-			if service.Running {
-				val = 1.0
-			}
-			alertStatus.Value = float32(val)
-			alertStatus.Type = getAlertType(alert, val)
-			alertStatus.UnixTime = service.Time
-			break
-		}
-	case monitor.PING:
-		pingLog := mysql.GetLogFromDBWithId(*server, alert.MetricName, "", 0, 0, alert.IsCustom)
-		alertStatus.Type = alertstatus.Normal
-		if len(pingLog) > 0 {
-			lastPingTime, _ := strconv.Atoi(pingLog[0][1])
-			timeNow := time.Now().Unix()
-			diff := timeNow - int64(lastPingTime)
-			if diff > int64(alert.TriggerIntveral) {
-				alertStatus.Type = alertstatus.Critical
-			}
-		}
-		alertStatus.UnixTime = strconv.FormatInt(time.Now().Unix(), 10)
-	default:
-		var customMetric monitor.CustomMetric
-		err := json.Unmarshal([]byte(metricLogs[0][1]), &customMetric)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-		alertStatus.UnixTime = customMetric.Time
-		value, err := strconv.ParseFloat(customMetric.Value, 32)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return alertStatus
-		}
-		alertStatus.Value = float32(value)
-		alertStatus.Type = getAlertType(alert, float64(alertStatus.Value))
-	}
-	logIdInt, err := strconv.ParseInt(logId, 10, 64)
-	if err != nil {
-		logger.Log("error", err.Error())
-		return alertStatus
-	}
-	alertStatus.StartEvent = logIdInt
-	return alertStatus
-}
-
 func getAlertType(alert *alerts.AlertConfig, val float64) alertstatus.StatusType {
 	switch alert.Op {
 	case "==":
@@ -629,6 +388,6 @@ func sendAlert(alert *alertapi.Alert) {
 	defer cancel()
 	_, err := alertClient.HandleAlerts(ctx, alert)
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("error", "cannot send alert to the alert processor: "+err.Error())
 	}
 }

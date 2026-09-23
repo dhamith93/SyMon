@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-const DEFAULT_RETENTION_DAYS int32 = 30
 const DEFAULT_INTERVAL_SECS int = 30
 const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
 
@@ -16,19 +15,21 @@ type Collector struct {
 	TLSEnabled                bool
 	LogFileEnabled            bool
 	EndpointCheckInterval     int
-	DataRetentionDays         int32
 	EndpointMonitoringEnabled bool
-	Port                      string
-	AlertEndpoint             string
-	AlertEndpointCACertPath   string
-	CertPath                  string
-	KeyPath                   string
-	LogFilePath               string
-	MySQLUserName             string
-	MySQLHost                 string
-	MySQLDatabaseName         string
-	MySQLPassword             string
-	AlertsFilePath            string
+	// DatabaseURL is a postgres:// connection string for TimescaleDB
+	DatabaseURL string
+	// days to keep raw data, 1 minute rollups and 1 hour rollups.
+	// 0 means the store's default.
+	RetentionRawDays        int
+	RetentionMinuteDays     int
+	RetentionHourDays       int
+	Port                    string
+	AlertEndpoint           string
+	AlertEndpointCACertPath string
+	CertPath                string
+	KeyPath                 string
+	LogFilePath             string
+	AlertsFilePath          string
 }
 
 type Client struct {
@@ -91,6 +92,15 @@ func GetAgent() Agent {
 	}
 }
 
+// positiveInt parses value, returning 0 when it is empty, invalid or not positive
+func positiveInt(value string) int {
+	converted, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || converted < 0 {
+		return 0
+	}
+	return converted
+}
+
 // splitList turns "a, B,,c" into [a b c]
 func splitList(value string) []string {
 	items := []string{}
@@ -124,14 +134,6 @@ func GetServicesToMonitor(path string) []ServiceToMonitor {
 }
 
 func GetCollector() Collector {
-	retentionDays := os.Getenv("SYMON_DATA_RETENTION_DAYES")
-	retentionDaysInt := DEFAULT_RETENTION_DAYS
-	if len(retentionDays) > 0 {
-		converted, _ := strconv.Atoi(retentionDays)
-		if converted > 0 {
-			retentionDaysInt = int32(converted)
-		}
-	}
 	checkInterval := os.Getenv("SYMON_ENDPOINT_CHECK_INTERVAL")
 	checkIntervalInt := DEFAULT_ENDPOINT_CHECK_INTERVAL
 	if len(checkInterval) > 0 {
@@ -149,13 +151,12 @@ func GetCollector() Collector {
 		KeyPath:                   os.Getenv("SYMON_TLS_KEY_PATH"),
 		LogFileEnabled:            strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
 		LogFilePath:               os.Getenv("SYMON_LOG_FILE_PATH"),
-		MySQLUserName:             os.Getenv("SYMON_DB_USER"),
-		MySQLHost:                 os.Getenv("SYMON_DB_HOST"),
-		MySQLDatabaseName:         os.Getenv("SYMON_DB_NAME"),
-		MySQLPassword:             os.Getenv("SYMON_DB_PASSWORD"),
+		DatabaseURL:               os.Getenv("SYMON_DATABASE_URL"),
+		RetentionRawDays:          positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
+		RetentionMinuteDays:       positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
+		RetentionHourDays:         positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),
 		AlertsFilePath:            os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
 		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) == "TRUE",
-		DataRetentionDays:         retentionDaysInt,
 		EndpointCheckInterval:     checkIntervalInt,
 	}
 }
