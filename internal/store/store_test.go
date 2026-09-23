@@ -174,6 +174,24 @@ func TestFailedSnapshotWritesNothing(t *testing.T) {
 	}
 }
 
+func TestLateSnapshotKeepsTheLatest(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	if err := st.AddHost(ctx, "web1", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+	at := time.Now().Truncate(time.Second)
+	for _, snapshotTime := range []time.Time{at, at.Add(-time.Hour)} {
+		if err := st.SaveSnapshot(ctx, testSnapshot("web1", snapshotTime)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	latest, err := st.LatestSnapshot(ctx, "web1")
+	if err != nil || !latest.Time.Equal(at) {
+		t.Errorf("expected the newest snapshot to stay, got %v %v", latest.Time, err)
+	}
+}
+
 func TestSnapshotAndQueries(t *testing.T) {
 	st := testStore(t)
 	ctx := context.Background()
@@ -181,12 +199,12 @@ func TestSnapshotAndQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := time.Now().Add(-10 * time.Minute).Truncate(time.Second)
-	if err := st.SaveSnapshot(ctx, testSnapshot("web1", at)); err != nil {
-		t.Fatal(err)
-	}
-	// an older snapshot arriving late does not replace the latest one
-	if err := st.SaveSnapshot(ctx, testSnapshot("web1", at.Add(-time.Hour))); err != nil {
-		t.Fatal(err)
+	// in time order. Data older than what the rollups already hold only
+	// shows in them after their next refresh, up to a minute later.
+	for _, snapshotTime := range []time.Time{at.Add(-time.Hour), at} {
+		if err := st.SaveSnapshot(ctx, testSnapshot("web1", snapshotTime)); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	t.Run("latest snapshot", func(t *testing.T) {
@@ -463,10 +481,22 @@ func TestLateDataIsRolledUp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// the test runs the job itself, so the scheduler must not run it too
+	if _, err := st.pool.Exec(ctx, "SELECT alter_job($1, scheduled => false)", job); err != nil {
+		t.Fatal(err)
+	}
 	runJob := func() {
 		t.Helper()
-		if _, err := st.pool.Exec(ctx, "CALL run_job($1)", job); err != nil {
-			t.Fatal(err)
+		// a scheduled run may still be finishing
+		for attempt := 1; ; attempt++ {
+			_, err := st.pool.Exec(ctx, "CALL run_job($1)", job)
+			if err == nil {
+				return
+			}
+			if attempt == 20 {
+				t.Fatal(err)
+			}
+			time.Sleep(250 * time.Millisecond)
 		}
 	}
 
