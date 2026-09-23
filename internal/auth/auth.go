@@ -54,8 +54,9 @@ func GetKey(generateIfNotFound bool) string {
 	}
 
 	key = keyGen()
-	err := os.Setenv("SYMON_KEY", key)
-	logger.Log("ERR", err.Error())
+	if err := os.Setenv("SYMON_KEY", key); err != nil {
+		logger.Log("error", err.Error())
+	}
 
 	return key
 }
