@@ -29,6 +29,8 @@ type HostSummary struct {
 	ActiveAlerts int
 	// WorstSeverity is the highest severity of the open alerts, 0 if none
 	WorstSeverity int
+	// Containers is how many containers were running at the latest snapshot
+	Containers int
 }
 
 func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
@@ -74,6 +76,7 @@ func fillSummary(summary *HostSummary, data *monitor.MonitorData) {
 	summary.CPUPct = float64(data.ProcUsage.LoadAvg)
 	summary.MemUsedPct = data.Memory.PercentageUsed
 	summary.SwapUsedPct = data.Swap.PercentageUsed
+	summary.Containers = len(data.Containers)
 	for _, disk := range data.Disk {
 		if pct := parsePercent(disk.Usage.Usage); pct != nil && *pct > summary.DiskUsedPct {
 			summary.DiskUsedPct = *pct

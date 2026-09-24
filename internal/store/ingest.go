@@ -68,6 +68,17 @@ func (s *Store) SaveSnapshot(ctx context.Context, data *monitor.MonitorData) err
 		batch.Queue("INSERT INTO service_status (time, host_id, name, running) VALUES ($1, $2, $3, $4)",
 			at, hostID, service.Name, service.Running)
 	}
+	for _, container := range data.Containers {
+		var rxBps, txBps, readBps, writeBps *float64
+		if container.Rates != nil {
+			rxBps, txBps = container.Rates.RxBytesPerSec, container.Rates.TxBytesPerSec
+			readBps, writeBps = &container.Rates.ReadBytesPerSec, &container.Rates.WriteBytesPerSec
+		}
+		batch.Queue(`INSERT INTO container_metrics (time, host_id, container_id, name, cpu_cores, cpu_pct, mem_used, mem_pct, rx_bps, tx_bps, read_bps, write_bps, pids)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+			at, hostID, container.ID, containerName(container), container.CPU.CoresUsed, container.CPU.PercentOfHost,
+			container.Memory.Used, container.Memory.PercentageUsed, rxBps, txBps, readBps, writeBps, float64(container.Pids.Current))
+	}
 	batch.Queue("INSERT INTO process_snapshots (time, host_id, processes) VALUES ($1, $2, $3)", at, hostID, processes)
 
 	// keep the newest snapshot even if an older one arrives late
@@ -157,6 +168,14 @@ func parsePercent(value string) *float64 {
 		return nil
 	}
 	return &pct
+}
+
+// containerName is the runtime's name, or the short ID without the socket
+func containerName(container monitor.Container) string {
+	if container.Name != "" {
+		return container.Name
+	}
+	return container.ShortID
 }
 
 // sensorName combines the chip and label, like "coretemp/Core 0"

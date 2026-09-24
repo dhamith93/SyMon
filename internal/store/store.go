@@ -116,9 +116,9 @@ func (s *Store) applyMigration(ctx context.Context, file string) error {
 }
 
 var (
-	rawTables    = []string{"host_metrics", "cpu_core_metrics", "disk_metrics", "disk_io_metrics", "net_metrics", "temp_metrics", "custom_metrics", "service_status", "process_snapshots"}
-	minuteTables = []string{"host_metrics_1m", "disk_metrics_1m", "disk_io_metrics_1m", "net_metrics_1m", "temp_metrics_1m", "custom_metrics_1m"}
-	hourTables   = []string{"host_metrics_1h", "disk_metrics_1h", "disk_io_metrics_1h", "net_metrics_1h", "temp_metrics_1h", "custom_metrics_1h"}
+	rawTables    = []string{"host_metrics", "cpu_core_metrics", "disk_metrics", "disk_io_metrics", "net_metrics", "temp_metrics", "custom_metrics", "service_status", "process_snapshots", "container_metrics"}
+	minuteTables = []string{"host_metrics_1m", "disk_metrics_1m", "disk_io_metrics_1m", "net_metrics_1m", "temp_metrics_1m", "custom_metrics_1m", "container_metrics_1m"}
+	hourTables   = []string{"host_metrics_1h", "disk_metrics_1h", "disk_io_metrics_1h", "net_metrics_1h", "temp_metrics_1h", "custom_metrics_1h", "container_metrics_1h"}
 )
 
 // ApplyRetention replaces the retention policies with the configured ones,

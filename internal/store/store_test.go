@@ -96,6 +96,13 @@ func testSnapshot(host string, at time.Time) *monitor.MonitorData {
 		TCPStates:    &monitor.TCPStates{Established: 12, Listen: 4, Total: 20},
 		Pressure:     &monitor.Pressure{CPU: monitor.ResourcePressure{Some: monitor.PressureMetric{Avg10: 1.5}}},
 		Temperatures: []monitor.Temperature{{Name: "coretemp", Label: "Core 0", Celsius: 48}},
+		Containers: []monitor.Container{
+			{ID: "aaa111", ShortID: "aaa111", Name: "web", CPU: monitor.ContainerCPU{PercentOfHost: 12}, Memory: monitor.ContainerMemory{Used: 256e6},
+				Rates: &monitor.ContainerRates{RxBytesPerSec: floatPtr(2048), TxBytesPerSec: floatPtr(1024), ReadBytesPerSec: 10}},
+			// no name from the socket, and on the host network
+			{ID: "bbb222", ShortID: "bbb222", CPU: monitor.ContainerCPU{PercentOfHost: 3}, Network: monitor.ContainerNetwork{SharesHostNetwork: true},
+				Rates: &monitor.ContainerRates{}},
+		},
 	}
 }
 
@@ -232,6 +239,27 @@ func TestSnapshotAndQueries(t *testing.T) {
 		host := fleet[0]
 		if host.CPUPct != 37 || host.DiskUsedPct != 91 || host.RxBps != 100 || host.TxBps != 50 || host.LastSeen.IsZero() {
 			t.Errorf("unexpected summary: %+v", host)
+		}
+	})
+
+	t.Run("containers", func(t *testing.T) {
+		cpu, err := st.QuerySeries(ctx, SeriesQuery{Host: "web1", Metric: "container_cpu", From: at.Add(-5 * time.Minute), To: at.Add(5 * time.Minute)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(cpu.Series) != 2 || cpu.Series[0].Label != "bbb222" || cpu.Series[1].Label != "web" || cpu.Series[1].Points[0].Value != 12 {
+			t.Errorf("expected cpu per container, named or by short id, got %+v", cpu.Series)
+		}
+		rx, err := st.QuerySeries(ctx, SeriesQuery{Host: "web1", Metric: "container_rx", From: at.Add(-5 * time.Minute), To: at.Add(5 * time.Minute)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rx.Series) != 1 || rx.Series[0].Label != "web" || rx.Series[0].Points[0].Value != 2048 {
+			t.Errorf("expected traffic only for the container with its own network, got %+v", rx.Series)
+		}
+		fleet, _ := st.FleetSummary(ctx)
+		if len(fleet) != 1 || fleet[0].Containers != 2 {
+			t.Errorf("expected 2 containers in the fleet summary, got %+v", fleet)
 		}
 	})
 
