@@ -27,14 +27,16 @@ const (
 	TCP_STATES   string = "tcpStates"
 	PRESSURE     string = "pressure"
 	TEMPERATURES string = "temperatures"
+	CONTAINERS   string = "containers"
 )
 
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off
 const (
-	CollectorDiskIO   string = "diskio"
-	CollectorTCP      string = "tcp"
-	CollectorPressure string = "pressure"
-	CollectorTemps    string = "temps"
+	CollectorDiskIO     string = "diskio"
+	CollectorTCP        string = "tcp"
+	CollectorPressure   string = "pressure"
+	CollectorTemps      string = "temps"
+	CollectorContainers string = "containers"
 )
 
 type Processes struct {
@@ -66,6 +68,7 @@ type MonitorData struct {
 	TCPStates    *TCPStates    `json:",omitempty"`
 	Pressure     *Pressure     `json:",omitempty"`
 	Temperatures []Temperature `json:",omitempty"`
+	Containers   []Container   `json:",omitempty"`
 }
 
 // Collector gathers a MonitorData snapshot on every tick. It keeps the
@@ -79,20 +82,30 @@ type Collector struct {
 	prevDiskIOTime time.Time
 	prevNetworks   map[string]NetworkUsage
 	prevNetTime    time.Time
+
+	prevContainers     map[string]systats.Container
+	prevContainersTime time.Time
+	// containersFailed stops a host without cgroups logging every tick
+	containersFailed bool
 }
 
 func NewCollector(config *config.Agent) *Collector {
 	stats := systats.New()
 	stats.ContainerAware = config.ContainerAware
+	if config.ContainerSocket != "" {
+		stats.ContainerSocketPath = config.ContainerSocket
+	}
+	stats.ContainerLayerSize = config.ContainerLayerSize
 
 	c := &Collector{
 		config: config,
 		stats:  stats,
 		enabled: map[string]bool{
-			CollectorDiskIO:   true,
-			CollectorTCP:      true,
-			CollectorPressure: true,
-			CollectorTemps:    true,
+			CollectorDiskIO:     true,
+			CollectorTCP:        true,
+			CollectorPressure:   true,
+			CollectorTemps:      true,
+			CollectorContainers: true,
 		},
 	}
 	for _, name := range config.DisabledCollectors {
@@ -142,6 +155,9 @@ func (c *Collector) Collect(ctx context.Context) MonitorData {
 	}
 	if c.enabled[CollectorTemps] {
 		data.Temperatures = c.temperatures()
+	}
+	if c.enabled[CollectorContainers] {
+		data.Containers = c.containers(ctx)
 	}
 	return data
 }
@@ -354,6 +370,37 @@ func (c *Collector) pressure() *Pressure {
 	}
 	pressure := fromSystatsPressure(p)
 	return &pressure
+}
+
+// containers returns the running containers, with rates once the agent
+// has seen a container before
+func (c *Collector) containers(ctx context.Context) []Container {
+	samples, err := c.stats.GetContainersWithContext(ctx, systats.Byte)
+	if err != nil {
+		if !c.containersFailed {
+			logger.Log("error", "cannot read containers, skipping them: "+err.Error())
+			c.containersFailed = true
+		}
+		return nil
+	}
+	c.containersFailed = false
+	sampled := time.Now()
+	elapsed := sampled.Sub(c.prevContainersTime).Seconds()
+
+	var output []Container
+	current := make(map[string]systats.Container, len(samples))
+	for _, sample := range samples {
+		container := fromSystatsContainer(sample)
+		if prev, ok := c.prevContainers[sample.ID]; ok && elapsed > 0 {
+			container.Rates = fromSystatsContainerRates(sample.RatesSince(prev, elapsed), container.Network)
+		}
+		current[sample.ID] = sample
+		output = append(output, container)
+	}
+
+	c.prevContainers = current
+	c.prevContainersTime = sampled
+	return output
 }
 
 // temperatures returns nil on hosts without sensors, like most VMs

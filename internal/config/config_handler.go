@@ -74,6 +74,12 @@ type Agent struct {
 	ContainerAware              bool
 	// AgentKeyPath holds the agent's own credential once it is enrolled
 	AgentKeyPath string
+	// ContainerSocket is a Docker compatible API socket for container
+	// names and images. Empty means /var/run/docker.sock.
+	ContainerSocket string
+	// ContainerLayerSize measures how much each container wrote to its own
+	// layer, which walks every file in it
+	ContainerLayerSize bool
 }
 
 type ServiceToMonitor struct {
@@ -101,6 +107,8 @@ func GetAgent() Agent {
 	return Agent{
 		ServerId:                    serverID,
 		AgentKeyPath:                agentKeyPath,
+		ContainerSocket:             os.Getenv("SYMON_CONTAINER_SOCKET"),
+		ContainerLayerSize:          strings.ToUpper(os.Getenv("SYMON_CONTAINER_LAYER_SIZE")) == "TRUE",
 		CollectorEndpoint:           os.Getenv("SYMON_COLLECTOR_ENDPOINT"),
 		CollectorEndpointCACertPath: os.Getenv("SYMON_COLLECTOR_ENDPOINT_CERT_PATH"),
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_AGENT_LOG_FILE_ENABLED")) == "TRUE",

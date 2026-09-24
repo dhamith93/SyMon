@@ -403,3 +403,150 @@ func fromSystatsTemperature(t systats.Temperature) Temperature {
 		CriticalAvailable: t.CriticalAvailable,
 	}
 }
+
+type Container struct {
+	ID      string
+	ShortID string
+	// Name and Image come from the container runtime's socket, empty
+	// unless MetadataAvailable
+	Name  string
+	Image string
+	State string
+	// Runtime is docker, podman, containerd, cri-o, kubernetes, lxc or machined
+	Runtime string
+	// ComposeProject groups containers started from one compose file
+	ComposeProject    string
+	MetadataAvailable bool
+
+	CPU     ContainerCPU
+	Memory  ContainerMemory
+	Network ContainerNetwork
+	BlockIO ContainerBlockIO
+	Pids    ContainerPids
+	// Pressure is nil on cgroup v1, which has no per container PSI
+	Pressure *Pressure `json:",omitempty"`
+	// LayerSize is the bytes the container wrote to its own layer, nil
+	// unless SYMON_CONTAINER_LAYER_SIZE is on
+	LayerSize *float64 `json:",omitempty"`
+	// Rates is nil until the agent has two samples of the container
+	Rates *ContainerRates `json:",omitempty"`
+	Time  int64
+}
+
+type ContainerCPU struct {
+	// CoresUsed is how many cores the container kept busy, 1.5 is one and a half
+	CoresUsed      float64
+	PercentOfHost  float64
+	PercentOfLimit float64
+	Limited        bool
+	AllocatedCores float64
+	// ThrottledSeconds is the total time the container was held back by
+	// its quota
+	ThrottledSeconds float64
+}
+
+// ContainerMemory sizes are in bytes
+type ContainerMemory struct {
+	Used           float64
+	Limit          float64
+	Limited        bool
+	PercentageUsed float64
+	OOMKills       uint64
+}
+
+type ContainerNetwork struct {
+	RxBytes uint64
+	TxBytes uint64
+	// SharesHostNetwork is true for --network host. The counters are then
+	// the host's own and say nothing about this container.
+	SharesHostNetwork bool
+	// Accessible is false when the counters could not be read
+	Accessible bool
+}
+
+type ContainerBlockIO struct {
+	ReadBytes  uint64
+	WriteBytes uint64
+}
+
+type ContainerPids struct {
+	Current uint64
+	Max     uint64
+	Limited bool
+}
+
+type ContainerRates struct {
+	// RxBytesPerSec and TxBytesPerSec are nil when the container shares
+	// the host network or its counters could not be read
+	RxBytesPerSec         *float64 `json:",omitempty"`
+	TxBytesPerSec         *float64 `json:",omitempty"`
+	ReadBytesPerSec       float64
+	WriteBytesPerSec      float64
+	CPUThrottledSecPerSec float64
+}
+
+func fromSystatsContainer(c systats.Container) Container {
+	container := Container{
+		ID:                c.ID,
+		ShortID:           c.ShortID,
+		Name:              c.Name,
+		Image:             c.Image,
+		State:             c.State,
+		Runtime:           c.Runtime,
+		ComposeProject:    c.Labels["com.docker.compose.project"],
+		MetadataAvailable: c.MetadataAvailable,
+		CPU: ContainerCPU{
+			CoresUsed:        c.CPU.CoresUsed,
+			PercentOfHost:    c.CPU.PercentOfHost,
+			PercentOfLimit:   c.CPU.PercentOfLimit,
+			Limited:          c.CPU.Limited,
+			AllocatedCores:   c.CPU.AllocatedCores,
+			ThrottledSeconds: c.CPU.ThrottledSeconds,
+		},
+		Memory: ContainerMemory{
+			Used:           c.Memory.Used,
+			Limit:          c.Memory.Limit,
+			Limited:        c.Memory.Limited,
+			PercentageUsed: c.Memory.PercentageUsed,
+			OOMKills:       c.Memory.OOMKills,
+		},
+		Network: ContainerNetwork{
+			SharesHostNetwork: c.Network.SharesHostNetwork,
+			Accessible:        c.Network.Accessible,
+		},
+		Pids: ContainerPids{Current: c.Pids.Current, Max: c.Pids.Max, Limited: c.Pids.Limited},
+		Time: c.Time,
+	}
+	for _, iface := range c.Network.Interfaces {
+		container.Network.RxBytes += iface.RxBytes
+		container.Network.TxBytes += iface.TxBytes
+	}
+	for _, device := range c.BlockIO {
+		container.BlockIO.ReadBytes += device.ReadBytes
+		container.BlockIO.WriteBytes += device.WriteBytes
+	}
+	if c.Pressure.Available {
+		pressure := fromSystatsPressure(c.Pressure)
+		container.Pressure = &pressure
+	}
+	if c.Layer.Available {
+		size := c.Layer.Size
+		container.LayerSize = &size
+	}
+	return container
+}
+
+// fromSystatsContainerRates leaves traffic out when the counters are the
+// host's or unknown, so it is never charted as the container's
+func fromSystatsContainerRates(r systats.ContainerRates, network ContainerNetwork) *ContainerRates {
+	rates := &ContainerRates{
+		ReadBytesPerSec:       r.ReadBytesPerSec,
+		WriteBytesPerSec:      r.WriteBytesPerSec,
+		CPUThrottledSecPerSec: r.CPUThrottledSecPerSec,
+	}
+	if network.Accessible && !network.SharesHostNetwork {
+		rx, tx := r.RxBytesPerSec, r.TxBytesPerSec
+		rates.RxBytesPerSec, rates.TxBytesPerSec = &rx, &tx
+	}
+	return rates
+}

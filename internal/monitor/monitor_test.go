@@ -313,3 +313,46 @@ func TestKeepDisk(t *testing.T) {
 		}
 	}
 }
+
+func TestFromSystatsContainer(t *testing.T) {
+	c := fromSystatsContainer(systats.Container{
+		ID: "abc123", Name: "web", Labels: map[string]string{"com.docker.compose.project": "shop"},
+		Network: systats.ContainerNetwork{Accessible: true, Interfaces: []systats.ContainerInterface{
+			{Interface: "eth0", RxBytes: 100, TxBytes: 10},
+			{Interface: "eth1", RxBytes: 50, TxBytes: 5},
+		}},
+		BlockIO: []systats.ContainerBlockIO{{ReadBytes: 7, WriteBytes: 3}, {ReadBytes: 1, WriteBytes: 1}},
+		Memory:  systats.ContainerMemory{Used: 512, Limit: 1024, PercentageUsed: 50},
+	})
+	if c.ComposeProject != "shop" || c.Network.RxBytes != 150 || c.Network.TxBytes != 15 || c.BlockIO.ReadBytes != 8 || c.BlockIO.WriteBytes != 4 {
+		t.Errorf("unexpected mapping: %+v", c)
+	}
+	if c.Pressure != nil || c.LayerSize != nil {
+		t.Error("expected pressure and layer size to be left out when not available")
+	}
+}
+
+func TestContainerRates(t *testing.T) {
+	r := systats.ContainerRates{RxBytesPerSec: 100, TxBytesPerSec: 50, ReadBytesPerSec: 7}
+
+	own := fromSystatsContainerRates(r, ContainerNetwork{Accessible: true})
+	if own.RxBytesPerSec == nil || *own.RxBytesPerSec != 100 || own.ReadBytesPerSec != 7 {
+		t.Errorf("unexpected rates: %+v", own)
+	}
+	for _, network := range []ContainerNetwork{{Accessible: true, SharesHostNetwork: true}, {Accessible: false}} {
+		rates := fromSystatsContainerRates(r, network)
+		if rates.RxBytesPerSec != nil || rates.TxBytesPerSec != nil {
+			t.Errorf("%+v: traffic must be left out", network)
+		}
+	}
+}
+
+func TestContainersCollectorCanBeDisabled(t *testing.T) {
+	c := NewCollector(&config.Agent{DisabledCollectors: []string{"containers"}, ContainerSocket: "/run/podman/podman.sock"})
+	if c.enabled[CollectorContainers] {
+		t.Error("expected containers to be disabled")
+	}
+	if c.stats.ContainerSocketPath != "/run/podman/podman.sock" {
+		t.Errorf("socket setting was not applied: %q", c.stats.ContainerSocketPath)
+	}
+}
