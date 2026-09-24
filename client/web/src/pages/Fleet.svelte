@@ -130,6 +130,7 @@
         <div class="meta muted">
           {host.os || 'Unknown OS'}
           {#if host.up}· up {formatDuration(host.uptimeSeconds)}{:else}· last seen {formatAgo(host.lastSeen)}{/if}
+          {#if host.containers > 0}· {host.containers} container{host.containers === 1 ? '' : 's'}{/if}
         </div>
 
         {#if host.time}

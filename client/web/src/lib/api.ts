@@ -16,6 +16,8 @@ export interface HostSummary {
   activeAlerts: number;
   // 2 critical, 1 warning, 0 no open alerts
   worstSeverity: number;
+  // running containers at the latest snapshot
+  containers: number;
 }
 
 export interface SeriesData {
@@ -63,6 +65,25 @@ export interface Processes {
   Memory: Process[] | null;
 }
 
+export interface Container {
+  ID: string;
+  ShortID: string;
+  Name: string;
+  Image: string;
+  State: string;
+  Runtime: string;
+  ComposeProject: string;
+  MetadataAvailable: boolean;
+  CPU: { CoresUsed: number; PercentOfHost: number; PercentOfLimit: number; Limited: boolean; AllocatedCores: number };
+  // bytes
+  Memory: { Used: number; Limit: number; Limited: boolean; PercentageUsed: number; OOMKills: number };
+  Network: { RxBytes: number; TxBytes: number; SharesHostNetwork: boolean; Accessible: boolean };
+  BlockIO: { ReadBytes: number; WriteBytes: number };
+  Pids: { Current: number; Max: number; Limited: boolean };
+  // missing until the agent has two samples. No traffic rates for host network containers.
+  Rates?: { RxBytesPerSec?: number; TxBytesPerSec?: number; ReadBytesPerSec: number; WriteBytesPerSec: number };
+}
+
 export interface Snapshot {
   UnixTime: string;
   System: {
@@ -103,6 +124,7 @@ export interface Snapshot {
   }[] | null;
   Services: { Name: string; Running: boolean }[] | null;
   Processes: Processes;
+  Containers?: Container[];
 }
 
 export interface HostDetail {

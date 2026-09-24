@@ -9,6 +9,7 @@
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
   import ChartCard from '../components/ChartCard.svelte';
+  import ContainerTable from '../components/ContainerTable.svelte';
   import Heatmap from '../components/Heatmap.svelte';
   import ProcessTable from '../components/ProcessTable.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
@@ -190,6 +191,13 @@
       </section>
     {/if}
   {/each}
+
+  {#if (snapshot?.Containers ?? []).length > 0}
+    <section>
+      <h2>Containers right now</h2>
+      <ContainerTable containers={snapshot?.Containers ?? []} />
+    </section>
+  {/if}
 
   <section id="processes">
     <h2>Processes</h2>

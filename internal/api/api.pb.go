@@ -327,6 +327,8 @@ type HostSummary struct {
 	ActiveAlerts  int32                  `protobuf:"varint,13,opt,name=activeAlerts,proto3" json:"activeAlerts,omitempty"`
 	// highest severity of the open alerts, 0 when there are none
 	WorstSeverity int32 `protobuf:"varint,14,opt,name=worstSeverity,proto3" json:"worstSeverity,omitempty"`
+	// running containers at the latest snapshot
+	Containers    int32 `protobuf:"varint,15,opt,name=containers,proto3" json:"containers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -455,6 +457,13 @@ func (x *HostSummary) GetActiveAlerts() int32 {
 func (x *HostSummary) GetWorstSeverity() int32 {
 	if x != nil {
 		return x.WorstSeverity
+	}
+	return 0
+}
+
+func (x *HostSummary) GetContainers() int32 {
+	if x != nil {
+		return x.Containers
 	}
 	return 0
 }
@@ -1294,7 +1303,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\btimezone\x18\x03 \x01(\tR\btimezone\"H\n" +
 	"\x0eEnrollResponse\x12\x1a\n" +
 	"\bhostName\x18\x01 \x01(\tR\bhostName\x12\x1a\n" +
-	"\bagentKey\x18\x02 \x01(\tR\bagentKey\"\x89\x03\n" +
+	"\bagentKey\x18\x02 \x01(\tR\bagentKey\"\xa9\x03\n" +
 	"\vHostSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
 	"\x02up\x18\x02 \x01(\bR\x02up\x12\x1a\n" +
@@ -1312,7 +1321,10 @@ const file_api_api_proto_rawDesc = "" +
 	"\x05rxBps\x18\v \x01(\x01R\x05rxBps\x12\x14\n" +
 	"\x05txBps\x18\f \x01(\x01R\x05txBps\x12\"\n" +
 	"\factiveAlerts\x18\r \x01(\x05R\factiveAlerts\x12$\n" +
-	"\rworstSeverity\x18\x0e \x01(\x05R\rworstSeverity\"6\n" +
+	"\rworstSeverity\x18\x0e \x01(\x05R\rworstSeverity\x12\x1e\n" +
+	"\n" +
+	"containers\x18\x0f \x01(\x05R\n" +
+	"containers\"6\n" +
 	"\fFleetSummary\x12&\n" +
 	"\x05hosts\x18\x01 \x03(\v2\x10.api.HostSummaryR\x05hosts\"!\n" +
 	"\vHostRequest\x12\x12\n" +

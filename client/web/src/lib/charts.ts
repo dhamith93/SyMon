@@ -95,6 +95,15 @@ export const hostSections: Section[] = [
     ],
   },
   {
+    title: 'Containers',
+    charts: [
+      { key: 'container_cpu', title: 'Container CPU, share of the host', unit: 'percent', optional: true, metrics: [{ metric: 'container_cpu' }] },
+      { key: 'container_memory', title: 'Container memory', unit: 'bytes', optional: true, metrics: [{ metric: 'container_memory' }] },
+      { key: 'container_rx', title: 'Container traffic received', unit: 'rate', optional: true, note: 'Containers on the host network are left out', metrics: [{ metric: 'container_rx' }] },
+      { key: 'container_tx', title: 'Container traffic sent', unit: 'rate', optional: true, note: 'Containers on the host network are left out', metrics: [{ metric: 'container_tx' }] },
+    ],
+  },
+  {
     title: 'Sensors',
     charts: [{ key: 'temperature', title: 'Temperatures', unit: 'celsius', optional: true, metrics: [{ metric: 'temperature' }] }],
   },

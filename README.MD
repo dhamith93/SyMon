@@ -22,6 +22,7 @@ Currently, it gathers following metrics under the monitoring interval given in t
     * Push alerts to user via Email, PagerDuty, or Slack
 * Custom data retention period
 * Disk IO and network throughput, TCP connection states, pressure stall information (PSI) and temperature sensors
+* Containers on each host (Docker, Podman, containerd, LXC): CPU, memory, network and disk IO per container, found from the cgroup tree. Names and images come from the Docker or Podman socket, `SYMON_CONTAINER_SOCKET` (default `/var/run/docker.sock`)
 
 ### Screenshots
 

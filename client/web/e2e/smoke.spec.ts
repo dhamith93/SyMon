@@ -62,3 +62,15 @@ test('unknown pages and hosts are handled', async ({ page }) => {
   await page.goto('/hosts/no-such-host');
   await expect(page.getByText('This host has not sent any data yet.')).toBeVisible();
 });
+
+test('containers show on a host that runs them', async ({ page, request }) => {
+  const fleet = await (await request.get('/api/v1/fleet')).json();
+  const host = fleet.hosts.find((h: { containers: number }) => h.containers > 0);
+  test.skip(!host, 'no host reports containers');
+
+  await page.goto(`/hosts/${encodeURIComponent(host.name)}`);
+  const table = page.locator('table', { has: page.locator('caption', { hasText: 'Running containers' }) });
+  await expect(table).toBeVisible();
+  await expect(table.locator('tbody tr')).not.toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Container CPU, share of the host' })).toBeVisible();
+});

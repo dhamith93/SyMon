@@ -148,6 +148,7 @@ func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
 			TxBps:         summary.TxBps,
 			ActiveAlerts:  int32(summary.ActiveAlerts),
 			WorstSeverity: int32(summary.WorstSeverity),
+			Containers:    int32(summary.Containers),
 		})
 	}
 	return fleet, nil

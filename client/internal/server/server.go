@@ -97,6 +97,7 @@ type hostSummary struct {
 	TxBps         float64 `json:"txBps"`
 	ActiveAlerts  int32   `json:"activeAlerts"`
 	WorstSeverity int32   `json:"worstSeverity"`
+	Containers    int32   `json:"containers"`
 }
 
 func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
@@ -122,6 +123,7 @@ func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
 			TxBps:         h.TxBps,
 			ActiveAlerts:  h.ActiveAlerts,
 			WorstSeverity: h.WorstSeverity,
+			Containers:    h.Containers,
 		})
 	}
 	writeJSON(w, map[string]any{"hosts": hosts})

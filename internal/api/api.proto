@@ -50,6 +50,8 @@ message HostSummary {
     int32 activeAlerts = 13;
     // highest severity of the open alerts, 0 when there are none
     int32 worstSeverity = 14;
+    // running containers at the latest snapshot
+    int32 containers = 15;
 }
 
 message FleetSummary {
