@@ -154,7 +154,8 @@ func printEnrollmentToken(ctx context.Context, st *store.Store, config *config.C
 		usable += " by " + host
 	}
 	fmt.Printf("Token usable %s until %s. On the new host run:\n\n", usable, expires.Local().Format("Jan 2 15:04"))
-	fmt.Printf("  curl -fsSL %s/install.sh | sudo sh -s -- --token %s\n\n", dashboardURL(config), token)
+	fmt.Printf("  curl -fsSL --connect-timeout 10 %s/install.sh | sudo sh -s -- --token %s\n\n", dashboardURL(config), token)
+	fmt.Println("The host downloads the agent from the dashboard, then sends its data to the collector.")
 	fmt.Println("Run the same command again later to upgrade the agent.")
 }
 

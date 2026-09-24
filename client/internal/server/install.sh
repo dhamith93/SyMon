@@ -2,8 +2,8 @@
 # Installs or upgrades the SyMon agent on this host, served by the SyMon
 # dashboard. Get a token on the collector host with: collector -enroll-token
 #
-#   curl -fsSL {{.Dashboard}}/install.sh | sudo sh -s -- --token <token> [--host <name>]
-#   curl -fsSL {{.Dashboard}}/install.sh | sudo sh -s -- --uninstall
+#   curl -fsSL --connect-timeout 10 {{.Dashboard}}/install.sh | sudo sh -s -- --token <token> [--host <name>]
+#   curl -fsSL --connect-timeout 10 {{.Dashboard}}/install.sh | sudo sh -s -- --uninstall
 #
 # Running it again on an enrolled host upgrades the agent and keeps its key.
 set -eu
@@ -72,9 +72,9 @@ esac
 
 download() {
 	if has curl; then
-		curl -fsSL "$1" -o "$2"
+		curl -fsSL --connect-timeout 10 "$1" -o "$2"
 	elif has wget; then
-		wget -q "$1" -O "$2"
+		wget -q -T 10 "$1" -O "$2"
 	else
 		fail "curl or wget is needed"
 	fi

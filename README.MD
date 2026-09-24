@@ -90,9 +90,9 @@ The easiest way to add a host is to enroll it. On the collector host, create a t
 
 `sudo ./collector_linux_x86_64 -enroll-token`
 
-It prints a command like the one below. Run it on the new host. It downloads the agent from the dashboard, enrolls the host, and installs and starts the agent as a systemd service.
+It prints a command like the one below. Run it on the new host. It downloads the agent from the dashboard (the Client's port, 8080 by default), enrolls the host, and installs and starts the agent as a systemd service, which then sends its data to the Collector (9000 by default). So the new host needs to reach both ports.
 
-`curl -fsSL http://symon:8080/install.sh | sudo sh -s -- --token <token>`
+`curl -fsSL --connect-timeout 10 http://symon:8080/install.sh | sudo sh -s -- --token <token>`
 
 * Tokens work once and expire after an hour. `-uses 10` lets one token enroll ten hosts, `-ttl 24h` keeps it valid longer and `-host web-3` limits it to one host name.
 * The host name is the machine's name unless `--host <name>` is passed to the script.
