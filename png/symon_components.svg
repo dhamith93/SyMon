@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" width="880" height="460" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>SyMon components</title>
+  <style>
+    .bg { fill: #ffffff; }
+    .box { fill: #f6f8fa; stroke: #8c959f; stroke-width: 1.5; }
+    .main { fill: #ddf4ff; stroke: #0969da; }
+    .opt { stroke-dasharray: 5 4; }
+    .name { fill: #1f2328; font-size: 15px; font-weight: 600; }
+    .sub { fill: #59636e; font-size: 12px; }
+    .line { stroke: #59636e; stroke-width: 1.5; fill: none; }
+    .dl { stroke-dasharray: 5 4; }
+    .lbl { fill: #59636e; font-size: 12px; }
+    .head { fill: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .box { fill: #161b22; stroke: #656c76; }
+      .main { fill: #0c2d4b; stroke: #4493f8; }
+      .name { fill: #e6edf3; }
+      .sub, .lbl { fill: #9198a1; }
+      .line { stroke: #9198a1; }
+      .head { fill: #9198a1; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path class="head" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="880" height="460"/>
+  <g transform="translate(0,40)">
+
+  <!-- monitored hosts -->
+  <text class="sub" x="30" y="34">Monitored hosts</text>
+  <rect class="box" x="30" y="48" width="170" height="60" rx="8"/>
+  <text class="name" x="46" y="74">Agent</text>
+  <text class="sub" x="46" y="94">web-1</text>
+  <rect class="box" x="30" y="128" width="170" height="60" rx="8"/>
+  <text class="name" x="46" y="154">Agent</text>
+  <text class="sub" x="46" y="174">db-1</text>
+  <rect class="box" x="30" y="208" width="170" height="60" rx="8"/>
+  <text class="name" x="46" y="234">Agent</text>
+  <text class="sub" x="46" y="254">pi-garage</text>
+
+  <!-- collector -->
+  <rect class="box main" x="330" y="118" width="190" height="80" rx="8"/>
+  <text class="name" x="346" y="148">Collector</text>
+  <text class="sub" x="346" y="168">stores data, checks alerts</text>
+  <text class="sub" x="346" y="186">port 9000</text>
+
+  <!-- agents to collector -->
+  <path class="line" d="M200,78 C265,78 265,145 328,145" marker-end="url(#arrow)"/>
+  <path class="line" d="M200,158 L328,158" marker-end="url(#arrow)"/>
+  <path class="line" d="M200,238 C265,238 265,171 328,171" marker-end="url(#arrow)"/>
+  <text class="lbl" x="214" y="150">metrics, gRPC</text>
+
+  <!-- database -->
+  <rect class="box" x="330" y="300" width="190" height="64" rx="8"/>
+  <text class="name" x="346" y="328">TimescaleDB</text>
+  <text class="sub" x="346" y="348">PostgreSQL</text>
+  <path class="line" d="M425,198 L425,298" marker-end="url(#arrow)"/>
+
+  <!-- alert processor -->
+  <rect class="box opt" x="640" y="300" width="210" height="64" rx="8"/>
+  <text class="name" x="656" y="328">Alert processor</text>
+  <text class="sub" x="656" y="348">email, Slack, PagerDuty</text>
+  <path class="line" d="M520,180 C590,180 590,320 638,320" marker-end="url(#arrow)"/>
+  <text class="lbl" x="560" y="250">alerts</text>
+  <text class="sub" x="656" y="386">optional</text>
+
+  <!-- client -->
+  <rect class="box main" x="640" y="118" width="210" height="80" rx="8"/>
+  <text class="name" x="656" y="148">Client</text>
+  <text class="sub" x="656" y="168">dashboard, JSON API</text>
+  <text class="sub" x="656" y="186">port 8080</text>
+  <path class="line" d="M638,158 L522,158" marker-end="url(#arrow)"/>
+  <text class="lbl" x="560" y="150">gRPC</text>
+
+  <!-- browser -->
+  <rect class="box" x="640" y="20" width="210" height="52" rx="8"/>
+  <text class="name" x="656" y="51">Browser</text>
+  <path class="line" d="M745,72 L745,116" marker-end="url(#arrow)"/>
+
+  <!-- agent download -->
+  <path class="line dl" d="M850,140 L866,140 Q870,140 870,136 L870,-16 Q870,-20 866,-20 L174,-20 Q170,-20 170,-16 L170,46" marker-end="url(#arrow)"/>
+  <text class="lbl" x="330" y="-26">new hosts download the agent from the Client</text>
+  </g>
+</svg>
