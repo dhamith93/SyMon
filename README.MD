@@ -1,6 +1,6 @@
 # SyMon
 
-[![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dhamith93/SyMon)](https://goreportcard.com/report/github.com/dhamith93/SyMon)
+[![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) 
 
 SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberry Pis. A small agent on each host sends its metrics to one server, which keeps the history in TimescaleDB, raises alerts, and shows everything on a web dashboard.
 
