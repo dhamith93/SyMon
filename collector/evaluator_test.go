@@ -19,7 +19,9 @@ type fakeStore struct {
 	lastSeen time.Time
 	// daysUntilFull is keyed by device, a missing device has no forecast yet
 	daysUntilFull map[string]float64
-	alerts        []store.Alert
+	// check is the newest endpoint check, none while its time is zero
+	check  store.EndpointCheck
+	alerts []store.Alert
 }
 
 func (f *fakeStore) LatestValue(ctx context.Context, host string, metric string, target string, isCustom bool) (float64, time.Time, error) {
@@ -39,6 +41,13 @@ func (f *fakeStore) DaysUntilFull(ctx context.Context, host string, device strin
 		return 0, store.ErrNotFound
 	}
 	return days, nil
+}
+
+func (f *fakeStore) LatestEndpointCheck(ctx context.Context, name string) (store.EndpointCheck, error) {
+	if f.check.Time.IsZero() {
+		return store.EndpointCheck{}, store.ErrNotFound
+	}
+	return f.check, nil
 }
 
 func (f *fakeStore) OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error) {
@@ -262,6 +271,57 @@ func TestDiskForecastAlert(t *testing.T) {
 	check(365, true)
 	check(365, true)
 	if len(sent) != 2 || sent[1].Status != int32(alertstatus.Normal) || fake.alerts[0].ResolvedAt == nil {
+		t.Errorf("expected the alert to resolve, got %+v", sent)
+	}
+}
+
+func TestEndpointAlert(t *testing.T) {
+	fake := &fakeStore{}
+	var sent []*alertapi.Alert
+	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	rule := alerts.AlertConfig{
+		Name:            "API up",
+		MetricName:      monitor.ENDPOINT,
+		Endpoint:        "https://api.example.com/health",
+		TriggerIntveral: 60,
+		Template:        "{subject} expected {expected} got {actual}: {error}",
+	}
+	start := time.Unix(1700000000, 0)
+
+	// a check every 2 minutes, evaluated every 15s, so each is seen more than once
+	check := func(minutes int, statusCode int, errMsg string) {
+		t.Helper()
+		fake.check = store.EndpointCheck{Time: start.Add(time.Duration(minutes) * time.Minute), Name: rule.Name, StatusCode: statusCode, Error: errMsg}
+		for i := 0; i < 2; i++ {
+			if err := e.evaluate(context.Background(), &rule, ""); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	// nothing checked yet
+	if err := e.evaluate(context.Background(), &rule, ""); err != nil {
+		t.Fatal(err)
+	}
+	check(0, 200, "")
+	check(2, 0, "connection refused")
+	if len(sent) != 0 {
+		t.Fatalf("expected no alert after one failed check, got %+v", sent)
+	}
+	check(4, 0, "connection refused")
+	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Critical) || sent[0].LogId != 1 || sent[0].ServerName != rule.Endpoint {
+		t.Fatalf("expected a critical alert for the endpoint, got %+v", sent)
+	}
+	if sent[0].Content != "[Critical] endpoint check failed on https://api.example.com/health expected 200 got 0: connection refused" {
+		t.Errorf("unexpected message %q", sent[0].Content)
+	}
+	if len(fake.alerts) != 1 || fake.alerts[0].Host != "" || fake.alerts[0].Target != rule.Endpoint {
+		t.Errorf("expected an alert without a host on the URL, got %+v", fake.alerts)
+	}
+
+	check(6, 200, "")
+	check(8, 200, "")
+	if len(sent) != 2 || !sent[1].Resolved || sent[1].LogId != 1 || fake.alerts[0].ResolvedAt == nil {
 		t.Errorf("expected the alert to resolve, got %+v", sent)
 	}
 }

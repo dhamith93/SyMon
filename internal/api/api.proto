@@ -201,6 +201,42 @@ message SnapshotList {
     repeated CustomValue customMetrics = 2;
 }
 
+message EndpointsRequest {
+    int64 from = 1;
+    int64 to = 2;
+}
+
+// An endpoint's newest check up to the end of the range, and how it did
+// over the range. name is the endpoint rule's name.
+message EndpointStatus {
+    string name = 1;
+    string url = 2;
+    string method = 3;
+    int64 time = 4;
+    bool ok = 5;
+    // 0 when there was no response
+    int32 statusCode = 6;
+    double latencyMs = 7;
+    string error = 8;
+    int32 checks = 9;
+    double uptimePct = 10;
+    // over the checks that got a response
+    double avgLatencyMs = 11;
+}
+
+message EndpointList {
+    repeated EndpointStatus endpoints = 1;
+}
+
+message EndpointSeriesRequest {
+    string name = 1;
+    // latency or availability
+    string metric = 2;
+    int64 from = 3;
+    int64 to = 4;
+    int32 maxPoints = 5;
+}
+
 service MonitorDataService {
     // agent
     rpc Enroll(EnrollRequest) returns (EnrollResponse) {}
@@ -220,4 +256,6 @@ service MonitorDataService {
     rpc ProcessUsage(ProcessUsageRequest) returns (ProcessUsageList) {}
     // every host's latest snapshot, for the metrics endpoint
     rpc Snapshots(Void) returns (SnapshotList) {}
+    rpc Endpoints(EndpointsRequest) returns (EndpointList) {}
+    rpc EndpointSeries(EndpointSeriesRequest) returns (SeriesResponse) {}
 }

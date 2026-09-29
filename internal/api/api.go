@@ -267,7 +267,11 @@ func (s *Server) QuerySeries(ctx context.Context, in *SeriesRequest) (*SeriesRes
 		return nil, toStatus(err)
 	}
 
-	response := &SeriesResponse{Metric: in.Metric, Source: result.Source, StepSeconds: int64(result.Step.Seconds())}
+	return seriesResponse(in.Metric, result), nil
+}
+
+func seriesResponse(metric string, result store.SeriesResult) *SeriesResponse {
+	response := &SeriesResponse{Metric: metric, Source: result.Source, StepSeconds: int64(result.Step.Seconds())}
 	for _, series := range result.Series {
 		points := make([]*Point, 0, len(series.Points))
 		for _, point := range series.Points {
@@ -275,7 +279,44 @@ func (s *Server) QuerySeries(ctx context.Context, in *SeriesRequest) (*SeriesRes
 		}
 		response.Series = append(response.Series, &Series{Label: series.Label, Points: points})
 	}
-	return response, nil
+	return response
+}
+
+func (s *Server) Endpoints(ctx context.Context, in *EndpointsRequest) (*EndpointList, error) {
+	summaries, err := s.Store.Endpoints(ctx, time.Unix(in.From, 0), time.Unix(in.To, 0))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	list := &EndpointList{}
+	for _, summary := range summaries {
+		latest := summary.Latest
+		list.Endpoints = append(list.Endpoints, &EndpointStatus{
+			Name:         latest.Name,
+			Url:          latest.URL,
+			Method:       latest.Method,
+			Time:         latest.Time.Unix(),
+			Ok:           latest.OK,
+			StatusCode:   int32(latest.StatusCode),
+			LatencyMs:    milliseconds(latest.Latency),
+			Error:        latest.Error,
+			Checks:       int32(summary.Checks),
+			UptimePct:    summary.UptimePct,
+			AvgLatencyMs: milliseconds(summary.AvgLatency),
+		})
+	}
+	return list, nil
+}
+
+func (s *Server) EndpointSeries(ctx context.Context, in *EndpointSeriesRequest) (*SeriesResponse, error) {
+	result, err := s.Store.EndpointSeries(ctx, in.Name, in.Metric, time.Unix(in.From, 0), time.Unix(in.To, 0), int(in.MaxPoints))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return seriesResponse(in.Metric, result), nil
+}
+
+func milliseconds(d time.Duration) float64 {
+	return float64(d) / float64(time.Millisecond)
 }
 
 func (s *Server) Processes(ctx context.Context, in *ProcessesRequest) (*ProcessesResponse, error) {

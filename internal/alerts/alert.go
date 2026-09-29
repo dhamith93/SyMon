@@ -5,9 +5,6 @@ import (
 	"os"
 )
 
-const ENDPOINT_METHOD_GET string = "GET"
-const ENDPOINT_METHOD_POST string = "POST"
-
 type AlertConfig struct {
 	Name              string
 	Description       string
