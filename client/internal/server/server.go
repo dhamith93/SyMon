@@ -83,6 +83,10 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("GET /api/v1/endpoints", s.getEndpoints)
 	data.HandleFunc("GET /api/v1/endpoints/series", s.getEndpointSeries)
 	data.HandleFunc("POST /api/v1/password", s.postPassword)
+	data.HandleFunc("GET /api/v1/rules", s.getRules)
+	data.HandleFunc("POST /api/v1/rules", s.requireAdmin(s.postRule))
+	data.HandleFunc("PUT /api/v1/rules/{id}", s.requireAdmin(s.putRule))
+	data.HandleFunc("DELETE /api/v1/rules/{id}", s.requireAdmin(s.deleteRule))
 	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
@@ -531,6 +535,8 @@ func writeGRPCError(w http.ResponseWriter, what string, err error) {
 		writeError(w, http.StatusNotFound, st.Message())
 	case codes.Unauthenticated:
 		writeError(w, http.StatusUnauthorized, st.Message())
+	case codes.AlreadyExists:
+		writeError(w, http.StatusConflict, st.Message())
 	case codes.ResourceExhausted:
 		writeError(w, http.StatusTooManyRequests, st.Message())
 	case codes.InvalidArgument:

@@ -275,6 +275,33 @@ message UserStatus {
     bool hasUsers = 1;
 }
 
+// An alert rule as the dashboard edits it. ruleJson has the same fields as
+// an alerts.json entry.
+message AlertRuleInfo {
+    int64 id = 1;
+    bool enabled = 2;
+    string ruleJson = 3;
+    int64 updatedAt = 4;
+    string updatedBy = 5;
+}
+
+message AlertRuleList {
+    repeated AlertRuleInfo rules = 1;
+}
+
+// id 0 creates a rule. by is the user making the change.
+message SaveRuleRequest {
+    int64 id = 1;
+    bool enabled = 2;
+    string ruleJson = 3;
+    string by = 4;
+}
+
+message RuleRequest {
+    int64 id = 1;
+    string by = 2;
+}
+
 service MonitorDataService {
     // agent
     rpc Enroll(EnrollRequest) returns (EnrollResponse) {}
@@ -309,4 +336,9 @@ service MonitorDataService {
     rpc CheckPassword(Credentials) returns (Message) {}
     // the dashboard stays locked until the first user exists
     rpc HasUsers(Void) returns (UserStatus) {}
+
+    // alert rules. The dashboard only lets admins change them.
+    rpc AlertRules(Void) returns (AlertRuleList) {}
+    rpc SaveRule(SaveRuleRequest) returns (AlertRuleInfo) {}
+    rpc DeleteRule(RuleRequest) returns (Message) {}
 }

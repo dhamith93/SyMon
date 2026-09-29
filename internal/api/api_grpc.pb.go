@@ -42,6 +42,9 @@ const (
 	MonitorDataService_ChangePassword_FullMethodName          = "/api.MonitorDataService/ChangePassword"
 	MonitorDataService_CheckPassword_FullMethodName           = "/api.MonitorDataService/CheckPassword"
 	MonitorDataService_HasUsers_FullMethodName                = "/api.MonitorDataService/HasUsers"
+	MonitorDataService_AlertRules_FullMethodName              = "/api.MonitorDataService/AlertRules"
+	MonitorDataService_SaveRule_FullMethodName                = "/api.MonitorDataService/SaveRule"
+	MonitorDataService_DeleteRule_FullMethodName              = "/api.MonitorDataService/DeleteRule"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -79,6 +82,10 @@ type MonitorDataServiceClient interface {
 	CheckPassword(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*Message, error)
 	// the dashboard stays locked until the first user exists
 	HasUsers(ctx context.Context, in *Void, opts ...grpc.CallOption) (*UserStatus, error)
+	// alert rules. The dashboard only lets admins change them.
+	AlertRules(ctx context.Context, in *Void, opts ...grpc.CallOption) (*AlertRuleList, error)
+	SaveRule(ctx context.Context, in *SaveRuleRequest, opts ...grpc.CallOption) (*AlertRuleInfo, error)
+	DeleteRule(ctx context.Context, in *RuleRequest, opts ...grpc.CallOption) (*Message, error)
 }
 
 type monitorDataServiceClient struct {
@@ -319,6 +326,36 @@ func (c *monitorDataServiceClient) HasUsers(ctx context.Context, in *Void, opts 
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) AlertRules(ctx context.Context, in *Void, opts ...grpc.CallOption) (*AlertRuleList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AlertRuleList)
+	err := c.cc.Invoke(ctx, MonitorDataService_AlertRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) SaveRule(ctx context.Context, in *SaveRuleRequest, opts ...grpc.CallOption) (*AlertRuleInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AlertRuleInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_SaveRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) DeleteRule(ctx context.Context, in *RuleRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_DeleteRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -354,6 +391,10 @@ type MonitorDataServiceServer interface {
 	CheckPassword(context.Context, *Credentials) (*Message, error)
 	// the dashboard stays locked until the first user exists
 	HasUsers(context.Context, *Void) (*UserStatus, error)
+	// alert rules. The dashboard only lets admins change them.
+	AlertRules(context.Context, *Void) (*AlertRuleList, error)
+	SaveRule(context.Context, *SaveRuleRequest) (*AlertRuleInfo, error)
+	DeleteRule(context.Context, *RuleRequest) (*Message, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -432,6 +473,15 @@ func (UnimplementedMonitorDataServiceServer) CheckPassword(context.Context, *Cre
 }
 func (UnimplementedMonitorDataServiceServer) HasUsers(context.Context, *Void) (*UserStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasUsers not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) AlertRules(context.Context, *Void) (*AlertRuleList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AlertRules not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) SaveRule(context.Context, *SaveRuleRequest) (*AlertRuleInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveRule not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) DeleteRule(context.Context, *RuleRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRule not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -868,6 +918,60 @@ func _MonitorDataService_HasUsers_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_AlertRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).AlertRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_AlertRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).AlertRules(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_SaveRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).SaveRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_SaveRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).SaveRule(ctx, req.(*SaveRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_DeleteRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).DeleteRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_DeleteRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).DeleteRule(ctx, req.(*RuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -966,6 +1070,18 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HasUsers",
 			Handler:    _MonitorDataService_HasUsers_Handler,
+		},
+		{
+			MethodName: "AlertRules",
+			Handler:    _MonitorDataService_AlertRules_Handler,
+		},
+		{
+			MethodName: "SaveRule",
+			Handler:    _MonitorDataService_SaveRule_Handler,
+		},
+		{
+			MethodName: "DeleteRule",
+			Handler:    _MonitorDataService_DeleteRule_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

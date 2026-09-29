@@ -181,6 +181,45 @@ export interface Snapshot {
   AgentVersion?: string;
 }
 
+// An alert rule, with the same fields as an alerts.json entry
+export interface RuleConfig {
+  Name: string;
+  Description?: string;
+  MetricName: string;
+  IsCustom?: boolean;
+  Op?: string;
+  Template?: string;
+  WarnThreshold?: number;
+  CriticalThreshold?: number;
+  TriggerIntveral?: number;
+  // host names, or "*" for all hosts
+  Servers?: string[] | null;
+  Endpoint?: string;
+  ExpectedHTTPCode?: number;
+  Method?: string;
+  CustomCACert?: string;
+  POSTContentType?: string;
+  POSTBody?: string;
+  Disk?: string;
+  Service?: string;
+  Email?: boolean;
+  Pagerduty?: boolean;
+  Slack?: boolean;
+  SlackChannel?: string;
+  // left out they are 14 and 3, 0 switches one off
+  CertWarnDays?: number;
+  CertCriticalDays?: number;
+}
+
+export interface AlertRule {
+  id: number;
+  enabled: boolean;
+  rule: RuleConfig;
+  updatedAt: number;
+  // empty for rules SyMon set up
+  updatedBy: string;
+}
+
 export interface HostDetail {
   host: string;
   time: number;
@@ -215,11 +254,18 @@ async function fail(response: Response): Promise<never> {
   throw new ApiError(response.status, message);
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const response = await fetch(path, {
+    method,
+    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (response.status === 401) onUnauthorized();
   if (!response.ok) return fail(response);
   return response.json();
 }
+
+const post = <T>(path: string, body: unknown) => send<T>('POST', path, body);
 
 // who is logged in, or without a session whether there are users at all.
 // role is admin, who can change alert rules, or viewer.
@@ -256,6 +302,10 @@ export const api = {
   login: (user: string, password: string) => post<{ user: string }>('/api/v1/login', { user, password }),
   logout: () => post<object>('/api/v1/logout', {}),
   changePassword: (current: string, next: string) => post<object>('/api/v1/password', { current, new: next }),
+  rules: () => get<{ rules: AlertRule[] }>('/api/v1/rules'),
+  createRule: (enabled: boolean, rule: RuleConfig) => post<{ id: number }>('/api/v1/rules', { enabled, rule }),
+  updateRule: (id: number, enabled: boolean, rule: RuleConfig) => send<{ id: number }>('PUT', `/api/v1/rules/${id}`, { enabled, rule }),
+  deleteRule: (id: number) => send<{ id: number }>('DELETE', `/api/v1/rules/${id}`),
   // collectorVersion is empty when the collector cannot say
   config: () => get<{ refreshSeconds: number; version: string; collectorVersion: string }>('/api/v1/config'),
   fleet: () => get<{ hosts: HostSummary[] }>('/api/v1/fleet'),

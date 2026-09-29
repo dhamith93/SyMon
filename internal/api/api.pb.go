@@ -2365,6 +2365,249 @@ func (x *UserStatus) GetHasUsers() bool {
 	return false
 }
 
+// An alert rule as the dashboard edits it. ruleJson has the same fields as
+// an alerts.json entry.
+type AlertRuleInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	RuleJson      string                 `protobuf:"bytes,3,opt,name=ruleJson,proto3" json:"ruleJson,omitempty"`
+	UpdatedAt     int64                  `protobuf:"varint,4,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
+	UpdatedBy     string                 `protobuf:"bytes,5,opt,name=updatedBy,proto3" json:"updatedBy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlertRuleInfo) Reset() {
+	*x = AlertRuleInfo{}
+	mi := &file_api_api_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlertRuleInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlertRuleInfo) ProtoMessage() {}
+
+func (x *AlertRuleInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlertRuleInfo.ProtoReflect.Descriptor instead.
+func (*AlertRuleInfo) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *AlertRuleInfo) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AlertRuleInfo) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *AlertRuleInfo) GetRuleJson() string {
+	if x != nil {
+		return x.RuleJson
+	}
+	return ""
+}
+
+func (x *AlertRuleInfo) GetUpdatedAt() int64 {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return 0
+}
+
+func (x *AlertRuleInfo) GetUpdatedBy() string {
+	if x != nil {
+		return x.UpdatedBy
+	}
+	return ""
+}
+
+type AlertRuleList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rules         []*AlertRuleInfo       `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlertRuleList) Reset() {
+	*x = AlertRuleList{}
+	mi := &file_api_api_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlertRuleList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlertRuleList) ProtoMessage() {}
+
+func (x *AlertRuleList) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlertRuleList.ProtoReflect.Descriptor instead.
+func (*AlertRuleList) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *AlertRuleList) GetRules() []*AlertRuleInfo {
+	if x != nil {
+		return x.Rules
+	}
+	return nil
+}
+
+// id 0 creates a rule. by is the user making the change.
+type SaveRuleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	RuleJson      string                 `protobuf:"bytes,3,opt,name=ruleJson,proto3" json:"ruleJson,omitempty"`
+	By            string                 `protobuf:"bytes,4,opt,name=by,proto3" json:"by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveRuleRequest) Reset() {
+	*x = SaveRuleRequest{}
+	mi := &file_api_api_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveRuleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveRuleRequest) ProtoMessage() {}
+
+func (x *SaveRuleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveRuleRequest.ProtoReflect.Descriptor instead.
+func (*SaveRuleRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *SaveRuleRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SaveRuleRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *SaveRuleRequest) GetRuleJson() string {
+	if x != nil {
+		return x.RuleJson
+	}
+	return ""
+}
+
+func (x *SaveRuleRequest) GetBy() string {
+	if x != nil {
+		return x.By
+	}
+	return ""
+}
+
+type RuleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	By            string                 `protobuf:"bytes,2,opt,name=by,proto3" json:"by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RuleRequest) Reset() {
+	*x = RuleRequest{}
+	mi := &file_api_api_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RuleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RuleRequest) ProtoMessage() {}
+
+func (x *RuleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RuleRequest.ProtoReflect.Descriptor instead.
+func (*RuleRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *RuleRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *RuleRequest) GetBy() string {
+	if x != nil {
+		return x.By
+	}
+	return ""
+}
+
 var File_api_api_proto protoreflect.FileDescriptor
 
 const file_api_api_proto_rawDesc = "" +
@@ -2554,7 +2797,24 @@ const file_api_api_proto_rawDesc = "" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"(\n" +
 	"\n" +
 	"UserStatus\x12\x1a\n" +
-	"\bhasUsers\x18\x01 \x01(\bR\bhasUsers2\xd8\t\n" +
+	"\bhasUsers\x18\x01 \x01(\bR\bhasUsers\"\x91\x01\n" +
+	"\rAlertRuleInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\x12\x1a\n" +
+	"\bruleJson\x18\x03 \x01(\tR\bruleJson\x12\x1c\n" +
+	"\tupdatedAt\x18\x04 \x01(\x03R\tupdatedAt\x12\x1c\n" +
+	"\tupdatedBy\x18\x05 \x01(\tR\tupdatedBy\"9\n" +
+	"\rAlertRuleList\x12(\n" +
+	"\x05rules\x18\x01 \x03(\v2\x12.api.AlertRuleInfoR\x05rules\"g\n" +
+	"\x0fSaveRuleRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\x12\x1a\n" +
+	"\bruleJson\x18\x03 \x01(\tR\bruleJson\x12\x0e\n" +
+	"\x02by\x18\x04 \x01(\tR\x02by\"-\n" +
+	"\vRuleRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x0e\n" +
+	"\x02by\x18\x02 \x01(\tR\x02by2\xef\n" +
+	"\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x12-\n" +
 	"\n" +
@@ -2579,7 +2839,12 @@ const file_api_api_proto_rawDesc = "" +
 	"\x06Logout\x12\x13.api.SessionRequest\x1a\f.api.Message\"\x00\x12<\n" +
 	"\x0eChangePassword\x12\x1a.api.ChangePasswordRequest\x1a\f.api.Message\"\x00\x121\n" +
 	"\rCheckPassword\x12\x10.api.Credentials\x1a\f.api.Message\"\x00\x12(\n" +
-	"\bHasUsers\x12\t.api.Void\x1a\x0f.api.UserStatus\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"\bHasUsers\x12\t.api.Void\x1a\x0f.api.UserStatus\"\x00\x12-\n" +
+	"\n" +
+	"AlertRules\x12\t.api.Void\x1a\x12.api.AlertRuleList\"\x00\x126\n" +
+	"\bSaveRule\x12\x14.api.SaveRuleRequest\x1a\x12.api.AlertRuleInfo\"\x00\x12.\n" +
+	"\n" +
+	"DeleteRule\x12\x10.api.RuleRequest\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -2593,7 +2858,7 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),                  // 0: api.Void
 	(*Message)(nil),               // 1: api.Message
@@ -2631,6 +2896,10 @@ var file_api_api_proto_goTypes = []any{
 	(*ChangePasswordRequest)(nil), // 33: api.ChangePasswordRequest
 	(*SessionRequest)(nil),        // 34: api.SessionRequest
 	(*UserStatus)(nil),            // 35: api.UserStatus
+	(*AlertRuleInfo)(nil),         // 36: api.AlertRuleInfo
+	(*AlertRuleList)(nil),         // 37: api.AlertRuleList
+	(*SaveRuleRequest)(nil),       // 38: api.SaveRuleRequest
+	(*RuleRequest)(nil),           // 39: api.RuleRequest
 }
 var file_api_api_proto_depIdxs = []int32{
 	6,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
@@ -2642,57 +2911,64 @@ var file_api_api_proto_depIdxs = []int32{
 	9,  // 6: api.SnapshotList.hosts:type_name -> api.HostSnapshot
 	25, // 7: api.SnapshotList.customMetrics:type_name -> api.CustomValue
 	28, // 8: api.EndpointList.endpoints:type_name -> api.EndpointStatus
-	4,  // 9: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
-	2,  // 10: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	2,  // 11: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	3,  // 12: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	3,  // 13: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0,  // 14: api.MonitorDataService.Fleet:input_type -> api.Void
-	8,  // 15: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	10, // 16: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	14, // 17: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	8,  // 18: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	17, // 19: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	8,  // 20: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
-	22, // 21: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
-	0,  // 22: api.MonitorDataService.Snapshots:input_type -> api.Void
-	27, // 23: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
-	30, // 24: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
-	0,  // 25: api.MonitorDataService.Version:input_type -> api.Void
-	31, // 26: api.MonitorDataService.Login:input_type -> api.Credentials
-	34, // 27: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
-	34, // 28: api.MonitorDataService.Logout:input_type -> api.SessionRequest
-	33, // 29: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
-	31, // 30: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
-	0,  // 31: api.MonitorDataService.HasUsers:input_type -> api.Void
-	5,  // 32: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	1,  // 33: api.MonitorDataService.HandlePing:output_type -> api.Message
-	1,  // 34: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 35: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 36: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	7,  // 37: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	9,  // 38: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	13, // 39: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	15, // 40: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	16, // 41: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	19, // 42: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	21, // 43: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	24, // 44: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	26, // 45: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	29, // 46: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	13, // 47: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	1,  // 48: api.MonitorDataService.Version:output_type -> api.Message
-	32, // 49: api.MonitorDataService.Login:output_type -> api.SessionInfo
-	32, // 50: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
-	1,  // 51: api.MonitorDataService.Logout:output_type -> api.Message
-	1,  // 52: api.MonitorDataService.ChangePassword:output_type -> api.Message
-	1,  // 53: api.MonitorDataService.CheckPassword:output_type -> api.Message
-	35, // 54: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
-	32, // [32:55] is the sub-list for method output_type
-	9,  // [9:32] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	36, // 9: api.AlertRuleList.rules:type_name -> api.AlertRuleInfo
+	4,  // 10: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
+	2,  // 11: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 12: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	3,  // 13: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	3,  // 14: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 15: api.MonitorDataService.Fleet:input_type -> api.Void
+	8,  // 16: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	10, // 17: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	14, // 18: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	8,  // 19: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	17, // 20: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	8,  // 21: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
+	22, // 22: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
+	0,  // 23: api.MonitorDataService.Snapshots:input_type -> api.Void
+	27, // 24: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
+	30, // 25: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
+	0,  // 26: api.MonitorDataService.Version:input_type -> api.Void
+	31, // 27: api.MonitorDataService.Login:input_type -> api.Credentials
+	34, // 28: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
+	34, // 29: api.MonitorDataService.Logout:input_type -> api.SessionRequest
+	33, // 30: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
+	31, // 31: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
+	0,  // 32: api.MonitorDataService.HasUsers:input_type -> api.Void
+	0,  // 33: api.MonitorDataService.AlertRules:input_type -> api.Void
+	38, // 34: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
+	39, // 35: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
+	5,  // 36: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	1,  // 37: api.MonitorDataService.HandlePing:output_type -> api.Message
+	1,  // 38: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 39: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 40: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	7,  // 41: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	9,  // 42: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	13, // 43: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	15, // 44: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	16, // 45: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	19, // 46: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	21, // 47: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	24, // 48: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	26, // 49: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	29, // 50: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	13, // 51: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 52: api.MonitorDataService.Version:output_type -> api.Message
+	32, // 53: api.MonitorDataService.Login:output_type -> api.SessionInfo
+	32, // 54: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
+	1,  // 55: api.MonitorDataService.Logout:output_type -> api.Message
+	1,  // 56: api.MonitorDataService.ChangePassword:output_type -> api.Message
+	1,  // 57: api.MonitorDataService.CheckPassword:output_type -> api.Message
+	35, // 58: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
+	37, // 59: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
+	36, // 60: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
+	1,  // 61: api.MonitorDataService.DeleteRule:output_type -> api.Message
+	36, // [36:62] is the sub-list for method output_type
+	10, // [10:36] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -2708,7 +2984,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   36,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

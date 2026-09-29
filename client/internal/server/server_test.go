@@ -34,6 +34,7 @@ type fakeCollector struct {
 	sessionChecks  atomic.Int32
 	passwordChecks atomic.Int32
 	loggedOut      atomic.Value
+	lastRuleBy     atomic.Value
 }
 
 const (
@@ -160,6 +161,34 @@ func (f *fakeCollector) EndpointSeries(ctx context.Context, in *api.EndpointSeri
 
 func (f *fakeCollector) Version(ctx context.Context, in *api.Void) (*api.Message, error) {
 	return &api.Message{Body: "v3.1.0"}, nil
+}
+
+func (f *fakeCollector) AlertRules(ctx context.Context, in *api.Void) (*api.AlertRuleList, error) {
+	return &api.AlertRuleList{Rules: []*api.AlertRuleInfo{
+		{Id: 1, Enabled: true, RuleJson: `{"Name":"CPU","MetricName":"procUsage"}`, UpdatedAt: 1700000000, UpdatedBy: "alice"},
+	}}, nil
+}
+
+// SaveRule knows the name CPU is taken and refuses rules without a name
+func (f *fakeCollector) SaveRule(ctx context.Context, in *api.SaveRuleRequest) (*api.AlertRuleInfo, error) {
+	f.lastRuleBy.Store(in.By)
+	switch {
+	case strings.Contains(in.RuleJson, `"Name":"CPU"`) && in.Id == 0:
+		return nil, status.Error(codes.AlreadyExists, "there is already a rule with that name")
+	case !strings.Contains(in.RuleJson, `"Name"`):
+		return nil, status.Error(codes.InvalidArgument, "invalid request: a rule needs a Name")
+	case in.Id == 404:
+		return nil, status.Error(codes.NotFound, "no data found")
+	}
+	id := in.Id
+	if id == 0 {
+		id = 7
+	}
+	return &api.AlertRuleInfo{Id: id, Enabled: in.Enabled}, nil
+}
+
+func (f *fakeCollector) DeleteRule(ctx context.Context, in *api.RuleRequest) (*api.Message, error) {
+	return &api.Message{Body: "ok"}, nil
 }
 
 func floatPtr(v float64) *float64 {

@@ -7,6 +7,9 @@ export type Page =
   | { name: 'alerts' }
   | { name: 'endpoints' }
   | { name: 'account' }
+  | { name: 'rules' }
+  // id is 0 for a new rule
+  | { name: 'rule'; id: number }
   | { name: 'notfound' };
 
 export const location = $state({
@@ -49,6 +52,10 @@ export function match(path: string): Page {
   if (path === '/alerts') return { name: 'alerts' };
   if (path === '/endpoints') return { name: 'endpoints' };
   if (path === '/account') return { name: 'account' };
+  if (path === '/rules') return { name: 'rules' };
+  if (path === '/rules/new') return { name: 'rule', id: 0 };
+  const rule = path.match(/^\/rules\/(\d+)\/?$/);
+  if (rule) return { name: 'rule', id: Number(rule[1]) };
   const host = path.match(/^\/hosts\/([^/]+)(\/custom)?\/?$/);
   if (host) {
     const name = decodeURIComponent(host[1]);

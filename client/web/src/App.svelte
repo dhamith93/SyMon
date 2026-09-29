@@ -10,12 +10,15 @@
   import Fleet from './pages/Fleet.svelte';
   import Host from './pages/Host.svelte';
   import Login from './pages/Login.svelte';
+  import RuleEditor from './pages/RuleEditor.svelte';
+  import Rules from './pages/Rules.svelte';
   import Setup from './pages/Setup.svelte';
 
   const page = $derived(match(location.path));
   const onAlerts = $derived(page.name === 'alerts');
   const onEndpoints = $derived(page.name === 'endpoints');
-  const onHosts = $derived(!onAlerts && !onEndpoints);
+  const onRules = $derived(page.name === 'rules' || page.name === 'rule');
+  const onHosts = $derived(!onAlerts && !onEndpoints && !onRules && page.name !== 'account');
   // one version when the dashboard and collector match, both when they do not
   const sameVersion = $derived(!appConfig.collectorVersion || appConfig.collectorVersion === appConfig.version);
 
@@ -41,6 +44,7 @@
         <a href="/" class:active={onHosts} aria-current={onHosts ? 'page' : undefined}>Hosts</a>
         <a href="/endpoints" class:active={onEndpoints} aria-current={onEndpoints ? 'page' : undefined}>Endpoints</a>
         <a href="/alerts" class:active={onAlerts} aria-current={onAlerts ? 'page' : undefined}>Alerts</a>
+        <a href="/rules" class:active={onRules} aria-current={onRules ? 'page' : undefined}>Rules</a>
       {/if}
     </nav>
     {#if auth.state === 'in'}
@@ -83,6 +87,10 @@
     <Endpoints />
   {:else if page.name === 'account'}
     <Account />
+  {:else if page.name === 'rules'}
+    <Rules />
+  {:else if page.name === 'rule'}
+    {#key page.id}<RuleEditor id={page.id} />{/key}
   {:else}
     <div class="page">
       <h1>Page not found</h1>
