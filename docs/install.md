@@ -63,7 +63,7 @@ echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -c
 wget -qO- https://packagecloud.io/timescale/timescaledb/gpgkey \
   | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
 sudo apt update
-sudo apt install -y timescaledb-2-postgresql-18
+sudo apt install -y postgresql-18 timescaledb-2-postgresql-18
 sudo timescaledb-tune --quiet --yes
 sudo systemctl restart postgresql
 ```
