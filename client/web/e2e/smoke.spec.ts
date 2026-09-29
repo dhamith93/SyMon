@@ -23,13 +23,18 @@ function watchErrors(page: Page): string[] {
 test('fleet, host, zoom, processes at a time, alerts', async ({ page }) => {
   const errors = watchErrors(page);
 
+  // hosts that stopped reporting come first and have no recent data to chart
+  const fleet = await (await page.request.get('/api/v1/fleet')).json();
+  const reporting = fleet.hosts.find((h: { up: boolean }) => h.up);
+  expect(reporting, 'needs a host that is reporting').toBeTruthy();
+  const hostName: string = reporting.name;
+
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Hosts' })).toBeVisible();
-  const firstHost = page.locator('a.host').first();
-  await expect(firstHost).toBeVisible();
-  const hostName = (await firstHost.locator('.name').textContent())!.trim();
+  const hostCard = page.locator('a.host').filter({ has: page.getByText(hostName, { exact: true }) });
+  await expect(hostCard).toBeVisible();
 
-  await firstHost.click();
+  await hostCard.click();
   await expect(page).toHaveURL(new RegExp(`/hosts/${encodeURIComponent(hostName)}`));
   await expect(page.getByRole('heading', { name: hostName, level: 1 })).toBeVisible();
   const cpuChart = page.locator('figure', { hasText: 'CPU usage' }).first().locator('.u-over');
@@ -75,8 +80,8 @@ test('unknown pages and hosts are handled', async ({ page }) => {
 
 test('containers show on a host that runs them', async ({ page }) => {
   const fleet = await (await page.request.get('/api/v1/fleet')).json();
-  const host = fleet.hosts.find((h: { containers: number }) => h.containers > 0);
-  test.skip(!host, 'no host reports containers');
+  const host = fleet.hosts.find((h: { up: boolean; containers: number }) => h.up && h.containers > 0);
+  test.skip(!host, 'no reporting host has containers');
 
   await page.goto(`/hosts/${encodeURIComponent(host.name)}`);
   const table = page.locator('table', { has: page.locator('caption', { hasText: 'Running containers' }) });
