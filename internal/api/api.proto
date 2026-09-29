@@ -237,6 +237,28 @@ message EndpointSeriesRequest {
     int32 maxPoints = 5;
 }
 
+// Dashboard login. The dashboard calls these with the shared key.
+
+message Credentials {
+    string user = 1;
+    string password = 2;
+}
+
+// token is only set by Login
+message SessionInfo {
+    string token = 1;
+    string user = 2;
+    int64 expires = 3;
+}
+
+message SessionRequest {
+    string token = 1;
+}
+
+message UserStatus {
+    bool hasUsers = 1;
+}
+
 service MonitorDataService {
     // agent
     rpc Enroll(EnrollRequest) returns (EnrollResponse) {}
@@ -260,4 +282,13 @@ service MonitorDataService {
     rpc EndpointSeries(EndpointSeriesRequest) returns (SeriesResponse) {}
     // the collector's build, in the body
     rpc Version(Void) returns (Message) {}
+
+    // dashboard login
+    rpc Login(Credentials) returns (SessionInfo) {}
+    rpc CheckSession(SessionRequest) returns (SessionInfo) {}
+    rpc Logout(SessionRequest) returns (Message) {}
+    // for HTTP basic auth, like Prometheus scraping /metrics
+    rpc CheckPassword(Credentials) returns (Message) {}
+    // the dashboard stays locked until the first user exists
+    rpc HasUsers(Void) returns (UserStatus) {}
 }

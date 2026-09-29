@@ -36,6 +36,11 @@ const (
 	MonitorDataService_Endpoints_FullMethodName               = "/api.MonitorDataService/Endpoints"
 	MonitorDataService_EndpointSeries_FullMethodName          = "/api.MonitorDataService/EndpointSeries"
 	MonitorDataService_Version_FullMethodName                 = "/api.MonitorDataService/Version"
+	MonitorDataService_Login_FullMethodName                   = "/api.MonitorDataService/Login"
+	MonitorDataService_CheckSession_FullMethodName            = "/api.MonitorDataService/CheckSession"
+	MonitorDataService_Logout_FullMethodName                  = "/api.MonitorDataService/Logout"
+	MonitorDataService_CheckPassword_FullMethodName           = "/api.MonitorDataService/CheckPassword"
+	MonitorDataService_HasUsers_FullMethodName                = "/api.MonitorDataService/HasUsers"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -63,6 +68,14 @@ type MonitorDataServiceClient interface {
 	EndpointSeries(ctx context.Context, in *EndpointSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
 	// the collector's build, in the body
 	Version(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error)
+	// dashboard login
+	Login(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*SessionInfo, error)
+	CheckSession(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*SessionInfo, error)
+	Logout(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*Message, error)
+	// for HTTP basic auth, like Prometheus scraping /metrics
+	CheckPassword(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*Message, error)
+	// the dashboard stays locked until the first user exists
+	HasUsers(ctx context.Context, in *Void, opts ...grpc.CallOption) (*UserStatus, error)
 }
 
 type monitorDataServiceClient struct {
@@ -243,6 +256,56 @@ func (c *monitorDataServiceClient) Version(ctx context.Context, in *Void, opts .
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) Login(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*SessionInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) CheckSession(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*SessionInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_CheckSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Logout(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) CheckPassword(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_CheckPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) HasUsers(ctx context.Context, in *Void, opts ...grpc.CallOption) (*UserStatus, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserStatus)
+	err := c.cc.Invoke(ctx, MonitorDataService_HasUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -268,6 +331,14 @@ type MonitorDataServiceServer interface {
 	EndpointSeries(context.Context, *EndpointSeriesRequest) (*SeriesResponse, error)
 	// the collector's build, in the body
 	Version(context.Context, *Void) (*Message, error)
+	// dashboard login
+	Login(context.Context, *Credentials) (*SessionInfo, error)
+	CheckSession(context.Context, *SessionRequest) (*SessionInfo, error)
+	Logout(context.Context, *SessionRequest) (*Message, error)
+	// for HTTP basic auth, like Prometheus scraping /metrics
+	CheckPassword(context.Context, *Credentials) (*Message, error)
+	// the dashboard stays locked until the first user exists
+	HasUsers(context.Context, *Void) (*UserStatus, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -328,6 +399,21 @@ func (UnimplementedMonitorDataServiceServer) EndpointSeries(context.Context, *En
 }
 func (UnimplementedMonitorDataServiceServer) Version(context.Context, *Void) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Version not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Login(context.Context, *Credentials) (*SessionInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) CheckSession(context.Context, *SessionRequest) (*SessionInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckSession not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Logout(context.Context, *SessionRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) CheckPassword(context.Context, *Credentials) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckPassword not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) HasUsers(context.Context, *Void) (*UserStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasUsers not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -656,6 +742,96 @@ func _MonitorDataService_Version_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Credentials)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Login(ctx, req.(*Credentials))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_CheckSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).CheckSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_CheckSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).CheckSession(ctx, req.(*SessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Logout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Logout(ctx, req.(*SessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_CheckPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Credentials)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).CheckPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_CheckPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).CheckPassword(ctx, req.(*Credentials))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_HasUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).HasUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_HasUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).HasUsers(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -730,6 +906,26 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Version",
 			Handler:    _MonitorDataService_Version_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _MonitorDataService_Login_Handler,
+		},
+		{
+			MethodName: "CheckSession",
+			Handler:    _MonitorDataService_CheckSession_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _MonitorDataService_Logout_Handler,
+		},
+		{
+			MethodName: "CheckPassword",
+			Handler:    _MonitorDataService_CheckPassword_Handler,
+		},
+		{
+			MethodName: "HasUsers",
+			Handler:    _MonitorDataService_HasUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -30,6 +30,11 @@ func main() {
 	tokenHost := flag.String("host", "", "With -enroll-token: only this host name may use the token")
 	tokenUses := flag.Int("uses", 1, "With -enroll-token: how many hosts the token can enroll")
 	tokenTTL := flag.Duration("ttl", time.Hour, "With -enroll-token: how long the token is valid")
+	addUserName := flag.String("add-user", "", "Create a dashboard user and print its password")
+	resetPasswordName := flag.String("reset-password", "", "Give a dashboard user a new password and log them out everywhere")
+	passwordStdin := flag.Bool("password-stdin", false, "With -add-user or -reset-password: read the password from stdin instead of making one up")
+	removeUserName := flag.String("remove-user", "", "Remove a dashboard user")
+	listUsersPtr := flag.Bool("list-users", false, "List the dashboard users")
 	envFile := flag.String("env", config.DefaultEnvFile("collector"), "Settings file with KEY=value lines, loaded if it exists")
 	versionPtr := flag.Bool("version", false, "Print the version and exit")
 	flag.Parse()
@@ -75,6 +80,20 @@ func main() {
 	}
 	if *enrollTokenPtr {
 		printEnrollmentToken(ctx, st, &config, *tokenHost, *tokenUses, *tokenTTL)
+		return
+	}
+	switch {
+	case *addUserName != "":
+		addUser(ctx, st, &config, *addUserName, *passwordStdin)
+		return
+	case *resetPasswordName != "":
+		resetPassword(ctx, st, *resetPasswordName, *passwordStdin)
+		return
+	case *removeUserName != "":
+		removeUser(ctx, st, *removeUserName)
+		return
+	case *listUsersPtr:
+		listUsers(ctx, st)
 		return
 	}
 

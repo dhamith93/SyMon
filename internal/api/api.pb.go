@@ -2059,6 +2059,207 @@ func (x *EndpointSeriesRequest) GetMaxPoints() int32 {
 	return 0
 }
 
+type Credentials struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          string                 `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Credentials) Reset() {
+	*x = Credentials{}
+	mi := &file_api_api_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Credentials) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Credentials) ProtoMessage() {}
+
+func (x *Credentials) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Credentials.ProtoReflect.Descriptor instead.
+func (*Credentials) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *Credentials) GetUser() string {
+	if x != nil {
+		return x.User
+	}
+	return ""
+}
+
+func (x *Credentials) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+// token is only set by Login
+type SessionInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	User          string                 `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
+	Expires       int64                  `protobuf:"varint,3,opt,name=expires,proto3" json:"expires,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SessionInfo) Reset() {
+	*x = SessionInfo{}
+	mi := &file_api_api_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionInfo) ProtoMessage() {}
+
+func (x *SessionInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionInfo.ProtoReflect.Descriptor instead.
+func (*SessionInfo) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *SessionInfo) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *SessionInfo) GetUser() string {
+	if x != nil {
+		return x.User
+	}
+	return ""
+}
+
+func (x *SessionInfo) GetExpires() int64 {
+	if x != nil {
+		return x.Expires
+	}
+	return 0
+}
+
+type SessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SessionRequest) Reset() {
+	*x = SessionRequest{}
+	mi := &file_api_api_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionRequest) ProtoMessage() {}
+
+func (x *SessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionRequest.ProtoReflect.Descriptor instead.
+func (*SessionRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *SessionRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type UserStatus struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HasUsers      bool                   `protobuf:"varint,1,opt,name=hasUsers,proto3" json:"hasUsers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserStatus) Reset() {
+	*x = UserStatus{}
+	mi := &file_api_api_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserStatus) ProtoMessage() {}
+
+func (x *UserStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserStatus.ProtoReflect.Descriptor instead.
+func (*UserStatus) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *UserStatus) GetHasUsers() bool {
+	if x != nil {
+		return x.HasUsers
+	}
+	return false
+}
+
 var File_api_api_proto protoreflect.FileDescriptor
 
 const file_api_api_proto_rawDesc = "" +
@@ -2225,7 +2426,19 @@ const file_api_api_proto_rawDesc = "" +
 	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x12\n" +
 	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
-	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\xa6\a\n" +
+	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints\"=\n" +
+	"\vCredentials\x12\x12\n" +
+	"\x04user\x18\x01 \x01(\tR\x04user\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"Q\n" +
+	"\vSessionInfo\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x12\n" +
+	"\x04user\x18\x02 \x01(\tR\x04user\x12\x18\n" +
+	"\aexpires\x18\x03 \x01(\x03R\aexpires\"&\n" +
+	"\x0eSessionRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"(\n" +
+	"\n" +
+	"UserStatus\x12\x1a\n" +
+	"\bhasUsers\x18\x01 \x01(\bR\bhasUsers2\x9a\t\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x12-\n" +
 	"\n" +
@@ -2244,7 +2457,12 @@ const file_api_api_proto_rawDesc = "" +
 	"\tSnapshots\x12\t.api.Void\x1a\x11.api.SnapshotList\"\x00\x127\n" +
 	"\tEndpoints\x12\x15.api.EndpointsRequest\x1a\x11.api.EndpointList\"\x00\x12C\n" +
 	"\x0eEndpointSeries\x12\x1a.api.EndpointSeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x12$\n" +
-	"\aVersion\x12\t.api.Void\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"\aVersion\x12\t.api.Void\x1a\f.api.Message\"\x00\x12-\n" +
+	"\x05Login\x12\x10.api.Credentials\x1a\x10.api.SessionInfo\"\x00\x127\n" +
+	"\fCheckSession\x12\x13.api.SessionRequest\x1a\x10.api.SessionInfo\"\x00\x12-\n" +
+	"\x06Logout\x12\x13.api.SessionRequest\x1a\f.api.Message\"\x00\x121\n" +
+	"\rCheckPassword\x12\x10.api.Credentials\x1a\f.api.Message\"\x00\x12(\n" +
+	"\bHasUsers\x12\t.api.Void\x1a\x0f.api.UserStatus\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -2258,7 +2476,7 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),                  // 0: api.Void
 	(*Message)(nil),               // 1: api.Message
@@ -2291,6 +2509,10 @@ var file_api_api_proto_goTypes = []any{
 	(*EndpointStatus)(nil),        // 28: api.EndpointStatus
 	(*EndpointList)(nil),          // 29: api.EndpointList
 	(*EndpointSeriesRequest)(nil), // 30: api.EndpointSeriesRequest
+	(*Credentials)(nil),           // 31: api.Credentials
+	(*SessionInfo)(nil),           // 32: api.SessionInfo
+	(*SessionRequest)(nil),        // 33: api.SessionRequest
+	(*UserStatus)(nil),            // 34: api.UserStatus
 }
 var file_api_api_proto_depIdxs = []int32{
 	6,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
@@ -2319,25 +2541,35 @@ var file_api_api_proto_depIdxs = []int32{
 	27, // 23: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
 	30, // 24: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
 	0,  // 25: api.MonitorDataService.Version:input_type -> api.Void
-	5,  // 26: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	1,  // 27: api.MonitorDataService.HandlePing:output_type -> api.Message
-	1,  // 28: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 29: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 30: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	7,  // 31: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	9,  // 32: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	13, // 33: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	15, // 34: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	16, // 35: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	19, // 36: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	21, // 37: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	24, // 38: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	26, // 39: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	29, // 40: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	13, // 41: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	1,  // 42: api.MonitorDataService.Version:output_type -> api.Message
-	26, // [26:43] is the sub-list for method output_type
-	9,  // [9:26] is the sub-list for method input_type
+	31, // 26: api.MonitorDataService.Login:input_type -> api.Credentials
+	33, // 27: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
+	33, // 28: api.MonitorDataService.Logout:input_type -> api.SessionRequest
+	31, // 29: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
+	0,  // 30: api.MonitorDataService.HasUsers:input_type -> api.Void
+	5,  // 31: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	1,  // 32: api.MonitorDataService.HandlePing:output_type -> api.Message
+	1,  // 33: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 34: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 35: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	7,  // 36: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	9,  // 37: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	13, // 38: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	15, // 39: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	16, // 40: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	19, // 41: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	21, // 42: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	24, // 43: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	26, // 44: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	29, // 45: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	13, // 46: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 47: api.MonitorDataService.Version:output_type -> api.Message
+	32, // 48: api.MonitorDataService.Login:output_type -> api.SessionInfo
+	32, // 49: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
+	1,  // 50: api.MonitorDataService.Logout:output_type -> api.Message
+	1,  // 51: api.MonitorDataService.CheckPassword:output_type -> api.Message
+	34, // 52: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
+	31, // [31:53] is the sub-list for method output_type
+	9,  // [9:31] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -2356,7 +2588,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   35,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

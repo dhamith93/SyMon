@@ -9,8 +9,8 @@ import (
 	"github.com/dhamith93/SyMon/internal/store"
 )
 
-// purgeOldRecords deletes old resolved alerts and dead enrollment tokens
-// once a day. Metric data is dropped by timescale retention policies instead.
+// purgeOldRecords deletes old resolved alerts, dead enrollment tokens and
+// expired dashboard sessions once a day. Metric data is dropped by timescale retention policies instead.
 func purgeOldRecords(st *store.Store) {
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
@@ -27,6 +27,12 @@ func purgeOldRecords(st *store.Store) {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 		if _, err := st.PurgeEnrollmentTokens(ctx); err != nil {
 			logger.Log("error", "token purge: "+err.Error())
+		}
+		cancel()
+
+		ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+		if _, err := st.PurgeSessions(ctx); err != nil {
+			logger.Log("error", "session purge: "+err.Error())
 		}
 		cancel()
 	}

@@ -35,6 +35,8 @@ type Server struct {
 	forecastMu sync.Mutex
 	forecastAt time.Time
 	diskFull   map[string]float64
+
+	logins loginFailures
 }
 
 // toStatus turns a store error into a grpc status. Unexpected errors are
@@ -49,6 +51,8 @@ func toStatus(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, store.ErrInvalid):
 		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, store.ErrBadLogin), errors.Is(err, store.ErrBadSession):
+		return status.Error(codes.Unauthenticated, err.Error())
 	case errors.Is(err, context.Canceled):
 		// the caller went away, nothing to report
 		return status.Error(codes.Canceled, "canceled")
