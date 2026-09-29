@@ -22,12 +22,15 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 
 **Endpoints**
 - HTTP checks of any URL from the server, with response time and uptime history
+- Alerts on HTTPS certificates that are about to expire
 
 **Custom metrics**
 - Send any number from a script or cron job and get a chart for it
 
 **Alerts**
-- Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts and HTTP endpoints
+- Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts, HTTP endpoints and certificates
+- Rules are edited on the dashboard and apply right away. They can watch every host, including ones added later
+- Every host is watched for going silent from the start
 - Warning and critical levels, shown on the dashboard and sent by email, Slack or PagerDuty
 
 **Dashboard**
@@ -84,7 +87,8 @@ Optional. The Collector sends it alerts as they open, change and resolve, and it
 - **Agent keys.** Each enrolled host gets its own key, stored hashed on the server. It can only send data, and only as that host. `collector -remove-agent <name>` revokes it.
 - **Shared key.** The Collector, Client and Alert processor use a shared key from `collector -init`. Each call carries a short-lived token signed with it.
 - **TLS.** Traffic between components can be encrypted. See the `*_TLS_*` and `*_CERT_PATH` settings in each component's `.env-example`.
-- **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
+- **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
+- **Roles.** Admins can change alert rules, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
 - **HTTPS.** Put a reverse proxy like Caddy or nginx in front of the dashboard, so passwords and the session cookie are encrypted.
 
 ## Local development
@@ -106,6 +110,8 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
 * `POST /api/v1/login` with `{"user": "...", "password": "..."}` as JSON
     * Sets the `symon_session` cookie. 401 for a wrong password, 429 while the user is locked out
 * `POST /api/v1/logout` with `{}` as JSON
+* `POST /api/v1/password` with `{"current": "...", "new": "..."}` as JSON
+    * Changes your own password and logs you out everywhere else
 * `GET /api/v1/session`
     * `{"user": "..."}` when logged in, otherwise 401 with `hasUsers`, false until the first user exists
 
@@ -126,6 +132,10 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * Names of the host's custom metrics
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
     * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint alerts have an empty `host`
+* `GET /api/v1/rules`
+    * The alert rules, each with `id`, `enabled` and `rule`, the rule in the alerts.json format
+* `POST /api/v1/rules` and `PUT /api/v1/rules/{id}` with `{"enabled": true, "rule": {...}}` as JSON, `DELETE /api/v1/rules/{id}`
+    * For admins only. A deleted or switched off rule resolves its open alerts
 * `GET /api/v1/endpoints?from=&to=`
     * Every endpoint checked within the range: its newest check, the number of checks, the share that passed and the average response time
 * `GET /api/v1/endpoints/series?name=&metric=latency&from=&to=`
