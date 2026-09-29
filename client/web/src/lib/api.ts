@@ -22,6 +22,13 @@ export interface HostSummary {
   diskFullDays: number | null;
   // empty from agents older than versions
   agentVersion: string;
+  // the agent updates itself when asked
+  canUpdate: boolean;
+  // an update asked for and not done yet, empty for none
+  updateVersion: string;
+  updateRequestedAt: number;
+  // why the agent's last try at the update failed
+  updateError: string;
 }
 
 // An endpoint's newest check up to the end of a range, and how it did over it
@@ -303,6 +310,7 @@ export const api = {
   logout: () => post<object>('/api/v1/logout', {}),
   changePassword: (current: string, next: string) => post<object>('/api/v1/password', { current, new: next }),
   rules: () => get<{ rules: AlertRule[] }>('/api/v1/rules'),
+  updateAgents: (hosts: string[]) => post<{ requested: number; version: string }>('/api/v1/agents/update', { hosts }),
   createRule: (enabled: boolean, rule: RuleConfig) => post<{ id: number }>('/api/v1/rules', { enabled, rule }),
   updateRule: (id: number, enabled: boolean, rule: RuleConfig) => send<{ id: number }>('PUT', `/api/v1/rules/${id}`, { enabled, rule }),
   deleteRule: (id: number) => send<{ id: number }>('DELETE', `/api/v1/rules/${id}`),

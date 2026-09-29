@@ -87,6 +87,7 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("POST /api/v1/rules", s.requireAdmin(s.postRule))
 	data.HandleFunc("PUT /api/v1/rules/{id}", s.requireAdmin(s.putRule))
 	data.HandleFunc("DELETE /api/v1/rules/{id}", s.requireAdmin(s.deleteRule))
+	data.HandleFunc("POST /api/v1/agents/update", s.requireAdmin(s.postAgentUpdate))
 	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
@@ -136,6 +137,12 @@ type hostSummary struct {
 	DiskFullDays *float64 `json:"diskFullDays"`
 	// empty from agents older than versions
 	AgentVersion string `json:"agentVersion"`
+	// the agent updates itself when asked
+	CanUpdate bool `json:"canUpdate"`
+	// an update asked for and not done yet, empty for none
+	UpdateVersion     string `json:"updateVersion"`
+	UpdateRequestedAt int64  `json:"updateRequestedAt"`
+	UpdateError       string `json:"updateError"`
 }
 
 func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
@@ -147,23 +154,27 @@ func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
 	hosts := make([]hostSummary, 0, len(fleet.Hosts))
 	for _, h := range fleet.Hosts {
 		hosts = append(hosts, hostSummary{
-			Name:          h.Name,
-			Up:            h.Up,
-			LastSeen:      h.LastSeen,
-			Time:          h.Time,
-			OS:            h.Os,
-			UptimeSeconds: h.UptimeSeconds,
-			CPUPct:        h.CpuPct,
-			MemUsedPct:    h.MemUsedPct,
-			SwapUsedPct:   h.SwapUsedPct,
-			DiskUsedPct:   h.DiskUsedPct,
-			RxBps:         h.RxBps,
-			TxBps:         h.TxBps,
-			ActiveAlerts:  h.ActiveAlerts,
-			WorstSeverity: h.WorstSeverity,
-			Containers:    h.Containers,
-			DiskFullDays:  h.DiskFullDays,
-			AgentVersion:  h.AgentVersion,
+			Name:              h.Name,
+			Up:                h.Up,
+			LastSeen:          h.LastSeen,
+			Time:              h.Time,
+			OS:                h.Os,
+			UptimeSeconds:     h.UptimeSeconds,
+			CPUPct:            h.CpuPct,
+			MemUsedPct:        h.MemUsedPct,
+			SwapUsedPct:       h.SwapUsedPct,
+			DiskUsedPct:       h.DiskUsedPct,
+			RxBps:             h.RxBps,
+			TxBps:             h.TxBps,
+			ActiveAlerts:      h.ActiveAlerts,
+			WorstSeverity:     h.WorstSeverity,
+			Containers:        h.Containers,
+			DiskFullDays:      h.DiskFullDays,
+			AgentVersion:      h.AgentVersion,
+			CanUpdate:         h.CanUpdate,
+			UpdateVersion:     h.UpdateVersion,
+			UpdateRequestedAt: h.UpdateRequestedAt,
+			UpdateError:       h.UpdateError,
 		})
 	}
 	writeJSON(w, map[string]any{"hosts": hosts})

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"text/template"
 )
 
@@ -18,8 +19,9 @@ var installTemplate = template.Must(template.New("install.sh").Parse(installScri
 
 // both values end up inside a shell script, so they are checked first
 var (
-	safeHost  = regexp.MustCompile(`^[A-Za-z0-9.\-]+(:[0-9]+)?$|^\[[0-9A-Fa-f:.]+\](:[0-9]+)?$`)
-	agentFile = regexp.MustCompile(`^agent-linux-(amd64|arm64|arm)$`)
+	safeHost = regexp.MustCompile(`^[A-Za-z0-9.\-]+(:[0-9]+)?$|^\[[0-9A-Fa-f:.]+\](:[0-9]+)?$`)
+	// a build, or the signature agents check it with before updating
+	agentFile = regexp.MustCompile(`^agent-linux-(amd64|arm64|arm)(\.sig)?$`)
 )
 
 // getInstallScript serves the script that installs and enrolls an agent,
@@ -80,5 +82,8 @@ func (s *server) getDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/octet-stream")
+	if strings.HasSuffix(name, ".sig") {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	}
 	http.ServeFile(w, r, path)
 }
