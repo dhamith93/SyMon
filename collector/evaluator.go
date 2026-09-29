@@ -18,6 +18,7 @@ type alertStore interface {
 	LatestValue(ctx context.Context, host string, metric string, target string, isCustom bool) (float64, time.Time, error)
 	LastSeen(ctx context.Context, host string) (time.Time, error)
 	DaysUntilFull(ctx context.Context, host string, device string) (float64, error)
+	LatestEndpointCheck(ctx context.Context, name string) (store.EndpointCheck, error)
 	OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error)
 	CreateAlert(ctx context.Context, alert store.Alert) (int64, error)
 	UpdateAlert(ctx context.Context, id int64, severity int, value float64, at time.Time) error
@@ -36,6 +37,9 @@ type evaluator struct {
 	pending map[string]pendingStatus
 	// checked is the newest sample time seen, so each sample counts once
 	checked map[string]time.Time
+	// checkErrors is the error of each endpoint rule's newest check, for
+	// its alert message
+	checkErrors map[string]string
 }
 
 type pendingStatus struct {
@@ -45,21 +49,25 @@ type pendingStatus struct {
 
 func newEvaluator(st alertStore, send func(*alertapi.Alert)) *evaluator {
 	return &evaluator{
-		store:   st,
-		send:    send,
-		now:     time.Now,
-		pending: map[string]pendingStatus{},
-		checked: map[string]time.Time{},
+		store:       st,
+		send:        send,
+		now:         time.Now,
+		pending:     map[string]pendingStatus{},
+		checked:     map[string]time.Time{},
+		checkErrors: map[string]string{},
 	}
 }
 
-// ruleTarget is the disk or service a rule watches, empty for other metrics
+// ruleTarget is the disk, service or URL a rule watches, empty for other
+// metrics
 func ruleTarget(rule *alerts.AlertConfig) string {
 	switch rule.MetricName {
 	case monitor.DISKS, monitor.DISK_FORECAST:
 		return rule.Disk
 	case monitor.SERVICES:
 		return rule.Service
+	case monitor.ENDPOINT:
+		return rule.Endpoint
 	}
 	return ""
 }
@@ -94,8 +102,17 @@ func (e *evaluator) evaluate(ctx context.Context, rule *alerts.AlertConfig, host
 
 // latest returns the value a rule checks. For ping it is the number of
 // seconds since the host was last heard from, for a disk forecast the days
-// until the disk is full.
+// until the disk is full, and for an endpoint the status code of its newest
+// check.
 func (e *evaluator) latest(ctx context.Context, rule *alerts.AlertConfig, host string, target string) (float64, time.Time, error) {
+	if rule.MetricName == monitor.ENDPOINT {
+		check, err := e.store.LatestEndpointCheck(ctx, rule.Name)
+		if err != nil {
+			return 0, time.Time{}, err
+		}
+		e.checkErrors[rule.Name] = check.Error
+		return float64(check.StatusCode), check.Time, nil
+	}
 	if rule.MetricName == monitor.DISK_FORECAST {
 		days, err := e.store.DaysUntilFull(ctx, host, target)
 		return days, e.now(), err
@@ -116,7 +133,14 @@ func (e *evaluator) latest(ctx context.Context, rule *alerts.AlertConfig, host s
 
 // ruleStatus compares a value with a rule. Ping rules have no thresholds,
 // a host is critical once it has been silent longer than the trigger interval.
+// An endpoint is critical while it answers with another status code.
 func ruleStatus(rule *alerts.AlertConfig, value float64) alertstatus.StatusType {
+	if rule.MetricName == monitor.ENDPOINT {
+		if int(value) != expectedCode(rule) {
+			return alertstatus.Critical
+		}
+		return alertstatus.Normal
+	}
 	if rule.MetricName == monitor.PING {
 		if value > float64(rule.TriggerIntveral) {
 			return alertstatus.Critical
@@ -140,7 +164,7 @@ func (e *evaluator) updateOpen(ctx context.Context, rule *alerts.AlertConfig, ho
 			return err
 		}
 		delete(e.pending, key)
-		e.send(buildAlertToSend(host, rule, alertStatus(rule, host, open.ID, status, value, at)))
+		e.send(e.message(rule, host, open.ID, status, value, at))
 		return nil
 	}
 
@@ -152,7 +176,7 @@ func (e *evaluator) updateOpen(ctx context.Context, rule *alerts.AlertConfig, ho
 	if err := e.store.UpdateAlert(ctx, open.ID, int(status), value, at); err != nil {
 		return err
 	}
-	e.send(buildAlertToSend(host, rule, alertStatus(rule, host, open.ID, status, value, at)))
+	e.send(e.message(rule, host, open.ID, status, value, at))
 	return nil
 }
 
@@ -183,8 +207,17 @@ func (e *evaluator) openIfBreached(ctx context.Context, rule *alerts.AlertConfig
 		return err
 	}
 	delete(e.pending, key)
-	e.send(buildAlertToSend(host, rule, alertStatus(rule, host, id, status, value, at)))
+	e.send(e.message(rule, host, id, status, value, at))
 	return nil
+}
+
+// message builds what is sent to the alert processor. Endpoint rules have
+// their own template fields, like the status code and the error.
+func (e *evaluator) message(rule *alerts.AlertConfig, host string, id int64, status alertstatus.StatusType, value float64, at time.Time) *alertapi.Alert {
+	if rule.MetricName == monitor.ENDPOINT {
+		return buildEndpointAlert(rule, id, int(value), e.checkErrors[rule.Name], status == alertstatus.Normal, at.Unix())
+	}
+	return buildAlertToSend(host, rule, alertStatus(rule, host, id, status, value, at))
 }
 
 func triggerInterval(rule *alerts.AlertConfig) time.Duration {

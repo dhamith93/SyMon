@@ -1,16 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
-	"crypto/x509"
+	"cmp"
 	"fmt"
 	"log"
-	"net/http"
-	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/alertapi"
@@ -21,7 +16,6 @@ import (
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/store"
 	"github.com/dhamith93/SyMon/internal/transport"
-	"github.com/dhamith93/SyMon/pkg/memdb"
 )
 
 // alertClient is created once in handleAlerts and shared by all alert checks
@@ -35,171 +29,36 @@ func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, s
 	defer conn.Close()
 	alertClient = alertapi.NewAlertServiceClient(conn)
 
-	ticker := time.NewTicker(15 * time.Second)
-	endpointTicker := time.NewTicker(time.Duration(config.EndpointCheckInterval) * time.Second)
-	quit := make(chan struct{})
-	var wg sync.WaitGroup
-	incidentTracker := memdb.CreateDatabase("incident_tracker")
-	rules := newEvaluator(st, sendAlert)
-
-	delta := 1
-	if config.EndpointMonitoringEnabled {
-		delta = 2
-	}
-
-	wg.Add(delta)
-	logger.Log("info", "starting alert checker")
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				for _, alert := range alertConfigs {
-					if alert.MetricName == "endpoint" {
-						continue
-					}
-					for _, server := range alert.Servers {
-						ctx, cancel := transport.Context()
-						if err := rules.evaluate(ctx, &alert, server); err != nil {
-							logger.Log("error", "alert "+alert.Name+" on "+server+": "+err.Error())
-						}
-						cancel()
-					}
-				}
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-
 	if config.EndpointMonitoringEnabled {
 		logger.Log("info", "starting endpoint monitor")
-		err := incidentTracker.Create(
-			"endpoint_monitor",
-			memdb.Col{Name: "url", Type: memdb.String},
-			memdb.Col{Name: "method", Type: memdb.String},
-			memdb.Col{Name: "expected", Type: memdb.Int},
-			memdb.Col{Name: "actual", Type: memdb.Int},
-			memdb.Col{Name: "time", Type: memdb.Int64},
-			memdb.Col{Name: "failed", Type: memdb.Bool},
-			memdb.Col{Name: "error", Type: memdb.String},
-			memdb.Col{Name: "alerted", Type: memdb.Bool},
-		)
-		if err != nil {
-			logger.Log("error", "memdb: "+err.Error())
-		} else {
-			go func() {
-				for {
-					select {
-					case <-endpointTicker.C:
-						for _, alert := range alertConfigs {
-							if alert.MetricName == "endpoint" {
-								checkEndpoint(&alert, &incidentTracker, config)
-							}
-						}
-					case <-quit:
-						ticker.Stop()
-						return
-					}
-				}
-			}()
-		}
-	}
-	wg.Wait()
-	fmt.Println("Exiting")
-}
-
-func checkEndpoint(alert *alerts.AlertConfig, incidentTracker *memdb.Database, config *config.Collector) {
-	var (
-		res *http.Response
-		err error
-	)
-	customCACertUsed := len(strings.TrimSpace(alert.CustomCACert)) > 0
-	client := &http.Client{}
-
-	if customCACertUsed {
-		caCert, err := os.ReadFile(alert.CustomCACert)
-		if err != nil {
-			logger.Log("error", err.Error())
-			return
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-
-		client = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					RootCAs: caCertPool,
-				},
-			},
-		}
+		go runEndpointChecks(alertConfigs, time.Duration(config.EndpointCheckInterval)*time.Second, st)
 	}
 
-	method := strings.ToUpper(alert.Method)
-
-	if method == alerts.ENDPOINT_METHOD_GET {
-		res, err = client.Get(alert.Endpoint)
-	}
-	if method == alerts.ENDPOINT_METHOD_POST {
-		body := []byte(alert.POSTBody)
-		bodyReader := bytes.NewReader(body)
-		res, err = client.Post(alert.Endpoint, alert.POSTContentType, bodyReader)
-	}
-
-	timeNow := time.Now().Unix()
-	failed := false
-	errMsg := ""
-
-	if err != nil {
-		logger.Log("error", err.Error())
-		errMsg = err.Error()
-		failed = true
-	}
-
-	statusCode := -1
-
-	if !failed {
-		defer res.Body.Close()
-		statusCode = res.StatusCode
-	}
-
-	existingRecord := incidentTracker.Tables["endpoint_monitor"].Where("url", "==", alert.Endpoint).And("method", "==", method).And("expected", "==", alert.ExpectedHTTPCode)
-
-	if existingRecord.RowCount > 0 {
-		diff := timeNow - existingRecord.Rows[0].Columns["time"].Int64Val
-		existingActual := existingRecord.Rows[0].Columns["actual"].IntVal
-		alerted := existingRecord.Rows[0].Columns["alerted"].BoolVal
-
-		existingRecord.Update("actual", statusCode)
-		existingRecord.Update("failed", failed)
-		existingRecord.Update("error", errMsg)
-
-		if statusCode != alert.ExpectedHTTPCode {
-			if alert.ExpectedHTTPCode != existingActual && !alerted {
-				if diff > int64(alert.TriggerIntveral) {
-					alertToSend := buildEndpointAlert(alert, statusCode, errMsg, false, timeNow)
-					sendAlert(alertToSend)
-					existingRecord.Update("alerted", true)
-				}
+	logger.Log("info", "starting alert checker")
+	rules := newEvaluator(st, sendAlert)
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
+		for _, alert := range alertConfigs {
+			// endpoint rules are checked from the collector, not on a host
+			hosts := alert.Servers
+			if alert.MetricName == monitor.ENDPOINT {
+				hosts = []string{""}
 			}
-		} else {
-			if alert.ExpectedHTTPCode != existingActual && alerted {
-				alertToSend := buildEndpointAlert(alert, statusCode, errMsg, true, timeNow)
-				sendAlert(alertToSend)
-				existingRecord.Update("alerted", false)
+			for _, server := range hosts {
+				ctx, cancel := transport.Context()
+				if err := rules.evaluate(ctx, &alert, server); err != nil {
+					logger.Log("error", "alert "+alert.Name+" on "+cmp.Or(server, alert.Endpoint)+": "+err.Error())
+				}
+				cancel()
 			}
-			existingRecord.Update("time", timeNow)
 		}
-
-	} else {
-		incidentTracker.Tables["endpoint_monitor"].Insert(
-			"url, method, expected, actual, time, failed, error, alerted",
-			alert.Endpoint, method, alert.ExpectedHTTPCode, statusCode, timeNow, failed, errMsg, false,
-		)
 	}
 }
 
-func buildEndpointAlert(alert *alerts.AlertConfig, actualHTTPCode int, errMsg string, resolved bool, unixtime int64) *alertapi.Alert {
+// buildEndpointAlert fills an endpoint rule's template. id is the alert's
+// row id, and actualHTTPCode is 0 when there was no response.
+func buildEndpointAlert(alert *alerts.AlertConfig, id int64, actualHTTPCode int, errMsg string, resolved bool, unixtime int64) *alertapi.Alert {
 	subject := "[Resolved] "
 	status := 0
 	if !resolved {
@@ -217,7 +76,7 @@ func buildEndpointAlert(alert *alerts.AlertConfig, actualHTTPCode int, errMsg st
 		"{metricName}",
 		alert.MetricName,
 		"{expected}",
-		strconv.Itoa(alert.ExpectedHTTPCode),
+		strconv.Itoa(expectedCode(alert)),
 		"{actual}",
 		strconv.Itoa(actualHTTPCode),
 		"{timestamp}",
@@ -231,6 +90,7 @@ func buildEndpointAlert(alert *alerts.AlertConfig, actualHTTPCode int, errMsg st
 	return &alertapi.Alert{
 		ServerName:   alert.Endpoint,
 		MetricName:   alert.MetricName,
+		LogId:        id,
 		Status:       int32(status),
 		Subject:      subject,
 		Content:      content,

@@ -73,6 +73,21 @@ func (f *fakeCollector) ProcessUsage(ctx context.Context, in *api.ProcessUsageRe
 	}}, nil
 }
 
+func (f *fakeCollector) Endpoints(ctx context.Context, in *api.EndpointsRequest) (*api.EndpointList, error) {
+	return &api.EndpointList{Endpoints: []*api.EndpointStatus{
+		{Name: "api", Url: "https://api.example.com", Method: "GET", Time: in.To, StatusCode: 0, Error: "connection refused", Checks: 30, UptimePct: 90, AvgLatencyMs: 110.5},
+	}}, nil
+}
+
+func (f *fakeCollector) EndpointSeries(ctx context.Context, in *api.EndpointSeriesRequest) (*api.SeriesResponse, error) {
+	if in.Metric != "latency" {
+		return nil, status.Error(codes.InvalidArgument, "invalid request: unknown endpoint metric")
+	}
+	return &api.SeriesResponse{Metric: in.Metric, Source: "raw", StepSeconds: 4, Series: []*api.Series{
+		{Label: in.Name, Points: []*api.Point{{Time: 1700000000, Value: 100}}},
+	}}, nil
+}
+
 func floatPtr(v float64) *float64 {
 	return &v
 }
@@ -146,6 +161,25 @@ func TestProcessUsage(t *testing.T) {
 	}
 	if fake.lastProcessUsage.Host != "web1" || fake.lastProcessUsage.From != 1700000000 || fake.lastProcessUsage.To != 1700003600 {
 		t.Errorf("unexpected request %+v", fake.lastProcessUsage)
+	}
+}
+
+func TestEndpoints(t *testing.T) {
+	s, _ := newTestServer(t, nil)
+	code, body, _ := get(t, s, "/api/v1/endpoints?from=1700000000&to=1700003600")
+	want := `{"endpoints":[{"name":"api","url":"https://api.example.com","method":"GET","time":1700003600,"ok":false,` +
+		`"statusCode":0,"latencyMs":0,"error":"connection refused","checks":30,"uptimePct":90,"avgLatencyMs":110.5}]}`
+	if code != 200 || strings.TrimSpace(body) != want {
+		t.Errorf("unexpected response %d: %s", code, body)
+	}
+
+	code, body, _ = get(t, s, "/api/v1/endpoints/series?name=api&metric=latency&from=1700000000&to=1700003600")
+	want = `{"metric":"latency","series":[{"label":"api","points":[[1700000000,100]]}],"source":"raw","stepSeconds":4}`
+	if code != 200 || strings.TrimSpace(body) != want {
+		t.Errorf("unexpected response %d: %s", code, body)
+	}
+	if code, _, _ := get(t, s, "/api/v1/endpoints/series?name=api&metric=nope"); code != http.StatusBadRequest {
+		t.Errorf("expected 400 for an unknown metric, got %d", code)
 	}
 }
 

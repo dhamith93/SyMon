@@ -33,6 +33,8 @@ const (
 	MonitorDataService_DiskForecasts_FullMethodName           = "/api.MonitorDataService/DiskForecasts"
 	MonitorDataService_ProcessUsage_FullMethodName            = "/api.MonitorDataService/ProcessUsage"
 	MonitorDataService_Snapshots_FullMethodName               = "/api.MonitorDataService/Snapshots"
+	MonitorDataService_Endpoints_FullMethodName               = "/api.MonitorDataService/Endpoints"
+	MonitorDataService_EndpointSeries_FullMethodName          = "/api.MonitorDataService/EndpointSeries"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -56,6 +58,8 @@ type MonitorDataServiceClient interface {
 	ProcessUsage(ctx context.Context, in *ProcessUsageRequest, opts ...grpc.CallOption) (*ProcessUsageList, error)
 	// every host's latest snapshot, for the metrics endpoint
 	Snapshots(ctx context.Context, in *Void, opts ...grpc.CallOption) (*SnapshotList, error)
+	Endpoints(ctx context.Context, in *EndpointsRequest, opts ...grpc.CallOption) (*EndpointList, error)
+	EndpointSeries(ctx context.Context, in *EndpointSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
 }
 
 type monitorDataServiceClient struct {
@@ -206,6 +210,26 @@ func (c *monitorDataServiceClient) Snapshots(ctx context.Context, in *Void, opts
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) Endpoints(ctx context.Context, in *EndpointsRequest, opts ...grpc.CallOption) (*EndpointList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EndpointList)
+	err := c.cc.Invoke(ctx, MonitorDataService_Endpoints_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) EndpointSeries(ctx context.Context, in *EndpointSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SeriesResponse)
+	err := c.cc.Invoke(ctx, MonitorDataService_EndpointSeries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -227,6 +251,8 @@ type MonitorDataServiceServer interface {
 	ProcessUsage(context.Context, *ProcessUsageRequest) (*ProcessUsageList, error)
 	// every host's latest snapshot, for the metrics endpoint
 	Snapshots(context.Context, *Void) (*SnapshotList, error)
+	Endpoints(context.Context, *EndpointsRequest) (*EndpointList, error)
+	EndpointSeries(context.Context, *EndpointSeriesRequest) (*SeriesResponse, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -278,6 +304,12 @@ func (UnimplementedMonitorDataServiceServer) ProcessUsage(context.Context, *Proc
 }
 func (UnimplementedMonitorDataServiceServer) Snapshots(context.Context, *Void) (*SnapshotList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Snapshots not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Endpoints(context.Context, *EndpointsRequest) (*EndpointList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Endpoints not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) EndpointSeries(context.Context, *EndpointSeriesRequest) (*SeriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EndpointSeries not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -552,6 +584,42 @@ func _MonitorDataService_Snapshots_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_Endpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndpointsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Endpoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Endpoints_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Endpoints(ctx, req.(*EndpointsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_EndpointSeries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EndpointSeriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).EndpointSeries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_EndpointSeries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).EndpointSeries(ctx, req.(*EndpointSeriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -614,6 +682,14 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Snapshots",
 			Handler:    _MonitorDataService_Snapshots_Handler,
+		},
+		{
+			MethodName: "Endpoints",
+			Handler:    _MonitorDataService_Endpoints_Handler,
+		},
+		{
+			MethodName: "EndpointSeries",
+			Handler:    _MonitorDataService_EndpointSeries_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

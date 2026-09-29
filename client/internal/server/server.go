@@ -73,6 +73,8 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/disk-forecasts", s.getDiskForecasts)
 	mux.HandleFunc("GET /api/v1/alerts", s.getAlerts)
+	mux.HandleFunc("GET /api/v1/endpoints", s.getEndpoints)
+	mux.HandleFunc("GET /api/v1/endpoints/series", s.getEndpointSeries)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
@@ -183,7 +185,10 @@ func (s *server) getSeries(w http.ResponseWriter, r *http.Request) {
 		writeGRPCError(w, query.Get("metric")+" for "+host, err)
 		return
 	}
+	writeSeries(w, response)
+}
 
+func writeSeries(w http.ResponseWriter, response *api.SeriesResponse) {
 	out := make([]series, 0, len(response.Series))
 	for _, s := range response.Series {
 		points := make([][2]float64, 0, len(s.Points))
@@ -263,6 +268,78 @@ func (s *server) getCustomMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{"names": nonNil(names.Names)})
+}
+
+type endpointStatus struct {
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	Method string `json:"method"`
+	// the newest check
+	Time       int64   `json:"time"`
+	OK         bool    `json:"ok"`
+	StatusCode int32   `json:"statusCode"`
+	LatencyMs  float64 `json:"latencyMs"`
+	Error      string  `json:"error"`
+	// over the range
+	Checks       int32   `json:"checks"`
+	UptimePct    float64 `json:"uptimePct"`
+	AvgLatencyMs float64 `json:"avgLatencyMs"`
+}
+
+// getEndpoints lists the endpoints checked within the range
+func (s *server) getEndpoints(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	from, to, err := timeRange(query.Get("from"), query.Get("to"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	response, err := s.collector.Endpoints(r.Context(), &api.EndpointsRequest{From: from, To: to})
+	if err != nil {
+		writeGRPCError(w, "endpoints", err)
+		return
+	}
+	endpoints := make([]endpointStatus, 0, len(response.Endpoints))
+	for _, e := range response.Endpoints {
+		endpoints = append(endpoints, endpointStatus{
+			Name:         e.Name,
+			URL:          e.Url,
+			Method:       e.Method,
+			Time:         e.Time,
+			OK:           e.Ok,
+			StatusCode:   e.StatusCode,
+			LatencyMs:    e.LatencyMs,
+			Error:        e.Error,
+			Checks:       e.Checks,
+			UptimePct:    e.UptimePct,
+			AvgLatencyMs: e.AvgLatencyMs,
+		})
+	}
+	writeJSON(w, map[string]any{"endpoints": endpoints})
+}
+
+// getEndpointSeries returns an endpoint's latency or availability over time,
+// in the same shape as a host's series
+func (s *server) getEndpointSeries(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	from, to, err := timeRange(query.Get("from"), query.Get("to"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	maxPoints, _ := strconv.Atoi(query.Get("maxPoints"))
+	response, err := s.collector.EndpointSeries(r.Context(), &api.EndpointSeriesRequest{
+		Name:      query.Get("name"),
+		Metric:    query.Get("metric"),
+		From:      from,
+		To:        to,
+		MaxPoints: int32(maxPoints),
+	})
+	if err != nil {
+		writeGRPCError(w, query.Get("metric")+" for endpoint "+query.Get("name"), err)
+		return
+	}
+	writeSeries(w, response)
 }
 
 type diskForecast struct {

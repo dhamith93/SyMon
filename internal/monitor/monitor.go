@@ -30,8 +30,12 @@ const (
 	CONTAINERS   string = "containers"
 )
 
-// DISK_FORECAST is an alert metric, the days until a disk is full
-const DISK_FORECAST string = "disk_forecast"
+// alert metrics that are not in a snapshot. DISK_FORECAST is the days until
+// a disk is full, ENDPOINT an HTTP check the collector runs.
+const (
+	DISK_FORECAST string = "disk_forecast"
+	ENDPOINT      string = "endpoint"
+)
 
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off
 const (

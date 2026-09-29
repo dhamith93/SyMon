@@ -11,11 +11,13 @@ import (
 )
 
 type Alert struct {
-	ID     int64
+	ID int64
+	// Host is empty for endpoint alerts, which belong to no host
 	Host   string
 	Rule   string
 	Metric string
-	// Target is the disk, service or custom metric name, empty otherwise
+	// Target is the disk, service, custom metric name or endpoint URL, empty
+	// otherwise
 	Target string
 	// Severity is 1 for warning and 2 for critical
 	Severity  int
@@ -69,7 +71,7 @@ func (s *Store) LatestValue(ctx context.Context, host string, metric string, tar
 	return *value, at, nil
 }
 
-const alertColumns = "a.id, h.name, a.rule, a.metric, a.target, a.severity, a.value, a.started_at, a.updated_at, a.resolved_at"
+const alertColumns = "a.id, coalesce(h.name, ''), a.rule, a.metric, a.target, a.severity, a.value, a.started_at, a.updated_at, a.resolved_at"
 
 func scanAlert(row pgx.Row) (Alert, error) {
 	var alert Alert
@@ -83,11 +85,11 @@ func scanAlert(row pgx.Row) (Alert, error) {
 }
 
 // OpenAlert returns the unresolved alert for a host, rule and target, or
-// nil if there is none
+// nil if there is none. An empty host finds endpoint alerts.
 func (s *Store) OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*Alert, error) {
 	row := s.pool.QueryRow(ctx, `SELECT `+alertColumns+`
-		FROM alerts a JOIN hosts h ON h.id = a.host_id
-		WHERE h.name = $1 AND a.rule = $2 AND a.metric = $3 AND a.target = $4 AND a.resolved_at IS NULL`,
+		FROM alerts a LEFT JOIN hosts h ON h.id = a.host_id
+		WHERE coalesce(h.name, '') = $1 AND a.rule = $2 AND a.metric = $3 AND a.target = $4 AND a.resolved_at IS NULL`,
 		host, rule, metric, target)
 	alert, err := scanAlert(row)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -101,12 +103,16 @@ func (s *Store) OpenAlert(ctx context.Context, host string, rule string, metric 
 
 // CreateAlert opens an alert and returns its id
 func (s *Store) CreateAlert(ctx context.Context, alert Alert) (int64, error) {
-	hostID, err := s.hostID(ctx, alert.Host)
-	if err != nil {
-		return 0, err
+	var hostID *int64
+	if alert.Host != "" {
+		id, err := s.hostID(ctx, alert.Host)
+		if err != nil {
+			return 0, err
+		}
+		hostID = &id
 	}
 	var id int64
-	err = s.pool.QueryRow(ctx, `
+	err := s.pool.QueryRow(ctx, `
 		INSERT INTO alerts (host_id, rule, metric, target, severity, value, started_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
 		RETURNING id`,
@@ -139,7 +145,7 @@ type AlertFilter struct {
 
 // Alerts lists alerts, newest first
 func (s *Store) Alerts(ctx context.Context, filter AlertFilter) ([]Alert, error) {
-	sql := `SELECT ` + alertColumns + ` FROM alerts a JOIN hosts h ON h.id = a.host_id WHERE true`
+	sql := `SELECT ` + alertColumns + ` FROM alerts a LEFT JOIN hosts h ON h.id = a.host_id WHERE true`
 	args := []any{}
 	if filter.Host != "" {
 		args = append(args, filter.Host)
