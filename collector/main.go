@@ -56,13 +56,6 @@ func main() {
 		log.SetOutput(file)
 	}
 
-	if len(config.AlertsFilePath) > 0 {
-		if _, err := os.Stat(config.AlertsFilePath); errors.Is(err, os.ErrNotExist) {
-			logger.Log("cannot load alert config: ", err.Error())
-		}
-		alertConfig = alerts.GetAlertConfig(config.AlertsFilePath)
-	}
-
 	ctx := context.Background()
 	st, err := openStore(ctx, &config)
 	if err != nil {
@@ -95,6 +88,14 @@ func main() {
 	case *listUsersPtr:
 		listUsers(ctx, st)
 		return
+	}
+
+	// a broken file would otherwise leave the collector running with no alerts
+	if len(config.AlertsFilePath) > 0 {
+		alertConfig, err = alerts.LoadRules(config.AlertsFilePath)
+		if err != nil {
+			log.Fatal("cannot load alert rules, fix the file or unset SYMON_ALERTS_CONFIG_PATH: ", err)
+		}
 	}
 
 	if err := st.Migrate(ctx); err != nil {

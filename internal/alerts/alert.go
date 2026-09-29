@@ -1,10 +1,5 @@
 package alerts
 
-import (
-	"encoding/json"
-	"os"
-)
-
 type AlertConfig struct {
 	Name              string
 	Description       string
@@ -41,17 +36,4 @@ type Alert struct {
 	WarnThreshold     int
 	CriticalThreshold int
 	TriggerIntveral   int
-}
-
-func GetAlertConfig(path string) []AlertConfig {
-	file, err := os.ReadFile(path)
-	alertConfig := []AlertConfig{}
-
-	if err != nil {
-		return alertConfig
-	}
-
-	_ = json.Unmarshal([]byte(file), &alertConfig)
-
-	return alertConfig
 }
