@@ -258,6 +258,25 @@ func (s *Server) Processes(ctx context.Context, in *ProcessesRequest) (*Processe
 	return &ProcessesResponse{Time: snapshotTime.Unix(), ProcessesJson: string(processes)}, nil
 }
 
+func (s *Server) ProcessUsage(ctx context.Context, in *ProcessUsageRequest) (*ProcessUsageList, error) {
+	result, err := s.Store.ProcessUsage(ctx, in.Host, time.Unix(in.From, 0), time.Unix(in.To, 0))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	list := &ProcessUsageList{Snapshots: int32(result.Snapshots), FirstTime: unix(result.FirstTime)}
+	for _, usage := range result.Processes {
+		list.Processes = append(list.Processes, &ProcessUsage{
+			Name:    usage.Name,
+			CpuAvg:  usage.CPUAvg,
+			CpuPeak: usage.CPUPeak,
+			MemAvg:  usage.MemAvg,
+			MemPeak: usage.MemPeak,
+			SeenPct: usage.SeenPct,
+		})
+	}
+	return list, nil
+}
+
 func (s *Server) CustomMetricNames(ctx context.Context, in *HostRequest) (*NameList, error) {
 	names, err := s.Store.CustomMetricNames(ctx, in.Host)
 	if err != nil {

@@ -549,3 +549,58 @@ func TestLateDataIsRolledUp(t *testing.T) {
 		t.Errorf("expected the late point from the minute rollup, got %+v", result)
 	}
 }
+
+func TestProcessUsage(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	if err := st.AddHost(ctx, "web1", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+
+	// php-fpm runs as two workers, postgres is in both lists at once, and
+	// some snapshots have empty lists
+	start := time.Now().Add(-time.Hour).Truncate(time.Second)
+	lists := []monitor.Processes{
+		{
+			CPU: []monitor.Process{
+				{Pid: 10, Name: "php-fpm", CPUUsage: 20, MemUsage: 5},
+				{Pid: 11, Name: "php-fpm", CPUUsage: 10, MemUsage: 5},
+				{Pid: 20, Name: "postgres", CPUUsage: 5, MemUsage: 30},
+			},
+			Memory: []monitor.Process{
+				{Pid: 20, Name: "postgres", CPUUsage: 5, MemUsage: 30},
+				{Pid: 10, Name: "php-fpm", CPUUsage: 20, MemUsage: 5},
+			},
+		},
+		{CPU: []monitor.Process{{Pid: 10, Name: "php-fpm", CPUUsage: 40, MemUsage: 5}}},
+		{Memory: []monitor.Process{{Pid: 20, Name: "postgres", CPUUsage: 1, MemUsage: 32}}},
+		{},
+	}
+	for i, processes := range lists {
+		snapshot := testSnapshot("web1", start.Add(time.Duration(i)*15*time.Second))
+		snapshot.Processes = processes
+		if err := st.SaveSnapshot(ctx, snapshot); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	result, err := st.ProcessUsage(ctx, "web1", start, start.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []ProcessUsage{
+		{Name: "php-fpm", CPUAvg: 17.5, CPUPeak: 40, MemAvg: 3.75, MemPeak: 10, SeenPct: 50},
+		{Name: "postgres", CPUAvg: 1.5, CPUPeak: 5, MemAvg: 15.5, MemPeak: 32, SeenPct: 50},
+	}
+	if result.Snapshots != 4 || !result.FirstTime.Equal(start) || fmt.Sprint(result.Processes) != fmt.Sprint(want) {
+		t.Errorf("got %d snapshots from %v: %+v", result.Snapshots, result.FirstTime, result.Processes)
+	}
+
+	empty, err := st.ProcessUsage(ctx, "web1", start.Add(-time.Hour), start)
+	if err != nil || empty.Snapshots != 0 || len(empty.Processes) != 0 {
+		t.Errorf("expected nothing before the first snapshot, got %+v %v", empty, err)
+	}
+	if _, err := st.ProcessUsage(ctx, "web1", start, start); !errors.Is(err, ErrInvalid) {
+		t.Errorf("expected ErrInvalid for an empty range, got %v", err)
+	}
+}

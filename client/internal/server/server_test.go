@@ -22,7 +22,8 @@ import (
 // fakeCollector knows one host, web1, and fails for the host "broken"
 type fakeCollector struct {
 	api.UnimplementedMonitorDataServiceServer
-	lastSeries *api.SeriesRequest
+	lastSeries       *api.SeriesRequest
+	lastProcessUsage *api.ProcessUsageRequest
 }
 
 func (f *fakeCollector) Fleet(ctx context.Context, in *api.Void) (*api.FleetSummary, error) {
@@ -62,6 +63,13 @@ func (f *fakeCollector) DiskForecasts(ctx context.Context, in *api.HostRequest) 
 	return &api.DiskForecastList{Disks: []*api.DiskForecast{
 		{Device: "/dev/sda1", Mount: "/", UsedPct: 40},
 		{Device: "/dev/sdb1", Mount: "/data", UsedPct: 60, PctPerDay: 2, BytesPerDay: 2e7, DaysToFull: floatPtr(20)},
+	}}, nil
+}
+
+func (f *fakeCollector) ProcessUsage(ctx context.Context, in *api.ProcessUsageRequest) (*api.ProcessUsageList, error) {
+	f.lastProcessUsage = in
+	return &api.ProcessUsageList{Snapshots: 4, FirstTime: 1700000000, Processes: []*api.ProcessUsage{
+		{Name: "php-fpm", CpuAvg: 17.5, CpuPeak: 40, MemAvg: 3.75, MemPeak: 10, SeenPct: 50},
 	}}, nil
 }
 
@@ -125,6 +133,19 @@ func TestFleet(t *testing.T) {
 	}
 	if !strings.Contains(body, `"diskFullDays":12.5`) || !strings.Contains(body, `"diskFullDays":null`) {
 		t.Errorf("expected a forecast for web1 and null for db1: %s", body)
+	}
+}
+
+func TestProcessUsage(t *testing.T) {
+	s, fake := newTestServer(t, nil)
+	code, body, _ := get(t, s, "/api/v1/hosts/web1/process-usage?from=1700000000&to=1700003600")
+	want := `{"firstTime":1700000000,"processes":[` +
+		`{"name":"php-fpm","cpuAvg":17.5,"cpuPeak":40,"memAvg":3.75,"memPeak":10,"seenPct":50}],"snapshots":4}`
+	if code != 200 || strings.TrimSpace(body) != want {
+		t.Errorf("unexpected response %d: %s", code, body)
+	}
+	if fake.lastProcessUsage.Host != "web1" || fake.lastProcessUsage.From != 1700000000 || fake.lastProcessUsage.To != 1700003600 {
+		t.Errorf("unexpected request %+v", fake.lastProcessUsage)
 	}
 }
 
