@@ -6,6 +6,7 @@ This guide sets up SyMon on one Linux server and adds hosts to it. It covers upg
 - [Install the server](#install-the-server)
 - [Add hosts](#add-hosts)
 - [Alerts](#alerts)
+- [Prometheus and Grafana](#prometheus-and-grafana)
 - [Upgrades](#upgrades)
 - [Backups](#backups)
 - [Uninstall](#uninstall)
@@ -212,12 +213,15 @@ A rule looks like this:
 | `memory` | memory used, % | |
 | `swap` | swap used, % | |
 | `disks` | disk space used, % | `Disk`, the device |
+| `disk_forecast` | days until the disk is full, at its growth over the last week | `Disk`, the device |
 | `services` | a service from the service list. `Op` `inactive` alerts when it stops, `active` when it runs | `Service`, the name from the service list |
 | `ping` | host silent for longer than `TriggerIntveral` seconds | |
 | `endpoint` | an HTTP check from the collector | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType` |
 | any name, with `"IsCustom": true` | a custom metric | |
 
 `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves. Endpoint checks need `SYMON_ENABLE_ENDPOINT_MONITORING=true` on the collector.
+
+`disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table, and on the hosts page when a disk fills up within 30 days.
 
 The collector reads the rules when it starts, so restart it after editing them.
 
@@ -242,6 +246,20 @@ sudo cp custom_scripts/symon_alertprocessor.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now symon_alertprocessor
 ```
+
+## Prometheus and Grafana
+
+The dashboard serves every host's latest values at `/metrics` in the Prometheus format, so Grafana or an existing Prometheus can use them. Add it to `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: symon
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["symon.example.lan:8080"]
+```
+
+Every value has a `host` label. Disks, interfaces, sensors, services and containers have their own labels too. `symon_up` is 0 for a host that stopped reporting, and its other values are left out until it reports again. Like the rest of the dashboard, `/metrics` has no login, so keep it behind the same reverse proxy or firewall.
 
 ## Upgrades
 

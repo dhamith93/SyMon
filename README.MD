@@ -11,8 +11,9 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 **Hosts**
 - CPU, overall and per core, load average, memory and swap
 - Disk space, disk IO and busy time, network traffic, TCP connections
+- When each disk will be full, at the rate it grew over the last week
 - Pressure stall information and temperature sensors
-- The top processes by CPU and memory, at any point in time
+- The top processes by CPU and memory at any point in time, and the programs that used the most over any range
 - Whether chosen systemd services are running
 
 **Containers**
@@ -23,18 +24,19 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 - Send any number from a script or cron job and get a chart for it
 
 **Alerts**
-- Rules for CPU, memory, swap, disks, services, custom metrics, silent hosts and HTTP endpoints
+- Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts and HTTP endpoints
 - Warning and critical levels, shown on the dashboard and sent by email, Slack or PagerDuty
 
 **Dashboard**
 - Every host at a glance, and a page per host with charts from 15 minutes to 30 days, or any custom range
-- Drag across a chart to zoom in, and switch any chart to a table
+- Drag across a chart to zoom in, click a point to see the processes running then, and switch any chart to a table
 - Follows the system light or dark theme
 
 **Running it**
 - Add a host with one command, with a single-use token
 - Raw data kept for 7 days, 1 minute averages for 30 days and 1 hour averages for a year, all adjustable
 - Each host has its own key, and components can talk over TLS
+- A Prometheus endpoint, for Grafana or a Prometheus you already run
 
 ## Screenshots
 
@@ -96,7 +98,7 @@ Components talk over gRPC, so other tools can read from or push into them. See t
 The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors return a JSON body `{"error": "..."}` with a 4xx or 5xx status.
 
 * `GET /api/v1/fleet`
-    * Every host with its status, latest usage, number of running containers and number of open alerts
+    * Every host with its status, latest usage, number of running containers, number of open alerts, and `diskFullDays`, the days until its first disk is full (null when none is filling up)
 * `GET /api/v1/hosts/{host}`
     * The host's latest snapshot as the agent sent it, with `up` and `lastSeen`
 * `GET /api/v1/hosts/{host}/series?metric=cpu&from=&to=`
@@ -104,7 +106,13 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * Metrics: `cpu`, `cpu_core`, `load1`, `load5`, `load15`, `memory`, `memory_used`, `swap`, `swap_used`, `psi_cpu`, `psi_memory`, `psi_memory_full`, `psi_io`, `psi_io_full`, `tcp_established`, `tcp_time_wait`, `tcp_close_wait`, `tcp_listen`, `tcp_total`, `disk_used`, `disk_inodes`, `disk_read`, `disk_write`, `disk_util`, `net_rx`, `net_tx`, `temperature`, `custom`, `container_cpu`, `container_memory`, `container_rx`, `container_tx`, `container_io_read`, `container_io_write`
 * `GET /api/v1/hosts/{host}/processes?at=`
     * Top processes by CPU and by memory at or before `at`, or the latest
+* `GET /api/v1/hosts/{host}/process-usage?from=&to=`
+    * The programs that used the most CPU and memory over the range, with their average, peak and how often they were among the top processes. Processes with the same name are added up
+* `GET /api/v1/hosts/{host}/disk-forecasts`
+    * Each disk's growth per day over the last week, and `daysToFull`, or null when the disk is not filling up
 * `GET /api/v1/hosts/{host}/custom-metrics`
     * Names of the host's custom metrics
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
     * Alerts, newest first. `open=1` leaves out resolved ones
+
+The Client also serves `GET /metrics`, every host's latest values in the Prometheus text format. See [Prometheus and Grafana](docs/install.md#prometheus-and-grafana).
