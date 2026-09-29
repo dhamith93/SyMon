@@ -11,26 +11,30 @@ import (
 )
 
 func TestForecastDays(t *testing.T) {
+	// 600 GB used at 60% leaves 400 GB, the rest is reserved or already used
+	const gb = 1e9
 	tests := []struct {
-		name      string
-		usedPct   float64
-		pctPerDay float64
-		r2        float64
-		samples   int
-		wantDays  float64
-		wantOK    bool
+		name        string
+		usedPct     float64
+		usedBytes   float64
+		bytesPerDay float64
+		r2          float64
+		samples     int
+		wantDays    float64
+		wantOK      bool
 	}{
-		{"steady growth", 60, 2, 0.95, 168, 20, true},
-		{"flat", 60, 0, 1, 168, 0, false},
-		{"shrinking", 60, -1, 0.9, 168, 0, false},
-		{"noisy", 60, 2, 0.3, 168, 0, false},
-		{"one day of history", 60, 2, 0.95, 24, 20, true},
-		{"too little history", 60, 2, 0.95, 23, 0, false},
-		{"beyond the horizon", 10, 0.2, 0.95, 168, 0, false},
-		{"already full", 100, 1, 0.95, 168, 0, true},
+		{"steady growth", 60, 600 * gb, 20 * gb, 0.95, 168, 20, true},
+		{"flat", 60, 600 * gb, 0, 1, 168, 0, false},
+		{"shrinking", 60, 600 * gb, -10 * gb, 0.9, 168, 0, false},
+		{"noisy", 60, 600 * gb, 20 * gb, 0.3, 168, 0, false},
+		{"one day of history", 60, 600 * gb, 20 * gb, 0.95, 24, 20, true},
+		{"too little history", 60, 600 * gb, 20 * gb, 0.95, 23, 0, false},
+		{"beyond the horizon", 60, 600 * gb, 1 * gb, 0.95, 168, 0, false},
+		{"already full", 100, 600 * gb, 1 * gb, 0.95, 168, 0, true},
+		{"empty disk", 0, 0, 1 * gb, 0.95, 168, 0, false},
 	}
 	for _, tt := range tests {
-		days, ok := forecastDays(tt.usedPct, tt.pctPerDay, tt.r2, tt.samples)
+		days, ok := forecastDays(tt.usedPct, tt.usedBytes, tt.bytesPerDay, tt.r2, tt.samples)
 		if ok != tt.wantOK || days != tt.wantDays {
 			t.Errorf("%s: got %v %v, want %v %v", tt.name, days, ok, tt.wantDays, tt.wantOK)
 		}
@@ -68,14 +72,15 @@ func TestDiskForecasts(t *testing.T) {
 	}
 
 	// two days of samples: /data grows 2% a day and reaches 60% now, so it
-	// is full in about 20 days. / stays at 40%.
+	// is full in about 20 days. / stays at 40%. Percents are whole numbers,
+	// like the agent sends them.
 	now := time.Now()
 	batch := &pgx.Batch{}
 	insert := `INSERT INTO disk_metrics (time, host_id, device, mount, fstype, size_bytes, used_bytes, used_pct, inodes_used_pct)
 		VALUES ($1, $2, $3, $4, 'ext4', 1e9, $5, $6, 1)`
 	for at := now.Add(-48 * time.Hour); at.Before(now); at = at.Add(10 * time.Minute) {
 		used := 60 + 2*at.Sub(now).Hours()/24
-		batch.Queue(insert, at, hostID, "/dev/sdb1", "/data", used*1e7, used)
+		batch.Queue(insert, at, hostID, "/dev/sdb1", "/data", used*1e7, math.Round(used))
 		batch.Queue(insert, at, hostID, "/dev/sda1", "/", 40e7, 40.0)
 	}
 	if err := st.sendBatch(ctx, batch); err != nil {
