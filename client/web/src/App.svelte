@@ -3,6 +3,7 @@
   import { appConfig, loadConfig } from './lib/config.svelte';
   import { handleLinkClick, location, match } from './lib/router.svelte';
   import { setTheme, theme, type ThemeChoice } from './lib/theme.svelte';
+  import Account from './pages/Account.svelte';
   import Alerts from './pages/Alerts.svelte';
   import CustomMetrics from './pages/CustomMetrics.svelte';
   import Endpoints from './pages/Endpoints.svelte';
@@ -43,7 +44,7 @@
       {/if}
     </nav>
     {#if auth.state === 'in'}
-      <span class="user secondary">{auth.user}</span>
+      <a class="user secondary" href="/account" title="Your account">{auth.user}</a>
       <button class="control" onclick={logOut}>Log out</button>
     {/if}
     <label class="theme secondary">
@@ -80,6 +81,8 @@
     <Alerts />
   {:else if page.name === 'endpoints'}
     <Endpoints />
+  {:else if page.name === 'account'}
+    <Account />
   {:else}
     <div class="page">
       <h1>Page not found</h1>
@@ -142,6 +145,11 @@
 
   .user {
     font-size: 13px;
+    text-decoration: none;
+  }
+
+  .user:hover {
+    text-decoration: underline;
   }
 
   nav a.active {

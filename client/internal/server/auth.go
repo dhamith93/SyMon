@@ -42,22 +42,28 @@ type authCache struct {
 	passwords map[[32]byte]time.Time
 }
 
+// userSession is who a session belongs to. role is admin or viewer.
+type userSession struct {
+	user string
+	role string
+}
+
 type cachedSession struct {
-	user  string
+	userSession
 	until time.Time
 }
 
-func (c *authCache) session(key [32]byte) (string, bool) {
+func (c *authCache) session(key [32]byte) (userSession, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	cached, ok := c.sessions[key]
 	if !ok || time.Now().After(cached.until) {
-		return "", false
+		return userSession{}, false
 	}
-	return cached.user, true
+	return cached.userSession, true
 }
 
-func (c *authCache) keepSession(key [32]byte, user string, expires time.Time) {
+func (c *authCache) keepSession(key [32]byte, session userSession, expires time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.sessions == nil {
@@ -67,13 +73,25 @@ func (c *authCache) keepSession(key [32]byte, user string, expires time.Time) {
 	if expires.Before(until) {
 		until = expires
 	}
-	c.sessions[key] = cachedSession{user: user, until: until}
+	c.sessions[key] = cachedSession{userSession: session, until: until}
 }
 
 func (c *authCache) forgetSession(key [32]byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.sessions, key)
+}
+
+// forgetUser drops a user's cached sessions but one, after the collector
+// ended the others
+func (c *authCache) forgetUser(user string, keep [32]byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for key, cached := range c.sessions {
+		if cached.user == user && key != keep {
+			delete(c.sessions, key)
+		}
+	}
 }
 
 func (c *authCache) password(key [32]byte) bool {
@@ -92,31 +110,32 @@ func (c *authCache) keepPassword(key [32]byte) {
 	c.passwords[key] = time.Now()
 }
 
-// sessionUser returns who the request's session cookie belongs to
-func (s *server) sessionUser(r *http.Request) (string, error) {
+// sessionOf returns who the request's session cookie belongs to
+func (s *server) sessionOf(r *http.Request) (userSession, error) {
 	cookie, err := r.Cookie(sessionCookie)
 	if err != nil || cookie.Value == "" {
-		return "", errNotLoggedIn
+		return userSession{}, errNotLoggedIn
 	}
 	key := sha256.Sum256([]byte(cookie.Value))
-	if user, ok := s.auth.session(key); ok {
-		return user, nil
+	if session, ok := s.auth.session(key); ok {
+		return session, nil
 	}
 	info, err := s.collector.CheckSession(r.Context(), &api.SessionRequest{Token: cookie.Value})
 	if status.Code(err) == codes.Unauthenticated {
-		return "", errNotLoggedIn
+		return userSession{}, errNotLoggedIn
 	}
 	if err != nil {
-		return "", err
+		return userSession{}, err
 	}
-	s.auth.keepSession(key, info.User, time.Unix(info.Expires, 0))
-	return info.User, nil
+	session := userSession{user: info.User, role: info.Role}
+	s.auth.keepSession(key, session, time.Unix(info.Expires, 0))
+	return session, nil
 }
 
 // requireLogin answers 401 unless the request has a valid session
 func (s *server) requireLogin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := s.sessionUser(r)
+		_, err := s.sessionOf(r)
 		switch {
 		case errors.Is(err, errNotLoggedIn):
 			writeError(w, http.StatusUnauthorized, err.Error())
@@ -131,9 +150,9 @@ func (s *server) requireLogin(next http.Handler) http.Handler {
 // getSession says who is logged in. Without a session it says whether
 // there are any users yet, since the dashboard stays locked until there are.
 func (s *server) getSession(w http.ResponseWriter, r *http.Request) {
-	user, err := s.sessionUser(r)
+	session, err := s.sessionOf(r)
 	if err == nil {
-		writeJSON(w, map[string]string{"user": user})
+		writeJSON(w, map[string]string{"user": session.user, "role": session.role})
 		return
 	}
 	if !errors.Is(err, errNotLoggedIn) {
@@ -190,7 +209,42 @@ func (s *server) postLogin(w http.ResponseWriter, r *http.Request) {
 		Secure:   isHTTPS(r),
 		SameSite: http.SameSiteLaxMode,
 	})
-	writeJSON(w, map[string]string{"user": session.User})
+	writeJSON(w, map[string]string{"user": session.User, "role": session.Role})
+}
+
+// postPassword changes the logged in user's own password. Their other
+// sessions end, this one stays.
+func (s *server) postPassword(w http.ResponseWriter, r *http.Request) {
+	if !jsonBody(r) {
+		writeError(w, http.StatusUnsupportedMediaType, "send the passwords as JSON")
+		return
+	}
+	var passwords struct {
+		Current string `json:"current"`
+		New     string `json:"new"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&passwords); err != nil {
+		writeError(w, http.StatusBadRequest, "send current and new")
+		return
+	}
+	session, err := s.sessionOf(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, errNotLoggedIn.Error())
+		return
+	}
+	cookie, _ := r.Cookie(sessionCookie)
+	_, err = s.collector.ChangePassword(r.Context(), &api.ChangePasswordRequest{Token: cookie.Value, Current: passwords.Current, NewPassword: passwords.New})
+	// the session was just checked, so this is the current password
+	if status.Code(err) == codes.Unauthenticated {
+		writeError(w, http.StatusForbidden, "the current password is wrong")
+		return
+	}
+	if err != nil {
+		writeGRPCError(w, "password change", err)
+		return
+	}
+	s.auth.forgetUser(session.user, sha256.Sum256([]byte(cookie.Value)))
+	writeJSON(w, map[string]string{})
 }
 
 func (s *server) postLogout(w http.ResponseWriter, r *http.Request) {
@@ -224,7 +278,7 @@ func (s *server) metricsAllowed(w http.ResponseWriter, r *http.Request) bool {
 	if !s.metricsAuth {
 		return true
 	}
-	if _, err := s.sessionUser(r); err == nil {
+	if _, err := s.sessionOf(r); err == nil {
 		return true
 	}
 	if user, password, ok := r.BasicAuth(); ok {

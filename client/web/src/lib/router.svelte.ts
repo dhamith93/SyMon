@@ -6,6 +6,7 @@ export type Page =
   | { name: 'custom'; host: string }
   | { name: 'alerts' }
   | { name: 'endpoints' }
+  | { name: 'account' }
   | { name: 'notfound' };
 
 export const location = $state({
@@ -47,6 +48,7 @@ export function match(path: string): Page {
   if (path === '/' || path === '') return { name: 'fleet' };
   if (path === '/alerts') return { name: 'alerts' };
   if (path === '/endpoints') return { name: 'endpoints' };
+  if (path === '/account') return { name: 'account' };
   const host = path.match(/^\/hosts\/([^/]+)(\/custom)?\/?$/);
   if (host) {
     const name = decodeURIComponent(host[1]);

@@ -60,7 +60,7 @@ func TestAppNeedsNoLogin(t *testing.T) {
 
 func TestSession(t *testing.T) {
 	s, fake := newTestServer(t, nil)
-	if rec := call(s, "GET", "/api/v1/session", "", testSession, nil); rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != `{"user":"tester"}` {
+	if rec := call(s, "GET", "/api/v1/session", "", testSession, nil); rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != `{"role":"admin","user":"tester"}` {
 		t.Errorf("expected the logged in user, got %d %s", rec.Code, rec.Body)
 	}
 	if rec := call(s, "GET", "/api/v1/session", "", "", nil); rec.Code != 401 || !strings.Contains(rec.Body.String(), `"hasUsers":true`) {
@@ -81,7 +81,7 @@ func TestLogin(t *testing.T) {
 		r.Header.Set("X-Forwarded-Proto", "https")
 	})
 	cookie := sessionCookieOf(rec)
-	if rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != `{"user":"alice"}` || cookie == nil {
+	if rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != `{"role":"admin","user":"alice"}` || cookie == nil {
 		t.Fatalf("expected a login, got %d %s", rec.Code, rec.Body)
 	}
 	if cookie.Value != "new-token" || !cookie.HttpOnly || !cookie.Secure || cookie.SameSite != http.SameSiteLaxMode || cookie.Path != "/" {
@@ -167,5 +167,28 @@ func TestMetricsAuth(t *testing.T) {
 	}
 	if rec := call(s, "GET", "/metrics", "", testSession, nil); rec.Code != 200 {
 		t.Errorf("expected metrics for a logged in browser, got %d", rec.Code)
+	}
+}
+
+func TestChangePassword(t *testing.T) {
+	s, _ := newTestServer(t, nil)
+	tests := []struct {
+		body    string
+		cookie  string
+		prepare func(*http.Request)
+		code    int
+		want    string
+	}{
+		{`{"current":"correct horse battery","new":"a brand new password"}`, testSession, asJSON, 200, "{}"},
+		{`{"current":"wrong","new":"a brand new password"}`, testSession, asJSON, http.StatusForbidden, "current password is wrong"},
+		{`{"current":"correct horse battery","new":"short"}`, testSession, asJSON, http.StatusBadRequest, "at least 12 characters"},
+		{`{"current":"correct horse battery","new":"a brand new password"}`, "", asJSON, http.StatusUnauthorized, "log in first"},
+		{`{"current":"correct horse battery","new":"a brand new password"}`, testSession, nil, http.StatusUnsupportedMediaType, "JSON"},
+	}
+	for _, tt := range tests {
+		rec := call(s, "POST", "/api/v1/password", tt.body, tt.cookie, tt.prepare)
+		if rec.Code != tt.code || !strings.Contains(rec.Body.String(), tt.want) {
+			t.Errorf("%s with %q: got %d %s, want %d", tt.body, tt.cookie, rec.Code, rec.Body, tt.code)
+		}
 	}
 }

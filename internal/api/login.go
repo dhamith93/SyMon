@@ -108,7 +108,7 @@ func (s *Server) Login(ctx context.Context, in *Credentials) (*SessionInfo, erro
 		return nil, err
 	}
 	logger.Log("info", "login by "+strconv.Quote(in.User))
-	return &SessionInfo{Token: session.Token, User: session.User, Expires: session.Expires.Unix()}, nil
+	return &SessionInfo{Token: session.Token, User: session.User, Role: session.Role, Expires: session.Expires.Unix()}, nil
 }
 
 func (s *Server) CheckPassword(ctx context.Context, in *Credentials) (*Message, error) {
@@ -127,7 +127,23 @@ func (s *Server) CheckSession(ctx context.Context, in *SessionRequest) (*Session
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &SessionInfo{User: session.User, Expires: session.Expires.Unix()}, nil
+	return &SessionInfo{User: session.User, Role: session.Role, Expires: session.Expires.Unix()}, nil
+}
+
+// ChangePassword counts a wrong current password like a failed login
+func (s *Server) ChangePassword(ctx context.Context, in *ChangePasswordRequest) (*Message, error) {
+	session, err := s.Store.Session(ctx, in.Token)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	err = s.checkLogin(session.User, func() error {
+		return s.Store.ChangePassword(ctx, in.Token, in.Current, in.NewPassword)
+	})
+	if err != nil {
+		return nil, err
+	}
+	logger.Log("info", "password changed by "+strconv.Quote(session.User))
+	return &Message{Body: "ok"}, nil
 }
 
 func (s *Server) Logout(ctx context.Context, in *SessionRequest) (*Message, error) {
