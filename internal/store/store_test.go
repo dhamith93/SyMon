@@ -77,12 +77,13 @@ func testStore(t *testing.T) *Store {
 
 func testSnapshot(host string, at time.Time) *monitor.MonitorData {
 	return &monitor.MonitorData{
-		UnixTime:  strconv.FormatInt(at.Unix(), 10),
-		ServerId:  host,
-		System:    monitor.System{HostName: host, OS: "Debian 13", UpTimeSeconds: 3600},
-		Memory:    monitor.Memory{PercentageUsed: 42.5, Used: 7000, Available: 9000, Total: 16000, Unit: "MB"},
-		Swap:      monitor.Swap{PercentageUsed: 1, Used: 20, Total: 2048, Unit: "MB"},
-		ProcUsage: monitor.CPU{LoadAvg: 37, CoreAvg: []int{30, 44}, Load1: 0.5, Load5: 0.4, Load15: 0.3},
+		UnixTime:     strconv.FormatInt(at.Unix(), 10),
+		ServerId:     host,
+		AgentVersion: "v3.1.0",
+		System:       monitor.System{HostName: host, OS: "Debian 13", UpTimeSeconds: 3600},
+		Memory:       monitor.Memory{PercentageUsed: 42.5, Used: 7000, Available: 9000, Total: 16000, Unit: "MB"},
+		Swap:         monitor.Swap{PercentageUsed: 1, Used: 20, Total: 2048, Unit: "MB"},
+		ProcUsage:    monitor.CPU{LoadAvg: 37, CoreAvg: []int{30, 44}, Load1: 0.5, Load5: 0.4, Load15: 0.3},
 		Disk: []monitor.Disk{
 			{FileSystem: "/dev/sda1", MountedOn: "/", Type: "ext4", Usage: monitor.DiskUsage{Size: 1000, Used: 400, Usage: "40%"}, Inodes: monitor.InodeUsage{Usage: "10%"}},
 			{FileSystem: "/dev/sdb1", MountedOn: "/data", Type: "ext4", Usage: monitor.DiskUsage{Size: 1000, Used: 910, Usage: "91%"}, Inodes: monitor.InodeUsage{Usage: "5%"}},
@@ -238,7 +239,7 @@ func TestSnapshotAndQueries(t *testing.T) {
 			t.Fatalf("expected one host, got %+v", fleet)
 		}
 		host := fleet[0]
-		if host.CPUPct != 37 || host.DiskUsedPct != 91 || host.RxBps != 100 || host.TxBps != 50 || host.LastSeen.IsZero() {
+		if host.CPUPct != 37 || host.DiskUsedPct != 91 || host.RxBps != 100 || host.TxBps != 50 || host.LastSeen.IsZero() || host.AgentVersion != "v3.1.0" {
 			t.Errorf("unexpected summary: %+v", host)
 		}
 	})

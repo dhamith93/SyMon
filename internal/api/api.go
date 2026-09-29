@@ -164,6 +164,7 @@ func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
 			ActiveAlerts:  int32(summary.ActiveAlerts),
 			WorstSeverity: int32(summary.WorstSeverity),
 			Containers:    int32(summary.Containers),
+			AgentVersion:  summary.AgentVersion,
 		}
 		if days, ok := diskFull[summary.Name]; ok {
 			host.DiskFullDays = &days

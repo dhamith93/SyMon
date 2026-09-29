@@ -6,6 +6,7 @@
   import { appConfig } from '../lib/config.svelte';
   import { formatAgo, formatBytes, formatDate, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
   import { noForecastText, projectDisks } from '../lib/projection';
+  import { agentOutdated } from '../lib/versions';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
@@ -154,6 +155,17 @@
     </div>
     {#if hasCustomMetrics}<a class="control link-button" href={hostPath(host, true)}>Custom metrics</a>{/if}
   </header>
+
+  {#if snapshot && agentOutdated(snapshot.AgentVersion, appConfig.version)}
+    <div class="card upgrade">
+      <StatusBadge status="warning" label="Agent outdated" />
+      <p class="secondary">
+        This host runs {snapshot.AgentVersion ? `agent ${snapshot.AgentVersion}` : 'an agent from before versions'}, and the dashboard
+        hands out {appConfig.version}. To upgrade it, run on the host:
+      </p>
+      <code>curl -fsSL {window.location.origin}/install.sh | sudo sh</code>
+    </div>
+  {/if}
 
   <div class="filters">
     <TimeRangePicker {range} />
@@ -384,6 +396,28 @@
 
   .link-button:hover {
     text-decoration: none;
+  }
+
+  .upgrade {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .upgrade p {
+    margin: 0;
+  }
+
+  .upgrade code {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--hover);
+    overflow-wrap: anywhere;
   }
 
   .filters {

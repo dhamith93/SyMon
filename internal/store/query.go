@@ -32,6 +32,8 @@ type HostSummary struct {
 	WorstSeverity int
 	// Containers is how many containers were running at the latest snapshot
 	Containers int
+	// AgentVersion is empty from agents older than versions
+	AgentVersion string
 }
 
 func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
@@ -78,6 +80,7 @@ func fillSummary(summary *HostSummary, data *monitor.MonitorData) {
 	summary.MemUsedPct = data.Memory.PercentageUsed
 	summary.SwapUsedPct = data.Swap.PercentageUsed
 	summary.Containers = len(data.Containers)
+	summary.AgentVersion = data.AgentVersion
 	for _, disk := range data.Disk {
 		if pct := parsePercent(disk.Usage.Usage); pct != nil && *pct > summary.DiskUsedPct {
 			summary.DiskUsedPct = *pct
