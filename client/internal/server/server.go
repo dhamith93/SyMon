@@ -310,6 +310,8 @@ type endpointStatus struct {
 	Checks       int32   `json:"checks"`
 	UptimePct    float64 `json:"uptimePct"`
 	AvgLatencyMs float64 `json:"avgLatencyMs"`
+	// when the newest certificate seen expires, 0 without one
+	CertExpires int64 `json:"certExpires"`
 }
 
 // getEndpoints lists the endpoints checked within the range
@@ -339,6 +341,7 @@ func (s *server) getEndpoints(w http.ResponseWriter, r *http.Request) {
 			Checks:       e.Checks,
 			UptimePct:    e.UptimePct,
 			AvgLatencyMs: e.AvgLatencyMs,
+			CertExpires:  e.CertExpires,
 		})
 	}
 	writeJSON(w, map[string]any{"endpoints": endpoints})

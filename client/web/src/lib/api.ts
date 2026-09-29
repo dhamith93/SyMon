@@ -39,6 +39,8 @@ export interface EndpointStatus {
   uptimePct: number;
   // over the checks that got a response
   avgLatencyMs: number;
+  // when the newest certificate seen expires, 0 without one
+  certExpires: number;
 }
 
 // A disk's growth over the last week and when it fills up at that rate

@@ -3,7 +3,7 @@
   import { align, type Aligned } from '../lib/align';
   import { api, type EndpointStatus } from '../lib/api';
   import { appConfig } from '../lib/config.svelte';
-  import { formatAgo, formatMs, formatPercent } from '../lib/format';
+  import { formatAgo, formatDate, formatDays, formatMs, formatPercent } from '../lib/format';
   import { poll } from '../lib/poll';
   import { location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
@@ -71,6 +71,14 @@
     navigate(location.path + rangeQuery(location.query, { from, to }));
   }
 
+  // certificates expiring sooner than this are shown as warnings, the level
+  // endpoint rules alert at unless they set another
+  const certWarnDays = 14;
+
+  function certDays(endpoint: EndpointStatus): number {
+    return (endpoint.certExpires - Date.now() / 1000) / 86400;
+  }
+
   // what the newest check got back
   function answer(endpoint: EndpointStatus): string {
     if (endpoint.statusCode) return `HTTP ${endpoint.statusCode} in ${formatMs(endpoint.latencyMs)}`;
@@ -113,6 +121,16 @@
         <span>{answer(endpoint)}, checked {formatAgo(endpoint.time)}</span>
         <span>{formatPercent(endpoint.uptimePct, endpoint.uptimePct < 100 ? 1 : 0)} of {endpoint.checks} checks passed</span>
         {#if endpoint.avgLatencyMs}<span>{formatMs(endpoint.avgLatencyMs)} on average</span>{/if}
+        {#if endpoint.certExpires}
+          {@const days = certDays(endpoint)}
+          {#if days < 0}
+            <StatusBadge status="critical" label="Certificate expired on {formatDate(endpoint.certExpires)}" />
+          {:else if days < certWarnDays}
+            <StatusBadge status="warning" label="Certificate expires in {formatDays(days)}" />
+          {:else}
+            <span>Certificate valid until {formatDate(endpoint.certExpires)}</span>
+          {/if}
+        {/if}
       </p>
       {#if endpoint.error}<p class="error secondary">{endpoint.error}</p>{/if}
 

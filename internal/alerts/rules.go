@@ -152,6 +152,12 @@ func (rule *AlertConfig) checkEndpoint() error {
 	if rule.ExpectedHTTPCode != 0 && (rule.ExpectedHTTPCode < 100 || rule.ExpectedHTTPCode > 599) {
 		return errors.New("ExpectedHTTPCode has to be an HTTP status code, like 200")
 	}
+	if (rule.CertWarnDays != nil && *rule.CertWarnDays < 0) || (rule.CertCriticalDays != nil && *rule.CertCriticalDays < 0) {
+		return errors.New("CertWarnDays and CertCriticalDays cannot be negative, 0 switches them off")
+	}
+	if warn, critical := rule.CertDays(); warn > 0 && critical > warn {
+		return errors.New("CertCriticalDays has to be at most CertWarnDays")
+	}
 	return nil
 }
 

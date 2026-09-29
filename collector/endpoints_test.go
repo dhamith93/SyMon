@@ -64,6 +64,7 @@ func TestCheckEndpointWithCustomCA(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	defer server.Close()
 	rule := &alerts.AlertConfig{Name: "tls", Endpoint: server.URL}
+	notAfter := server.Certificate().NotAfter
 
 	// the test server's certificate is not trusted by default
 	if check := checkEndpoint(context.Background(), rule, time.Now()); check.OK || check.Error == "" {
@@ -76,8 +77,8 @@ func TestCheckEndpointWithCustomCA(t *testing.T) {
 		t.Fatal(err)
 	}
 	rule.CustomCACert = caPath
-	if check := checkEndpoint(context.Background(), rule, time.Now()); !check.OK {
-		t.Errorf("expected the custom CA to be trusted, got %+v", check)
+	if check := checkEndpoint(context.Background(), rule, time.Now()); !check.OK || !check.CertExpires.Equal(notAfter) {
+		t.Errorf("expected the custom CA to be trusted and the certificate's expiry kept, got %+v", check)
 	}
 
 	rule.CustomCACert = filepath.Join(t.TempDir(), "missing.pem")

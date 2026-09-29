@@ -107,6 +107,9 @@ func checkEndpoint(ctx context.Context, rule *alerts.AlertConfig, now time.Time)
 	}
 	check.Latency = time.Since(started)
 	response.Body.Close()
+	if response.TLS != nil && len(response.TLS.PeerCertificates) > 0 {
+		check.CertExpires = response.TLS.PeerCertificates[0].NotAfter
+	}
 	check.StatusCode = response.StatusCode
 	check.OK = response.StatusCode == expectedCode(rule)
 	return check

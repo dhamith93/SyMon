@@ -81,6 +81,7 @@
       case 'disk_forecast':
       case 'services':
       case 'endpoint':
+      case 'certificate':
         return alert.target;
       default:
         return alert.metric;
@@ -98,6 +99,8 @@
         return `silent ${formatDuration(alert.value)}`;
       case 'endpoint':
         return alert.value ? `HTTP ${alert.value}` : 'no response';
+      case 'certificate':
+        return alert.value < 0 ? 'certificate expired' : `certificate expires in ${formatDays(alert.value)}`;
       case 'disk_forecast':
         // the collector reads a disk that is not filling up as 365 days
         return alert.value >= 365 ? 'not filling up' : `full in ${formatDays(alert.value)}`;

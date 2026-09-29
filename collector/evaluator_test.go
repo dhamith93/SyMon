@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,8 +21,17 @@ type fakeStore struct {
 	// daysUntilFull is keyed by device, a missing device has no forecast yet
 	daysUntilFull map[string]float64
 	// check is the newest endpoint check, none while its time is zero
-	check  store.EndpointCheck
-	alerts []store.Alert
+	check store.EndpointCheck
+	// certExpires is the newest check's certificate, none while zero
+	certExpires time.Time
+	alerts      []store.Alert
+}
+
+func (f *fakeStore) LatestCertificate(ctx context.Context, name string) (time.Time, time.Time, error) {
+	if f.certExpires.IsZero() {
+		return time.Time{}, time.Time{}, store.ErrNotFound
+	}
+	return f.certExpires, f.check.Time, nil
 }
 
 func (f *fakeStore) LatestValue(ctx context.Context, host string, metric string, target string, isCustom bool) (float64, time.Time, error) {
@@ -323,5 +333,63 @@ func TestEndpointAlert(t *testing.T) {
 	check(8, 200, "")
 	if len(sent) != 2 || !sent[1].Resolved || sent[1].LogId != 1 || fake.alerts[0].ResolvedAt == nil {
 		t.Errorf("expected the alert to resolve, got %+v", sent)
+	}
+}
+
+func TestCertificateAlert(t *testing.T) {
+	fake := &fakeStore{}
+	var sent []*alertapi.Alert
+	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	rule := certificateRule(&alerts.AlertConfig{Name: "Shop", MetricName: monitor.ENDPOINT, Endpoint: "https://shop.example.com", Slack: true})
+	if rule == nil || rule.WarnThreshold != 14 || rule.CriticalThreshold != 3 {
+		t.Fatalf("expected a certificate rule at 14 and 3 days, got %+v", rule)
+	}
+
+	start := time.Unix(1700000000, 0)
+	check := func(minutes int, daysLeft float64) {
+		t.Helper()
+		fake.check.Time = start.Add(time.Duration(minutes) * time.Minute)
+		fake.certExpires = fake.check.Time.Add(time.Duration(daysLeft * 24 * float64(time.Hour)))
+		if err := e.evaluate(context.Background(), rule, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	check(0, 40)
+	check(1, 13)
+	check(2, 13)
+	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Warning) || sent[0].MetricName != monitor.CERTIFICATE || !sent[0].Slack {
+		t.Fatalf("expected one warning, got %+v", sent)
+	}
+	if !strings.Contains(sent[0].Subject, "certificate expiring for https://shop.example.com") || !strings.Contains(sent[0].Content, "expires on") {
+		t.Errorf("unexpected message %q %q", sent[0].Subject, sent[0].Content)
+	}
+	check(3, 2)
+	if len(sent) != 2 || sent[1].Status != int32(alertstatus.Critical) {
+		t.Fatalf("expected it to turn critical, got %+v", sent)
+	}
+	// renewed
+	check(4, 90)
+	check(5, 90)
+	if len(sent) != 3 || !sent[2].Resolved || !strings.Contains(sent[2].Subject, "renewed") {
+		t.Errorf("expected the alert to resolve, got %+v", sent)
+	}
+}
+
+func TestCertificateRule(t *testing.T) {
+	zero, thirty := 0, 30
+	tests := []struct {
+		rule alerts.AlertConfig
+		want bool
+	}{
+		{alerts.AlertConfig{MetricName: monitor.ENDPOINT, Endpoint: "http://example.com"}, false},
+		{alerts.AlertConfig{MetricName: monitor.ENDPOINT, Endpoint: "https://example.com", CertWarnDays: &zero, CertCriticalDays: &zero}, false},
+		{alerts.AlertConfig{MetricName: monitor.ENDPOINT, Endpoint: "https://example.com", CertWarnDays: &thirty}, true},
+		{alerts.AlertConfig{MetricName: monitor.PING, Servers: []string{"*"}}, false},
+	}
+	for _, tt := range tests {
+		if got := certificateRule(&tt.rule); (got != nil) != tt.want {
+			t.Errorf("%s %s: got %+v, want a rule: %v", tt.rule.MetricName, tt.rule.Endpoint, got, tt.want)
+		}
 	}
 }
