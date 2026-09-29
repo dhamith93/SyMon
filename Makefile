@@ -1,13 +1,22 @@
-.PHONY: proto web clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
+.PHONY: proto web signing-key clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
 
 # the version -version and the dashboard show, like v3.0.0-16-g2519821
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -ldflags "-X github.com/dhamith93/SyMon/internal/version.Version=$(VERSION)"
+# agents only install updates from the dashboard when they are signed with
+# this key, which stays where the builds are made and never on the servers.
+# Its public key is built into agents, and is empty until make signing-key.
+SIGNING_KEY ?= $(HOME)/.config/symon/agent-signing.key
+UPDATE_KEY = $(shell cat $(SIGNING_KEY).pub 2>/dev/null)
+# recursive, so a key made earlier in the same run is picked up
+LDFLAGS = -ldflags "-X github.com/dhamith93/SyMon/internal/version.Version=$(VERSION) -X github.com/dhamith93/SyMon/internal/update.PublicKey=$(UPDATE_KEY)"
 
 proto:
 	cd internal && protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		api/api.proto alertapi/alertapi.proto
+
+signing-key:
+	go run ./tools/sign keygen -key $(SIGNING_KEY)
 
 web:
 	cd client/web && npm ci && npm run build
@@ -51,7 +60,7 @@ pack-collector: build-collector
 	cd release/ && tar -cvf collector_linux_x86_64.tar.gz collector_linux_x86_64
 	rm -rf release/collector_linux_x86_64
 
-pack-agent: build-agent
+pack-agent: signing-key build-agent
 	mkdir -p release/agent_linux_x86_64
 	cp agent/agent_linux_x86_64 release/agent_linux_x86_64
 	cp agent/.env-example release/agent_linux_x86_64
@@ -67,12 +76,13 @@ pack-alertprocessor: build-alertprocessor
 
 # the agent builds are what new hosts download from the dashboard.
 # GOARM=6 also runs on ARMv7, so one arm build covers every Raspberry Pi.
-pack-client: build-client
+pack-client: signing-key build-client
 	mkdir -p release/client_linux_x86_64/downloads
 	cp client/client_linux_x86_64 release/client_linux_x86_64
 	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o ../release/client_linux_x86_64/downloads/agent-linux-amd64
 	cd agent && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build $(LDFLAGS) -o ../release/client_linux_x86_64/downloads/agent-linux-arm64
 	cd agent && GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build $(LDFLAGS) -o ../release/client_linux_x86_64/downloads/agent-linux-arm
+	go run ./tools/sign sign -key $(SIGNING_KEY) release/client_linux_x86_64/downloads/agent-linux-amd64 release/client_linux_x86_64/downloads/agent-linux-arm64 release/client_linux_x86_64/downloads/agent-linux-arm
 	cp client/.env-example release/client_linux_x86_64
 	cp client/Dockerfile release/client_linux_x86_64
 	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
