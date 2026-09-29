@@ -122,7 +122,15 @@ SYMON_CLIENT_COLLECTOR_ENDPOINT=localhost:9000
 SYMON_KEY=...
 ```
 
-The dashboard has no login. Keep it on a private network, or put nginx or Apache in front of it for HTTPS and a password.
+The dashboard needs a login, and stays locked until the first user exists. Create one, which prints its password:
+
+```sh
+sudo /opt/symon/collector_linux_x86_64/collector_linux_x86_64 -add-user admin
+```
+
+`-password-stdin` sets a password of your own instead, at least 12 characters. `-list-users`, `-reset-password <name>` and `-remove-user <name>` manage users. A login lasts 30 days, and a new password or a removed user logs that user out everywhere within a minute. After 10 wrong passwords a user name is locked for 15 minutes.
+
+Put Caddy or nginx in front of the dashboard for HTTPS, so passwords and the session cookie are encrypted. The install script and agent downloads need no login, so new hosts can still enroll.
 
 ### 5. Start everything
 
@@ -261,7 +269,15 @@ scrape_configs:
       - targets: ["symon.example.lan:8080"]
 ```
 
-Every value has a `host` label. Disks, interfaces, sensors, services and containers have their own labels too. Custom metrics sent in the last 2 days show as `symon_custom_metric` with `name` and `unit` labels, and `symon_custom_metric_timestamp_seconds` says when each was sent, so you can alert when a job stops reporting. `symon_up` is 0 for a host that stopped reporting, and its other values are left out until it reports again. Like the rest of the dashboard, `/metrics` has no login, so keep it behind the same reverse proxy or firewall. To switch it off, add `SYMON_CLIENT_METRICS_ENABLED=false` to `/etc/symon/client.env` and restart the dashboard.
+Every value has a `host` label. Disks, interfaces, sensors, services and containers have their own labels too. Custom metrics sent in the last 2 days show as `symon_custom_metric` with `name` and `unit` labels, and `symon_custom_metric_timestamp_seconds` says when each was sent, so you can alert when a job stops reporting. `symon_up` is 0 for a host that stopped reporting, and its other values are left out until it reports again. `/metrics` needs no login unless `SYMON_CLIENT_METRICS_AUTH=true` is in `/etc/symon/client.env`. Then it takes a SyMon user's name and password as HTTP basic auth. Create a user for Prometheus and add it to the scrape config:
+
+```yaml
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/symon-password
+```
+
+To switch `/metrics` off, add `SYMON_CLIENT_METRICS_ENABLED=false` to `/etc/symon/client.env`. Restart the dashboard after changing either.
 
 ## Upgrades
 
@@ -277,6 +293,8 @@ sudo systemctl start symon_collector symon_client
 ```
 
 The collector updates the database schema by itself when it starts. Back up the database first (see below) if you want a way back, because schema changes are not undone by going back to an older build.
+
+Coming from a version without logins, the dashboard is locked after the upgrade until you create a user with `-add-user`, as in [Set up the dashboard](#4-set-up-the-dashboard).
 
 **Checking versions.** Every binary prints its version with `-version`, for example `/opt/symon/collector_linux_x86_64/collector_linux_x86_64 -version`, and logs it when it starts. The dashboard footer shows its own version, and the collector's too when they differ. Each host's page shows the version of its agent, so you can see which hosts still need the upgrade below.
 
@@ -346,6 +364,10 @@ sudo -u postgres dropuser symon
 **A container shows "host network".** It shares the host's network, so its traffic is already counted in the host's own network charts.
 
 **The dashboard shows data only for part of a long range.** Longer ranges come from 1 minute and 1 hour averages, which are refreshed every few minutes. Recent data appears there shortly after it arrives.
+
+**Forgot a password.** On the collector's host, `collector -reset-password <name>` prints a new one.
+
+**"Too many failed logins".** That user name had 10 wrong passwords within 15 minutes. Wait 15 minutes, or reset the password.
 
 ## Settings reference
 
