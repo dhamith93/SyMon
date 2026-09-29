@@ -80,6 +80,7 @@
       case 'disks':
       case 'disk_forecast':
       case 'services':
+      case 'endpoint':
         return alert.target;
       default:
         return alert.metric;
@@ -95,6 +96,8 @@
         return formatPercent(alert.value);
       case 'ping':
         return `silent ${formatDuration(alert.value)}`;
+      case 'endpoint':
+        return alert.value ? `HTTP ${alert.value}` : 'no response';
       case 'disk_forecast':
         // the collector reads a disk that is not filling up as 365 days
         return alert.value >= 365 ? 'not filling up' : `full in ${formatDays(alert.value)}`;
@@ -181,7 +184,10 @@
                   <StatusBadge status={status(alert)} />
                   {#if alert.resolvedAt}<span class="muted severity">was {alert.severity === 2 ? 'critical' : 'warning'}</span>{/if}
                 </td>
-                <td><a href={hostPath(alert.host)}>{alert.host}</a></td>
+                <td>
+                  <!-- endpoint alerts belong to no host -->
+                  {#if alert.host}<a href={hostPath(alert.host)}>{alert.host}</a>{:else}<a href="/endpoints">Endpoint</a>{/if}
+                </td>
                 <td>{alert.rule}</td>
                 <td class="secondary">{watched(alert)}</td>
                 <td class="right num">{value(alert)}</td>

@@ -216,10 +216,12 @@ A rule looks like this:
 | `disk_forecast` | days until the disk is full, at its growth over the last week | `Disk`, the device |
 | `services` | a service from the service list. `Op` `inactive` alerts when it stops, `active` when it runs | `Service`, the name from the service list |
 | `ping` | host silent for longer than `TriggerIntveral` seconds | |
-| `endpoint` | an HTTP check from the collector | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType` |
+| `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert` |
 | any name, with `"IsCustom": true` | a custom metric | |
 
-`Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves. Endpoint checks need `SYMON_ENABLE_ENDPOINT_MONITORING=true` on the collector.
+`Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
+
+`endpoint` rules need `SYMON_ENABLE_ENDPOINT_MONITORING=true` on the collector, which then requests each `Endpoint` every `SYMON_ENDPOINT_CHECK_INTERVAL` seconds (60 by default) and waits up to 30 seconds for an answer. A check passes when the status code is `ExpectedHTTPCode`, 200 if left out. The alert opens once checks have failed for `TriggerIntveral` seconds and resolves once they have passed for as long. Endpoint alerts belong to no host, and every check is kept as long as the 1 hour averages, for the response time and uptime charts on the dashboard's Endpoints page.
 
 `disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table and on a chart of where each filling disk is headed, and on the hosts page when a disk fills up within 30 days.
 
