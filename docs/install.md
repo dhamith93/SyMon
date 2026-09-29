@@ -259,7 +259,7 @@ scrape_configs:
       - targets: ["symon.example.lan:8080"]
 ```
 
-Every value has a `host` label. Disks, interfaces, sensors, services and containers have their own labels too. `symon_up` is 0 for a host that stopped reporting, and its other values are left out until it reports again. Like the rest of the dashboard, `/metrics` has no login, so keep it behind the same reverse proxy or firewall.
+Every value has a `host` label. Disks, interfaces, sensors, services and containers have their own labels too. `symon_up` is 0 for a host that stopped reporting, and its other values are left out until it reports again. Like the rest of the dashboard, `/metrics` has no login, so keep it behind the same reverse proxy or firewall. To switch it off, add `SYMON_CLIENT_METRICS_ENABLED=false` to `/etc/symon/client.env` and restart the dashboard.
 
 ## Upgrades
 

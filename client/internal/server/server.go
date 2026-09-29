@@ -31,6 +31,7 @@ type server struct {
 	collectorEndpoint string
 	agentCollector    string
 	downloadsDir      string
+	metricsEnabled    bool
 }
 
 // Run starts the server on the given address, like ":8080"
@@ -50,6 +51,7 @@ func Run(address string) {
 		collectorEndpoint: config.CollectorEndpoint,
 		agentCollector:    config.AgentCollectorEndpoint,
 		downloadsDir:      config.DownloadsDir,
+		metricsEnabled:    config.MetricsEnabled,
 	}
 	httpServer := &http.Server{
 		Addr:              address,
