@@ -101,10 +101,15 @@ func (x *Message) GetBody() string {
 	return ""
 }
 
+// agentVersion and arch are sent by agents that can update themselves,
+// updateError when their last try failed
 type ServerInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ServerName    string                 `protobuf:"bytes,1,opt,name=serverName,proto3" json:"serverName,omitempty"`
 	Timezone      string                 `protobuf:"bytes,2,opt,name=timezone,proto3" json:"timezone,omitempty"`
+	AgentVersion  string                 `protobuf:"bytes,3,opt,name=agentVersion,proto3" json:"agentVersion,omitempty"`
+	Arch          string                 `protobuf:"bytes,4,opt,name=arch,proto3" json:"arch,omitempty"`
+	UpdateError   string                 `protobuf:"bytes,5,opt,name=updateError,proto3" json:"updateError,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -153,6 +158,254 @@ func (x *ServerInfo) GetTimezone() string {
 	return ""
 }
 
+func (x *ServerInfo) GetAgentVersion() string {
+	if x != nil {
+		return x.AgentVersion
+	}
+	return ""
+}
+
+func (x *ServerInfo) GetArch() string {
+	if x != nil {
+		return x.Arch
+	}
+	return ""
+}
+
+func (x *ServerInfo) GetUpdateError() string {
+	if x != nil {
+		return x.UpdateError
+	}
+	return ""
+}
+
+// An update an admin asked for. The agent downloads the build from
+// downloadUrl, the dashboard, and installs it only when it is signed.
+type AgentUpdate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	DownloadUrl   string                 `protobuf:"bytes,2,opt,name=downloadUrl,proto3" json:"downloadUrl,omitempty"`
+	RequestedAt   int64                  `protobuf:"varint,3,opt,name=requestedAt,proto3" json:"requestedAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentUpdate) Reset() {
+	*x = AgentUpdate{}
+	mi := &file_api_api_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentUpdate) ProtoMessage() {}
+
+func (x *AgentUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentUpdate.ProtoReflect.Descriptor instead.
+func (*AgentUpdate) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AgentUpdate) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *AgentUpdate) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *AgentUpdate) GetRequestedAt() int64 {
+	if x != nil {
+		return x.RequestedAt
+	}
+	return 0
+}
+
+// body is field 1 like in Message, so agents from before updates still read it
+type PingResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Body          string                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
+	Update        *AgentUpdate           `protobuf:"bytes,2,opt,name=update,proto3" json:"update,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PingResponse) Reset() {
+	*x = PingResponse{}
+	mi := &file_api_api_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingResponse) ProtoMessage() {}
+
+func (x *PingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
+func (*PingResponse) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PingResponse) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *PingResponse) GetUpdate() *AgentUpdate {
+	if x != nil {
+		return x.Update
+	}
+	return nil
+}
+
+type AgentUpdateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hosts         []string               `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	DownloadUrl   string                 `protobuf:"bytes,3,opt,name=downloadUrl,proto3" json:"downloadUrl,omitempty"`
+	By            string                 `protobuf:"bytes,4,opt,name=by,proto3" json:"by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentUpdateRequest) Reset() {
+	*x = AgentUpdateRequest{}
+	mi := &file_api_api_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentUpdateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentUpdateRequest) ProtoMessage() {}
+
+func (x *AgentUpdateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentUpdateRequest.ProtoReflect.Descriptor instead.
+func (*AgentUpdateRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *AgentUpdateRequest) GetHosts() []string {
+	if x != nil {
+		return x.Hosts
+	}
+	return nil
+}
+
+func (x *AgentUpdateRequest) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *AgentUpdateRequest) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *AgentUpdateRequest) GetBy() string {
+	if x != nil {
+		return x.By
+	}
+	return ""
+}
+
+type AgentUpdateResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Requested     int32                  `protobuf:"varint,1,opt,name=requested,proto3" json:"requested,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentUpdateResult) Reset() {
+	*x = AgentUpdateResult{}
+	mi := &file_api_api_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentUpdateResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentUpdateResult) ProtoMessage() {}
+
+func (x *AgentUpdateResult) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentUpdateResult.ProtoReflect.Descriptor instead.
+func (*AgentUpdateResult) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *AgentUpdateResult) GetRequested() int32 {
+	if x != nil {
+		return x.Requested
+	}
+	return 0
+}
+
 type MonitorData struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MonitorData   string                 `protobuf:"bytes,1,opt,name=monitorData,proto3" json:"monitorData,omitempty"`
@@ -162,7 +415,7 @@ type MonitorData struct {
 
 func (x *MonitorData) Reset() {
 	*x = MonitorData{}
-	mi := &file_api_api_proto_msgTypes[3]
+	mi := &file_api_api_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +427,7 @@ func (x *MonitorData) String() string {
 func (*MonitorData) ProtoMessage() {}
 
 func (x *MonitorData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[3]
+	mi := &file_api_api_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +440,7 @@ func (x *MonitorData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MonitorData.ProtoReflect.Descriptor instead.
 func (*MonitorData) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{3}
+	return file_api_api_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MonitorData) GetMonitorData() string {
@@ -209,7 +462,7 @@ type EnrollRequest struct {
 
 func (x *EnrollRequest) Reset() {
 	*x = EnrollRequest{}
-	mi := &file_api_api_proto_msgTypes[4]
+	mi := &file_api_api_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -221,7 +474,7 @@ func (x *EnrollRequest) String() string {
 func (*EnrollRequest) ProtoMessage() {}
 
 func (x *EnrollRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[4]
+	mi := &file_api_api_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -234,7 +487,7 @@ func (x *EnrollRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollRequest.ProtoReflect.Descriptor instead.
 func (*EnrollRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{4}
+	return file_api_api_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EnrollRequest) GetToken() string {
@@ -268,7 +521,7 @@ type EnrollResponse struct {
 
 func (x *EnrollResponse) Reset() {
 	*x = EnrollResponse{}
-	mi := &file_api_api_proto_msgTypes[5]
+	mi := &file_api_api_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +533,7 @@ func (x *EnrollResponse) String() string {
 func (*EnrollResponse) ProtoMessage() {}
 
 func (x *EnrollResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[5]
+	mi := &file_api_api_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,7 +546,7 @@ func (x *EnrollResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollResponse.ProtoReflect.Descriptor instead.
 func (*EnrollResponse) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{5}
+	return file_api_api_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EnrollResponse) GetHostName() string {
@@ -332,14 +585,20 @@ type HostSummary struct {
 	// days until the first disk fills up, unset when none is filling up
 	DiskFullDays *float64 `protobuf:"fixed64,16,opt,name=diskFullDays,proto3,oneof" json:"diskFullDays,omitempty"`
 	// empty from agents older than versions
-	AgentVersion  string `protobuf:"bytes,17,opt,name=agentVersion,proto3" json:"agentVersion,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	AgentVersion string `protobuf:"bytes,17,opt,name=agentVersion,proto3" json:"agentVersion,omitempty"`
+	// the agent updates itself when asked
+	CanUpdate bool `protobuf:"varint,18,opt,name=canUpdate,proto3" json:"canUpdate,omitempty"`
+	// an update asked for and not done yet, empty for none
+	UpdateVersion     string `protobuf:"bytes,19,opt,name=updateVersion,proto3" json:"updateVersion,omitempty"`
+	UpdateRequestedAt int64  `protobuf:"varint,20,opt,name=updateRequestedAt,proto3" json:"updateRequestedAt,omitempty"`
+	UpdateError       string `protobuf:"bytes,21,opt,name=updateError,proto3" json:"updateError,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *HostSummary) Reset() {
 	*x = HostSummary{}
-	mi := &file_api_api_proto_msgTypes[6]
+	mi := &file_api_api_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -351,7 +610,7 @@ func (x *HostSummary) String() string {
 func (*HostSummary) ProtoMessage() {}
 
 func (x *HostSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[6]
+	mi := &file_api_api_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -364,7 +623,7 @@ func (x *HostSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostSummary.ProtoReflect.Descriptor instead.
 func (*HostSummary) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{6}
+	return file_api_api_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *HostSummary) GetName() string {
@@ -486,6 +745,34 @@ func (x *HostSummary) GetAgentVersion() string {
 	return ""
 }
 
+func (x *HostSummary) GetCanUpdate() bool {
+	if x != nil {
+		return x.CanUpdate
+	}
+	return false
+}
+
+func (x *HostSummary) GetUpdateVersion() string {
+	if x != nil {
+		return x.UpdateVersion
+	}
+	return ""
+}
+
+func (x *HostSummary) GetUpdateRequestedAt() int64 {
+	if x != nil {
+		return x.UpdateRequestedAt
+	}
+	return 0
+}
+
+func (x *HostSummary) GetUpdateError() string {
+	if x != nil {
+		return x.UpdateError
+	}
+	return ""
+}
+
 type FleetSummary struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Hosts         []*HostSummary         `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
@@ -495,7 +782,7 @@ type FleetSummary struct {
 
 func (x *FleetSummary) Reset() {
 	*x = FleetSummary{}
-	mi := &file_api_api_proto_msgTypes[7]
+	mi := &file_api_api_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -507,7 +794,7 @@ func (x *FleetSummary) String() string {
 func (*FleetSummary) ProtoMessage() {}
 
 func (x *FleetSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[7]
+	mi := &file_api_api_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -520,7 +807,7 @@ func (x *FleetSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FleetSummary.ProtoReflect.Descriptor instead.
 func (*FleetSummary) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{7}
+	return file_api_api_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FleetSummary) GetHosts() []*HostSummary {
@@ -539,7 +826,7 @@ type HostRequest struct {
 
 func (x *HostRequest) Reset() {
 	*x = HostRequest{}
-	mi := &file_api_api_proto_msgTypes[8]
+	mi := &file_api_api_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +838,7 @@ func (x *HostRequest) String() string {
 func (*HostRequest) ProtoMessage() {}
 
 func (x *HostRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[8]
+	mi := &file_api_api_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +851,7 @@ func (x *HostRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostRequest.ProtoReflect.Descriptor instead.
 func (*HostRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{8}
+	return file_api_api_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HostRequest) GetHost() string {
@@ -588,7 +875,7 @@ type HostSnapshot struct {
 
 func (x *HostSnapshot) Reset() {
 	*x = HostSnapshot{}
-	mi := &file_api_api_proto_msgTypes[9]
+	mi := &file_api_api_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -600,7 +887,7 @@ func (x *HostSnapshot) String() string {
 func (*HostSnapshot) ProtoMessage() {}
 
 func (x *HostSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[9]
+	mi := &file_api_api_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -613,7 +900,7 @@ func (x *HostSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostSnapshot.ProtoReflect.Descriptor instead.
 func (*HostSnapshot) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{9}
+	return file_api_api_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *HostSnapshot) GetHost() string {
@@ -668,7 +955,7 @@ type SeriesRequest struct {
 
 func (x *SeriesRequest) Reset() {
 	*x = SeriesRequest{}
-	mi := &file_api_api_proto_msgTypes[10]
+	mi := &file_api_api_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -680,7 +967,7 @@ func (x *SeriesRequest) String() string {
 func (*SeriesRequest) ProtoMessage() {}
 
 func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[10]
+	mi := &file_api_api_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -693,7 +980,7 @@ func (x *SeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesRequest.ProtoReflect.Descriptor instead.
 func (*SeriesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{10}
+	return file_api_api_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SeriesRequest) GetHost() string {
@@ -755,7 +1042,7 @@ type Point struct {
 
 func (x *Point) Reset() {
 	*x = Point{}
-	mi := &file_api_api_proto_msgTypes[11]
+	mi := &file_api_api_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -767,7 +1054,7 @@ func (x *Point) String() string {
 func (*Point) ProtoMessage() {}
 
 func (x *Point) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[11]
+	mi := &file_api_api_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -780,7 +1067,7 @@ func (x *Point) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Point.ProtoReflect.Descriptor instead.
 func (*Point) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{11}
+	return file_api_api_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Point) GetTime() int64 {
@@ -807,7 +1094,7 @@ type Series struct {
 
 func (x *Series) Reset() {
 	*x = Series{}
-	mi := &file_api_api_proto_msgTypes[12]
+	mi := &file_api_api_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +1106,7 @@ func (x *Series) String() string {
 func (*Series) ProtoMessage() {}
 
 func (x *Series) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[12]
+	mi := &file_api_api_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -832,7 +1119,7 @@ func (x *Series) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Series.ProtoReflect.Descriptor instead.
 func (*Series) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{12}
+	return file_api_api_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Series) GetLabel() string {
@@ -862,7 +1149,7 @@ type SeriesResponse struct {
 
 func (x *SeriesResponse) Reset() {
 	*x = SeriesResponse{}
-	mi := &file_api_api_proto_msgTypes[13]
+	mi := &file_api_api_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -874,7 +1161,7 @@ func (x *SeriesResponse) String() string {
 func (*SeriesResponse) ProtoMessage() {}
 
 func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[13]
+	mi := &file_api_api_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -887,7 +1174,7 @@ func (x *SeriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeriesResponse.ProtoReflect.Descriptor instead.
 func (*SeriesResponse) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{13}
+	return file_api_api_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SeriesResponse) GetMetric() string {
@@ -929,7 +1216,7 @@ type ProcessesRequest struct {
 
 func (x *ProcessesRequest) Reset() {
 	*x = ProcessesRequest{}
-	mi := &file_api_api_proto_msgTypes[14]
+	mi := &file_api_api_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -941,7 +1228,7 @@ func (x *ProcessesRequest) String() string {
 func (*ProcessesRequest) ProtoMessage() {}
 
 func (x *ProcessesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[14]
+	mi := &file_api_api_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -954,7 +1241,7 @@ func (x *ProcessesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessesRequest.ProtoReflect.Descriptor instead.
 func (*ProcessesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{14}
+	return file_api_api_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ProcessesRequest) GetHost() string {
@@ -982,7 +1269,7 @@ type ProcessesResponse struct {
 
 func (x *ProcessesResponse) Reset() {
 	*x = ProcessesResponse{}
-	mi := &file_api_api_proto_msgTypes[15]
+	mi := &file_api_api_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -994,7 +1281,7 @@ func (x *ProcessesResponse) String() string {
 func (*ProcessesResponse) ProtoMessage() {}
 
 func (x *ProcessesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[15]
+	mi := &file_api_api_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1007,7 +1294,7 @@ func (x *ProcessesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessesResponse.ProtoReflect.Descriptor instead.
 func (*ProcessesResponse) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{15}
+	return file_api_api_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ProcessesResponse) GetTime() int64 {
@@ -1033,7 +1320,7 @@ type NameList struct {
 
 func (x *NameList) Reset() {
 	*x = NameList{}
-	mi := &file_api_api_proto_msgTypes[16]
+	mi := &file_api_api_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1045,7 +1332,7 @@ func (x *NameList) String() string {
 func (*NameList) ProtoMessage() {}
 
 func (x *NameList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[16]
+	mi := &file_api_api_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1058,7 +1345,7 @@ func (x *NameList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NameList.ProtoReflect.Descriptor instead.
 func (*NameList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{16}
+	return file_api_api_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *NameList) GetNames() []string {
@@ -1081,7 +1368,7 @@ type AlertsRequest struct {
 
 func (x *AlertsRequest) Reset() {
 	*x = AlertsRequest{}
-	mi := &file_api_api_proto_msgTypes[17]
+	mi := &file_api_api_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1093,7 +1380,7 @@ func (x *AlertsRequest) String() string {
 func (*AlertsRequest) ProtoMessage() {}
 
 func (x *AlertsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[17]
+	mi := &file_api_api_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1106,7 +1393,7 @@ func (x *AlertsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertsRequest.ProtoReflect.Descriptor instead.
 func (*AlertsRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{17}
+	return file_api_api_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *AlertsRequest) GetHost() string {
@@ -1157,7 +1444,7 @@ type AlertRecord struct {
 
 func (x *AlertRecord) Reset() {
 	*x = AlertRecord{}
-	mi := &file_api_api_proto_msgTypes[18]
+	mi := &file_api_api_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1169,7 +1456,7 @@ func (x *AlertRecord) String() string {
 func (*AlertRecord) ProtoMessage() {}
 
 func (x *AlertRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[18]
+	mi := &file_api_api_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1182,7 +1469,7 @@ func (x *AlertRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertRecord.ProtoReflect.Descriptor instead.
 func (*AlertRecord) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{18}
+	return file_api_api_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *AlertRecord) GetId() int64 {
@@ -1264,7 +1551,7 @@ type AlertList struct {
 
 func (x *AlertList) Reset() {
 	*x = AlertList{}
-	mi := &file_api_api_proto_msgTypes[19]
+	mi := &file_api_api_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1276,7 +1563,7 @@ func (x *AlertList) String() string {
 func (*AlertList) ProtoMessage() {}
 
 func (x *AlertList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[19]
+	mi := &file_api_api_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1289,7 +1576,7 @@ func (x *AlertList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertList.ProtoReflect.Descriptor instead.
 func (*AlertList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{19}
+	return file_api_api_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *AlertList) GetAlerts() []*AlertRecord {
@@ -1320,7 +1607,7 @@ type DiskForecast struct {
 
 func (x *DiskForecast) Reset() {
 	*x = DiskForecast{}
-	mi := &file_api_api_proto_msgTypes[20]
+	mi := &file_api_api_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1332,7 +1619,7 @@ func (x *DiskForecast) String() string {
 func (*DiskForecast) ProtoMessage() {}
 
 func (x *DiskForecast) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[20]
+	mi := &file_api_api_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1345,7 +1632,7 @@ func (x *DiskForecast) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiskForecast.ProtoReflect.Descriptor instead.
 func (*DiskForecast) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{20}
+	return file_api_api_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *DiskForecast) GetDevice() string {
@@ -1413,7 +1700,7 @@ type DiskForecastList struct {
 
 func (x *DiskForecastList) Reset() {
 	*x = DiskForecastList{}
-	mi := &file_api_api_proto_msgTypes[21]
+	mi := &file_api_api_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1425,7 +1712,7 @@ func (x *DiskForecastList) String() string {
 func (*DiskForecastList) ProtoMessage() {}
 
 func (x *DiskForecastList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[21]
+	mi := &file_api_api_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1438,7 +1725,7 @@ func (x *DiskForecastList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiskForecastList.ProtoReflect.Descriptor instead.
 func (*DiskForecastList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{21}
+	return file_api_api_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DiskForecastList) GetDisks() []*DiskForecast {
@@ -1459,7 +1746,7 @@ type ProcessUsageRequest struct {
 
 func (x *ProcessUsageRequest) Reset() {
 	*x = ProcessUsageRequest{}
-	mi := &file_api_api_proto_msgTypes[22]
+	mi := &file_api_api_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1471,7 +1758,7 @@ func (x *ProcessUsageRequest) String() string {
 func (*ProcessUsageRequest) ProtoMessage() {}
 
 func (x *ProcessUsageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[22]
+	mi := &file_api_api_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1484,7 +1771,7 @@ func (x *ProcessUsageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessUsageRequest.ProtoReflect.Descriptor instead.
 func (*ProcessUsageRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{22}
+	return file_api_api_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ProcessUsageRequest) GetHost() string {
@@ -1525,7 +1812,7 @@ type ProcessUsage struct {
 
 func (x *ProcessUsage) Reset() {
 	*x = ProcessUsage{}
-	mi := &file_api_api_proto_msgTypes[23]
+	mi := &file_api_api_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1537,7 +1824,7 @@ func (x *ProcessUsage) String() string {
 func (*ProcessUsage) ProtoMessage() {}
 
 func (x *ProcessUsage) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[23]
+	mi := &file_api_api_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1550,7 +1837,7 @@ func (x *ProcessUsage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessUsage.ProtoReflect.Descriptor instead.
 func (*ProcessUsage) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{23}
+	return file_api_api_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ProcessUsage) GetName() string {
@@ -1607,7 +1894,7 @@ type ProcessUsageList struct {
 
 func (x *ProcessUsageList) Reset() {
 	*x = ProcessUsageList{}
-	mi := &file_api_api_proto_msgTypes[24]
+	mi := &file_api_api_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1619,7 +1906,7 @@ func (x *ProcessUsageList) String() string {
 func (*ProcessUsageList) ProtoMessage() {}
 
 func (x *ProcessUsageList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[24]
+	mi := &file_api_api_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1632,7 +1919,7 @@ func (x *ProcessUsageList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessUsageList.ProtoReflect.Descriptor instead.
 func (*ProcessUsageList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{24}
+	return file_api_api_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ProcessUsageList) GetSnapshots() int32 {
@@ -1670,7 +1957,7 @@ type CustomValue struct {
 
 func (x *CustomValue) Reset() {
 	*x = CustomValue{}
-	mi := &file_api_api_proto_msgTypes[25]
+	mi := &file_api_api_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1682,7 +1969,7 @@ func (x *CustomValue) String() string {
 func (*CustomValue) ProtoMessage() {}
 
 func (x *CustomValue) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[25]
+	mi := &file_api_api_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1695,7 +1982,7 @@ func (x *CustomValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CustomValue.ProtoReflect.Descriptor instead.
 func (*CustomValue) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{25}
+	return file_api_api_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *CustomValue) GetHost() string {
@@ -1744,7 +2031,7 @@ type SnapshotList struct {
 
 func (x *SnapshotList) Reset() {
 	*x = SnapshotList{}
-	mi := &file_api_api_proto_msgTypes[26]
+	mi := &file_api_api_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1756,7 +2043,7 @@ func (x *SnapshotList) String() string {
 func (*SnapshotList) ProtoMessage() {}
 
 func (x *SnapshotList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[26]
+	mi := &file_api_api_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1769,7 +2056,7 @@ func (x *SnapshotList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotList.ProtoReflect.Descriptor instead.
 func (*SnapshotList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{26}
+	return file_api_api_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *SnapshotList) GetHosts() []*HostSnapshot {
@@ -1796,7 +2083,7 @@ type EndpointsRequest struct {
 
 func (x *EndpointsRequest) Reset() {
 	*x = EndpointsRequest{}
-	mi := &file_api_api_proto_msgTypes[27]
+	mi := &file_api_api_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1808,7 +2095,7 @@ func (x *EndpointsRequest) String() string {
 func (*EndpointsRequest) ProtoMessage() {}
 
 func (x *EndpointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[27]
+	mi := &file_api_api_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1821,7 +2108,7 @@ func (x *EndpointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointsRequest.ProtoReflect.Descriptor instead.
 func (*EndpointsRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{27}
+	return file_api_api_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *EndpointsRequest) GetFrom() int64 {
@@ -1863,7 +2150,7 @@ type EndpointStatus struct {
 
 func (x *EndpointStatus) Reset() {
 	*x = EndpointStatus{}
-	mi := &file_api_api_proto_msgTypes[28]
+	mi := &file_api_api_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1875,7 +2162,7 @@ func (x *EndpointStatus) String() string {
 func (*EndpointStatus) ProtoMessage() {}
 
 func (x *EndpointStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[28]
+	mi := &file_api_api_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1888,7 +2175,7 @@ func (x *EndpointStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointStatus.ProtoReflect.Descriptor instead.
 func (*EndpointStatus) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{28}
+	return file_api_api_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *EndpointStatus) GetName() string {
@@ -1984,7 +2271,7 @@ type EndpointList struct {
 
 func (x *EndpointList) Reset() {
 	*x = EndpointList{}
-	mi := &file_api_api_proto_msgTypes[29]
+	mi := &file_api_api_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1996,7 +2283,7 @@ func (x *EndpointList) String() string {
 func (*EndpointList) ProtoMessage() {}
 
 func (x *EndpointList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[29]
+	mi := &file_api_api_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2009,7 +2296,7 @@ func (x *EndpointList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointList.ProtoReflect.Descriptor instead.
 func (*EndpointList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{29}
+	return file_api_api_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *EndpointList) GetEndpoints() []*EndpointStatus {
@@ -2033,7 +2320,7 @@ type EndpointSeriesRequest struct {
 
 func (x *EndpointSeriesRequest) Reset() {
 	*x = EndpointSeriesRequest{}
-	mi := &file_api_api_proto_msgTypes[30]
+	mi := &file_api_api_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2045,7 +2332,7 @@ func (x *EndpointSeriesRequest) String() string {
 func (*EndpointSeriesRequest) ProtoMessage() {}
 
 func (x *EndpointSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[30]
+	mi := &file_api_api_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2058,7 +2345,7 @@ func (x *EndpointSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointSeriesRequest.ProtoReflect.Descriptor instead.
 func (*EndpointSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{30}
+	return file_api_api_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *EndpointSeriesRequest) GetName() string {
@@ -2106,7 +2393,7 @@ type Credentials struct {
 
 func (x *Credentials) Reset() {
 	*x = Credentials{}
-	mi := &file_api_api_proto_msgTypes[31]
+	mi := &file_api_api_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2118,7 +2405,7 @@ func (x *Credentials) String() string {
 func (*Credentials) ProtoMessage() {}
 
 func (x *Credentials) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[31]
+	mi := &file_api_api_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2131,7 +2418,7 @@ func (x *Credentials) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Credentials.ProtoReflect.Descriptor instead.
 func (*Credentials) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{31}
+	return file_api_api_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *Credentials) GetUser() string {
@@ -2161,7 +2448,7 @@ type SessionInfo struct {
 
 func (x *SessionInfo) Reset() {
 	*x = SessionInfo{}
-	mi := &file_api_api_proto_msgTypes[32]
+	mi := &file_api_api_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2173,7 +2460,7 @@ func (x *SessionInfo) String() string {
 func (*SessionInfo) ProtoMessage() {}
 
 func (x *SessionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[32]
+	mi := &file_api_api_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2186,7 +2473,7 @@ func (x *SessionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionInfo.ProtoReflect.Descriptor instead.
 func (*SessionInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{32}
+	return file_api_api_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *SessionInfo) GetToken() string {
@@ -2228,7 +2515,7 @@ type ChangePasswordRequest struct {
 
 func (x *ChangePasswordRequest) Reset() {
 	*x = ChangePasswordRequest{}
-	mi := &file_api_api_proto_msgTypes[33]
+	mi := &file_api_api_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2240,7 +2527,7 @@ func (x *ChangePasswordRequest) String() string {
 func (*ChangePasswordRequest) ProtoMessage() {}
 
 func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[33]
+	mi := &file_api_api_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2253,7 +2540,7 @@ func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangePasswordRequest.ProtoReflect.Descriptor instead.
 func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{33}
+	return file_api_api_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ChangePasswordRequest) GetToken() string {
@@ -2286,7 +2573,7 @@ type SessionRequest struct {
 
 func (x *SessionRequest) Reset() {
 	*x = SessionRequest{}
-	mi := &file_api_api_proto_msgTypes[34]
+	mi := &file_api_api_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2298,7 +2585,7 @@ func (x *SessionRequest) String() string {
 func (*SessionRequest) ProtoMessage() {}
 
 func (x *SessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[34]
+	mi := &file_api_api_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2311,7 +2598,7 @@ func (x *SessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionRequest.ProtoReflect.Descriptor instead.
 func (*SessionRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{34}
+	return file_api_api_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *SessionRequest) GetToken() string {
@@ -2330,7 +2617,7 @@ type UserStatus struct {
 
 func (x *UserStatus) Reset() {
 	*x = UserStatus{}
-	mi := &file_api_api_proto_msgTypes[35]
+	mi := &file_api_api_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2342,7 +2629,7 @@ func (x *UserStatus) String() string {
 func (*UserStatus) ProtoMessage() {}
 
 func (x *UserStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[35]
+	mi := &file_api_api_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2355,7 +2642,7 @@ func (x *UserStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserStatus.ProtoReflect.Descriptor instead.
 func (*UserStatus) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{35}
+	return file_api_api_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *UserStatus) GetHasUsers() bool {
@@ -2380,7 +2667,7 @@ type AlertRuleInfo struct {
 
 func (x *AlertRuleInfo) Reset() {
 	*x = AlertRuleInfo{}
-	mi := &file_api_api_proto_msgTypes[36]
+	mi := &file_api_api_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2392,7 +2679,7 @@ func (x *AlertRuleInfo) String() string {
 func (*AlertRuleInfo) ProtoMessage() {}
 
 func (x *AlertRuleInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[36]
+	mi := &file_api_api_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2405,7 +2692,7 @@ func (x *AlertRuleInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertRuleInfo.ProtoReflect.Descriptor instead.
 func (*AlertRuleInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{36}
+	return file_api_api_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *AlertRuleInfo) GetId() int64 {
@@ -2452,7 +2739,7 @@ type AlertRuleList struct {
 
 func (x *AlertRuleList) Reset() {
 	*x = AlertRuleList{}
-	mi := &file_api_api_proto_msgTypes[37]
+	mi := &file_api_api_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2464,7 +2751,7 @@ func (x *AlertRuleList) String() string {
 func (*AlertRuleList) ProtoMessage() {}
 
 func (x *AlertRuleList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[37]
+	mi := &file_api_api_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2477,7 +2764,7 @@ func (x *AlertRuleList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertRuleList.ProtoReflect.Descriptor instead.
 func (*AlertRuleList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{37}
+	return file_api_api_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *AlertRuleList) GetRules() []*AlertRuleInfo {
@@ -2500,7 +2787,7 @@ type SaveRuleRequest struct {
 
 func (x *SaveRuleRequest) Reset() {
 	*x = SaveRuleRequest{}
-	mi := &file_api_api_proto_msgTypes[38]
+	mi := &file_api_api_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2512,7 +2799,7 @@ func (x *SaveRuleRequest) String() string {
 func (*SaveRuleRequest) ProtoMessage() {}
 
 func (x *SaveRuleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[38]
+	mi := &file_api_api_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2525,7 +2812,7 @@ func (x *SaveRuleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveRuleRequest.ProtoReflect.Descriptor instead.
 func (*SaveRuleRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{38}
+	return file_api_api_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *SaveRuleRequest) GetId() int64 {
@@ -2566,7 +2853,7 @@ type RuleRequest struct {
 
 func (x *RuleRequest) Reset() {
 	*x = RuleRequest{}
-	mi := &file_api_api_proto_msgTypes[39]
+	mi := &file_api_api_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2578,7 +2865,7 @@ func (x *RuleRequest) String() string {
 func (*RuleRequest) ProtoMessage() {}
 
 func (x *RuleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[39]
+	mi := &file_api_api_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2591,7 +2878,7 @@ func (x *RuleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuleRequest.ProtoReflect.Descriptor instead.
 func (*RuleRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{39}
+	return file_api_api_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *RuleRequest) GetId() int64 {
@@ -2615,13 +2902,30 @@ const file_api_api_proto_rawDesc = "" +
 	"\rapi/api.proto\x12\x03api\"\x06\n" +
 	"\x04Void\"\x1d\n" +
 	"\aMessage\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\tR\x04body\"H\n" +
+	"\x04body\x18\x01 \x01(\tR\x04body\"\xa2\x01\n" +
 	"\n" +
 	"ServerInfo\x12\x1e\n" +
 	"\n" +
 	"serverName\x18\x01 \x01(\tR\n" +
 	"serverName\x12\x1a\n" +
-	"\btimezone\x18\x02 \x01(\tR\btimezone\"/\n" +
+	"\btimezone\x18\x02 \x01(\tR\btimezone\x12\"\n" +
+	"\fagentVersion\x18\x03 \x01(\tR\fagentVersion\x12\x12\n" +
+	"\x04arch\x18\x04 \x01(\tR\x04arch\x12 \n" +
+	"\vupdateError\x18\x05 \x01(\tR\vupdateError\"k\n" +
+	"\vAgentUpdate\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\x12 \n" +
+	"\vdownloadUrl\x18\x02 \x01(\tR\vdownloadUrl\x12 \n" +
+	"\vrequestedAt\x18\x03 \x01(\x03R\vrequestedAt\"L\n" +
+	"\fPingResponse\x12\x12\n" +
+	"\x04body\x18\x01 \x01(\tR\x04body\x12(\n" +
+	"\x06update\x18\x02 \x01(\v2\x10.api.AgentUpdateR\x06update\"v\n" +
+	"\x12AgentUpdateRequest\x12\x14\n" +
+	"\x05hosts\x18\x01 \x03(\tR\x05hosts\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12 \n" +
+	"\vdownloadUrl\x18\x03 \x01(\tR\vdownloadUrl\x12\x0e\n" +
+	"\x02by\x18\x04 \x01(\tR\x02by\"1\n" +
+	"\x11AgentUpdateResult\x12\x1c\n" +
+	"\trequested\x18\x01 \x01(\x05R\trequested\"/\n" +
 	"\vMonitorData\x12 \n" +
 	"\vmonitorData\x18\x01 \x01(\tR\vmonitorData\"]\n" +
 	"\rEnrollRequest\x12\x14\n" +
@@ -2630,7 +2934,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\btimezone\x18\x03 \x01(\tR\btimezone\"H\n" +
 	"\x0eEnrollResponse\x12\x1a\n" +
 	"\bhostName\x18\x01 \x01(\tR\bhostName\x12\x1a\n" +
-	"\bagentKey\x18\x02 \x01(\tR\bagentKey\"\x87\x04\n" +
+	"\bagentKey\x18\x02 \x01(\tR\bagentKey\"\x9b\x05\n" +
 	"\vHostSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
 	"\x02up\x18\x02 \x01(\bR\x02up\x12\x1a\n" +
@@ -2653,7 +2957,11 @@ const file_api_api_proto_rawDesc = "" +
 	"containers\x18\x0f \x01(\x05R\n" +
 	"containers\x12'\n" +
 	"\fdiskFullDays\x18\x10 \x01(\x01H\x00R\fdiskFullDays\x88\x01\x01\x12\"\n" +
-	"\fagentVersion\x18\x11 \x01(\tR\fagentVersionB\x0f\n" +
+	"\fagentVersion\x18\x11 \x01(\tR\fagentVersion\x12\x1c\n" +
+	"\tcanUpdate\x18\x12 \x01(\bR\tcanUpdate\x12$\n" +
+	"\rupdateVersion\x18\x13 \x01(\tR\rupdateVersion\x12,\n" +
+	"\x11updateRequestedAt\x18\x14 \x01(\x03R\x11updateRequestedAt\x12 \n" +
+	"\vupdateError\x18\x15 \x01(\tR\vupdateErrorB\x0f\n" +
 	"\r_diskFullDays\"6\n" +
 	"\fFleetSummary\x12&\n" +
 	"\x05hosts\x18\x01 \x03(\v2\x10.api.HostSummaryR\x05hosts\"!\n" +
@@ -2813,12 +3121,11 @@ const file_api_api_proto_rawDesc = "" +
 	"\x02by\x18\x04 \x01(\tR\x02by\"-\n" +
 	"\vRuleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x0e\n" +
-	"\x02by\x18\x02 \x01(\tR\x02by2\xef\n" +
-	"\n" +
+	"\x02by\x18\x02 \x01(\tR\x02by2\xbd\v\n" +
 	"\x12MonitorDataService\x123\n" +
-	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x12-\n" +
+	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x122\n" +
 	"\n" +
-	"HandlePing\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x12,\n" +
+	"HandlePing\x12\x0f.api.ServerInfo\x1a\x11.api.PingResponse\"\x00\x12,\n" +
 	"\tInitAgent\x12\x0f.api.ServerInfo\x1a\f.api.Message\"\x00\x125\n" +
 	"\x11HandleMonitorData\x12\x10.api.MonitorData\x1a\f.api.Message\"\x00\x12;\n" +
 	"\x17HandleCustomMonitorData\x12\x10.api.MonitorData\x1a\f.api.Message\"\x00\x12'\n" +
@@ -2844,7 +3151,8 @@ const file_api_api_proto_rawDesc = "" +
 	"AlertRules\x12\t.api.Void\x1a\x12.api.AlertRuleList\"\x00\x126\n" +
 	"\bSaveRule\x12\x14.api.SaveRuleRequest\x1a\x12.api.AlertRuleInfo\"\x00\x12.\n" +
 	"\n" +
-	"DeleteRule\x12\x10.api.RuleRequest\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"DeleteRule\x12\x10.api.RuleRequest\x1a\f.api.Message\"\x00\x12G\n" +
+	"\x12RequestAgentUpdate\x12\x17.api.AgentUpdateRequest\x1a\x16.api.AgentUpdateResult\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -2858,117 +3166,124 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),                  // 0: api.Void
 	(*Message)(nil),               // 1: api.Message
 	(*ServerInfo)(nil),            // 2: api.ServerInfo
-	(*MonitorData)(nil),           // 3: api.MonitorData
-	(*EnrollRequest)(nil),         // 4: api.EnrollRequest
-	(*EnrollResponse)(nil),        // 5: api.EnrollResponse
-	(*HostSummary)(nil),           // 6: api.HostSummary
-	(*FleetSummary)(nil),          // 7: api.FleetSummary
-	(*HostRequest)(nil),           // 8: api.HostRequest
-	(*HostSnapshot)(nil),          // 9: api.HostSnapshot
-	(*SeriesRequest)(nil),         // 10: api.SeriesRequest
-	(*Point)(nil),                 // 11: api.Point
-	(*Series)(nil),                // 12: api.Series
-	(*SeriesResponse)(nil),        // 13: api.SeriesResponse
-	(*ProcessesRequest)(nil),      // 14: api.ProcessesRequest
-	(*ProcessesResponse)(nil),     // 15: api.ProcessesResponse
-	(*NameList)(nil),              // 16: api.NameList
-	(*AlertsRequest)(nil),         // 17: api.AlertsRequest
-	(*AlertRecord)(nil),           // 18: api.AlertRecord
-	(*AlertList)(nil),             // 19: api.AlertList
-	(*DiskForecast)(nil),          // 20: api.DiskForecast
-	(*DiskForecastList)(nil),      // 21: api.DiskForecastList
-	(*ProcessUsageRequest)(nil),   // 22: api.ProcessUsageRequest
-	(*ProcessUsage)(nil),          // 23: api.ProcessUsage
-	(*ProcessUsageList)(nil),      // 24: api.ProcessUsageList
-	(*CustomValue)(nil),           // 25: api.CustomValue
-	(*SnapshotList)(nil),          // 26: api.SnapshotList
-	(*EndpointsRequest)(nil),      // 27: api.EndpointsRequest
-	(*EndpointStatus)(nil),        // 28: api.EndpointStatus
-	(*EndpointList)(nil),          // 29: api.EndpointList
-	(*EndpointSeriesRequest)(nil), // 30: api.EndpointSeriesRequest
-	(*Credentials)(nil),           // 31: api.Credentials
-	(*SessionInfo)(nil),           // 32: api.SessionInfo
-	(*ChangePasswordRequest)(nil), // 33: api.ChangePasswordRequest
-	(*SessionRequest)(nil),        // 34: api.SessionRequest
-	(*UserStatus)(nil),            // 35: api.UserStatus
-	(*AlertRuleInfo)(nil),         // 36: api.AlertRuleInfo
-	(*AlertRuleList)(nil),         // 37: api.AlertRuleList
-	(*SaveRuleRequest)(nil),       // 38: api.SaveRuleRequest
-	(*RuleRequest)(nil),           // 39: api.RuleRequest
+	(*AgentUpdate)(nil),           // 3: api.AgentUpdate
+	(*PingResponse)(nil),          // 4: api.PingResponse
+	(*AgentUpdateRequest)(nil),    // 5: api.AgentUpdateRequest
+	(*AgentUpdateResult)(nil),     // 6: api.AgentUpdateResult
+	(*MonitorData)(nil),           // 7: api.MonitorData
+	(*EnrollRequest)(nil),         // 8: api.EnrollRequest
+	(*EnrollResponse)(nil),        // 9: api.EnrollResponse
+	(*HostSummary)(nil),           // 10: api.HostSummary
+	(*FleetSummary)(nil),          // 11: api.FleetSummary
+	(*HostRequest)(nil),           // 12: api.HostRequest
+	(*HostSnapshot)(nil),          // 13: api.HostSnapshot
+	(*SeriesRequest)(nil),         // 14: api.SeriesRequest
+	(*Point)(nil),                 // 15: api.Point
+	(*Series)(nil),                // 16: api.Series
+	(*SeriesResponse)(nil),        // 17: api.SeriesResponse
+	(*ProcessesRequest)(nil),      // 18: api.ProcessesRequest
+	(*ProcessesResponse)(nil),     // 19: api.ProcessesResponse
+	(*NameList)(nil),              // 20: api.NameList
+	(*AlertsRequest)(nil),         // 21: api.AlertsRequest
+	(*AlertRecord)(nil),           // 22: api.AlertRecord
+	(*AlertList)(nil),             // 23: api.AlertList
+	(*DiskForecast)(nil),          // 24: api.DiskForecast
+	(*DiskForecastList)(nil),      // 25: api.DiskForecastList
+	(*ProcessUsageRequest)(nil),   // 26: api.ProcessUsageRequest
+	(*ProcessUsage)(nil),          // 27: api.ProcessUsage
+	(*ProcessUsageList)(nil),      // 28: api.ProcessUsageList
+	(*CustomValue)(nil),           // 29: api.CustomValue
+	(*SnapshotList)(nil),          // 30: api.SnapshotList
+	(*EndpointsRequest)(nil),      // 31: api.EndpointsRequest
+	(*EndpointStatus)(nil),        // 32: api.EndpointStatus
+	(*EndpointList)(nil),          // 33: api.EndpointList
+	(*EndpointSeriesRequest)(nil), // 34: api.EndpointSeriesRequest
+	(*Credentials)(nil),           // 35: api.Credentials
+	(*SessionInfo)(nil),           // 36: api.SessionInfo
+	(*ChangePasswordRequest)(nil), // 37: api.ChangePasswordRequest
+	(*SessionRequest)(nil),        // 38: api.SessionRequest
+	(*UserStatus)(nil),            // 39: api.UserStatus
+	(*AlertRuleInfo)(nil),         // 40: api.AlertRuleInfo
+	(*AlertRuleList)(nil),         // 41: api.AlertRuleList
+	(*SaveRuleRequest)(nil),       // 42: api.SaveRuleRequest
+	(*RuleRequest)(nil),           // 43: api.RuleRequest
 }
 var file_api_api_proto_depIdxs = []int32{
-	6,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
-	11, // 1: api.Series.points:type_name -> api.Point
-	12, // 2: api.SeriesResponse.series:type_name -> api.Series
-	18, // 3: api.AlertList.alerts:type_name -> api.AlertRecord
-	20, // 4: api.DiskForecastList.disks:type_name -> api.DiskForecast
-	23, // 5: api.ProcessUsageList.processes:type_name -> api.ProcessUsage
-	9,  // 6: api.SnapshotList.hosts:type_name -> api.HostSnapshot
-	25, // 7: api.SnapshotList.customMetrics:type_name -> api.CustomValue
-	28, // 8: api.EndpointList.endpoints:type_name -> api.EndpointStatus
-	36, // 9: api.AlertRuleList.rules:type_name -> api.AlertRuleInfo
-	4,  // 10: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
-	2,  // 11: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	2,  // 12: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	3,  // 13: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	3,  // 14: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0,  // 15: api.MonitorDataService.Fleet:input_type -> api.Void
-	8,  // 16: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	10, // 17: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	14, // 18: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	8,  // 19: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	17, // 20: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	8,  // 21: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
-	22, // 22: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
-	0,  // 23: api.MonitorDataService.Snapshots:input_type -> api.Void
-	27, // 24: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
-	30, // 25: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
-	0,  // 26: api.MonitorDataService.Version:input_type -> api.Void
-	31, // 27: api.MonitorDataService.Login:input_type -> api.Credentials
-	34, // 28: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
-	34, // 29: api.MonitorDataService.Logout:input_type -> api.SessionRequest
-	33, // 30: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
-	31, // 31: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
-	0,  // 32: api.MonitorDataService.HasUsers:input_type -> api.Void
-	0,  // 33: api.MonitorDataService.AlertRules:input_type -> api.Void
-	38, // 34: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
-	39, // 35: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
-	5,  // 36: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	1,  // 37: api.MonitorDataService.HandlePing:output_type -> api.Message
-	1,  // 38: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 39: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 40: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	7,  // 41: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	9,  // 42: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	13, // 43: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	15, // 44: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	16, // 45: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	19, // 46: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	21, // 47: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	24, // 48: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	26, // 49: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	29, // 50: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	13, // 51: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	1,  // 52: api.MonitorDataService.Version:output_type -> api.Message
-	32, // 53: api.MonitorDataService.Login:output_type -> api.SessionInfo
-	32, // 54: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
-	1,  // 55: api.MonitorDataService.Logout:output_type -> api.Message
-	1,  // 56: api.MonitorDataService.ChangePassword:output_type -> api.Message
-	1,  // 57: api.MonitorDataService.CheckPassword:output_type -> api.Message
-	35, // 58: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
-	37, // 59: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
-	36, // 60: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
-	1,  // 61: api.MonitorDataService.DeleteRule:output_type -> api.Message
-	36, // [36:62] is the sub-list for method output_type
-	10, // [10:36] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 0: api.PingResponse.update:type_name -> api.AgentUpdate
+	10, // 1: api.FleetSummary.hosts:type_name -> api.HostSummary
+	15, // 2: api.Series.points:type_name -> api.Point
+	16, // 3: api.SeriesResponse.series:type_name -> api.Series
+	22, // 4: api.AlertList.alerts:type_name -> api.AlertRecord
+	24, // 5: api.DiskForecastList.disks:type_name -> api.DiskForecast
+	27, // 6: api.ProcessUsageList.processes:type_name -> api.ProcessUsage
+	13, // 7: api.SnapshotList.hosts:type_name -> api.HostSnapshot
+	29, // 8: api.SnapshotList.customMetrics:type_name -> api.CustomValue
+	32, // 9: api.EndpointList.endpoints:type_name -> api.EndpointStatus
+	40, // 10: api.AlertRuleList.rules:type_name -> api.AlertRuleInfo
+	8,  // 11: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
+	2,  // 12: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 13: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	7,  // 14: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	7,  // 15: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 16: api.MonitorDataService.Fleet:input_type -> api.Void
+	12, // 17: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	14, // 18: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	18, // 19: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	12, // 20: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	21, // 21: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	12, // 22: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
+	26, // 23: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
+	0,  // 24: api.MonitorDataService.Snapshots:input_type -> api.Void
+	31, // 25: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
+	34, // 26: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
+	0,  // 27: api.MonitorDataService.Version:input_type -> api.Void
+	35, // 28: api.MonitorDataService.Login:input_type -> api.Credentials
+	38, // 29: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
+	38, // 30: api.MonitorDataService.Logout:input_type -> api.SessionRequest
+	37, // 31: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
+	35, // 32: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
+	0,  // 33: api.MonitorDataService.HasUsers:input_type -> api.Void
+	0,  // 34: api.MonitorDataService.AlertRules:input_type -> api.Void
+	42, // 35: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
+	43, // 36: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
+	5,  // 37: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
+	9,  // 38: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	4,  // 39: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
+	1,  // 40: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 41: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 42: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	11, // 43: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	13, // 44: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	17, // 45: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	19, // 46: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	20, // 47: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	23, // 48: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	25, // 49: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	28, // 50: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	30, // 51: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	33, // 52: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	17, // 53: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 54: api.MonitorDataService.Version:output_type -> api.Message
+	36, // 55: api.MonitorDataService.Login:output_type -> api.SessionInfo
+	36, // 56: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
+	1,  // 57: api.MonitorDataService.Logout:output_type -> api.Message
+	1,  // 58: api.MonitorDataService.ChangePassword:output_type -> api.Message
+	1,  // 59: api.MonitorDataService.CheckPassword:output_type -> api.Message
+	39, // 60: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
+	41, // 61: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
+	40, // 62: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
+	1,  // 63: api.MonitorDataService.DeleteRule:output_type -> api.Message
+	6,  // 64: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
+	38, // [38:65] is the sub-list for method output_type
+	11, // [11:38] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -2976,15 +3291,15 @@ func file_api_api_proto_init() {
 	if File_api_api_proto != nil {
 		return
 	}
-	file_api_api_proto_msgTypes[6].OneofWrappers = []any{}
-	file_api_api_proto_msgTypes[20].OneofWrappers = []any{}
+	file_api_api_proto_msgTypes[10].OneofWrappers = []any{}
+	file_api_api_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   40,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

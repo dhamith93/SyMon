@@ -11,9 +11,39 @@ message Message {
     string body = 1;
 }
 
+// agentVersion and arch are sent by agents that can update themselves,
+// updateError when their last try failed
 message ServerInfo {
     string serverName = 1;
     string timezone = 2;
+    string agentVersion = 3;
+    string arch = 4;
+    string updateError = 5;
+}
+
+// An update an admin asked for. The agent downloads the build from
+// downloadUrl, the dashboard, and installs it only when it is signed.
+message AgentUpdate {
+    string version = 1;
+    string downloadUrl = 2;
+    int64 requestedAt = 3;
+}
+
+// body is field 1 like in Message, so agents from before updates still read it
+message PingResponse {
+    string body = 1;
+    AgentUpdate update = 2;
+}
+
+message AgentUpdateRequest {
+    repeated string hosts = 1;
+    string version = 2;
+    string downloadUrl = 3;
+    string by = 4;
+}
+
+message AgentUpdateResult {
+    int32 requested = 1;
 }
 
 message MonitorData {
@@ -56,6 +86,12 @@ message HostSummary {
     optional double diskFullDays = 16;
     // empty from agents older than versions
     string agentVersion = 17;
+    // the agent updates itself when asked
+    bool canUpdate = 18;
+    // an update asked for and not done yet, empty for none
+    string updateVersion = 19;
+    int64 updateRequestedAt = 20;
+    string updateError = 21;
 }
 
 message FleetSummary {
@@ -305,7 +341,7 @@ message RuleRequest {
 service MonitorDataService {
     // agent
     rpc Enroll(EnrollRequest) returns (EnrollResponse) {}
-    rpc HandlePing(ServerInfo) returns (Message) {}
+    rpc HandlePing(ServerInfo) returns (PingResponse) {}
     rpc InitAgent(ServerInfo) returns (Message) {}
     rpc HandleMonitorData(MonitorData) returns (Message) {}
     rpc HandleCustomMonitorData(MonitorData) returns (Message) {}
@@ -341,4 +377,7 @@ service MonitorDataService {
     rpc AlertRules(Void) returns (AlertRuleList) {}
     rpc SaveRule(SaveRuleRequest) returns (AlertRuleInfo) {}
     rpc DeleteRule(RuleRequest) returns (Message) {}
+
+    // ask agents to update themselves, from the dashboard
+    rpc RequestAgentUpdate(AgentUpdateRequest) returns (AgentUpdateResult) {}
 }

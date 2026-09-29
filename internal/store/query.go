@@ -34,11 +34,19 @@ type HostSummary struct {
 	Containers int
 	// AgentVersion is empty from agents older than versions
 	AgentVersion string
+	// CanUpdate is true for agents that update themselves when asked
+	CanUpdate bool
+	// UpdateVersion is the update asked for and not done yet, empty for none
+	UpdateVersion     string
+	UpdateRequestedAt time.Time
+	// UpdateError is why the agent's last try at the update failed
+	UpdateError string
 }
 
 func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT h.name, h.last_seen, l.time, l.snapshot, count(a.id), coalesce(max(a.severity), 0)
+		SELECT h.name, h.last_seen, l.time, l.snapshot, count(a.id), coalesce(max(a.severity), 0),
+		       h.agent_version, h.agent_arch <> '', coalesce(h.update_version, ''), h.update_requested_at, h.update_error
 		FROM hosts h
 		LEFT JOIN host_latest l ON l.host_id = h.id
 		LEFT JOIN alerts a ON a.host_id = h.id AND a.resolved_at IS NULL
@@ -54,8 +62,14 @@ func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
 		var summary HostSummary
 		var lastSeen, snapshotTime *time.Time
 		var snapshot []byte
-		if err := rows.Scan(&summary.Name, &lastSeen, &snapshotTime, &snapshot, &summary.ActiveAlerts, &summary.WorstSeverity); err != nil {
+		var pingVersion string
+		var requestedAt *time.Time
+		if err := rows.Scan(&summary.Name, &lastSeen, &snapshotTime, &snapshot, &summary.ActiveAlerts, &summary.WorstSeverity,
+			&pingVersion, &summary.CanUpdate, &summary.UpdateVersion, &requestedAt, &summary.UpdateError); err != nil {
 			return nil, err
+		}
+		if requestedAt != nil {
+			summary.UpdateRequestedAt = *requestedAt
 		}
 		if lastSeen != nil {
 			summary.LastSeen = *lastSeen
@@ -67,6 +81,10 @@ func (s *Store) FleetSummary(ctx context.Context) ([]HostSummary, error) {
 				return nil, err
 			}
 			fillSummary(&summary, &data)
+		}
+		// a ping is newer than the snapshot right after an update
+		if pingVersion != "" {
+			summary.AgentVersion = pingVersion
 		}
 		summaries = append(summaries, summary)
 	}
