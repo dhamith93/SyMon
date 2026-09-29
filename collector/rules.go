@@ -43,9 +43,16 @@ func setupRules(ctx context.Context, st *store.Store, config *config.Collector) 
 	if setup.Done {
 		return
 	}
-	message := fmt.Sprintf("alert rules now live in the database and are edited on the dashboard. Imported %d from %q", setup.Imported, config.AlertsFilePath)
+	changes := []string{}
+	if config.AlertsFilePath != "" {
+		changes = append(changes, fmt.Sprintf("imported %d from %s", setup.Imported, config.AlertsFilePath))
+	}
 	if len(setup.Added) > 0 {
-		message += ", added " + strings.Join(setup.Added, ", ")
+		changes = append(changes, "added "+strings.Join(setup.Added, ", "))
+	}
+	message := "alert rules now live in the database and are edited on the dashboard"
+	if len(changes) > 0 {
+		message += ": " + strings.Join(changes, ", ")
 	}
 	logger.Log("info", message)
 }
