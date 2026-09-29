@@ -45,6 +45,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 - Each host has its own key, and components can talk over TLS
 - A Prometheus endpoint, for Grafana or a Prometheus you already run
 - Every part reports its version: `-version` on each binary, the dashboard footer, and each host's page for its agent
+- Agents update themselves from the dashboard when an admin asks, and only install builds signed with your key
 
 ## Screenshots
 
@@ -88,6 +89,7 @@ Optional. The Collector sends it alerts as they open, change and resolve, and it
 - **Shared key.** The Collector, Client and Alert processor use a shared key from `collector -init`. Each call carries a short-lived token signed with it.
 - **TLS.** Traffic between components can be encrypted. See the `*_TLS_*` and `*_CERT_PATH` settings in each component's `.env-example`.
 - **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
+- **Agent updates.** Agent builds are signed with a key that stays where you build them (`~/.config/symon/agent-signing.key`). Agents only install updates signed with it, so a tampered download or a spoofed update request cannot run code on your hosts.
 - **Roles.** Admins can change alert rules, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
 - **HTTPS.** Put a reverse proxy like Caddy or nginx in front of the dashboard, so passwords and the session cookie are encrypted.
 
@@ -132,6 +134,8 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * Names of the host's custom metrics
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
     * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint alerts have an empty `host`
+* `POST /api/v1/agents/update` with `{"hosts": ["..."]}` as JSON
+    * For admins only. Asks those hosts' agents to update to the dashboard's version, and answers how many were asked. Agents from before updates are left out
 * `GET /api/v1/rules`
     * The alert rules, each with `id`, `enabled` and `rule`, the rule in the alerts.json format
 * `POST /api/v1/rules` and `PUT /api/v1/rules/{id}` with `{"enabled": true, "rule": {...}}` as JSON, `DELETE /api/v1/rules/{id}`

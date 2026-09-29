@@ -41,6 +41,8 @@ make pack-all
 
 `release/` then holds one bundle per component. The client bundle includes the agent builds that new hosts download: Linux amd64, arm64 and 32 bit ARM (every Raspberry Pi).
 
+The first `make pack-all` also creates `~/.config/symon/agent-signing.key` and signs the agent builds with it. Agents are built with its public key and only install updates from the dashboard that are signed with it, so keep the key on the machine you build on, never on the servers, and back it up. Without it, a new key means every agent needs one manual upgrade before the dashboard can update it again. `SIGNING_KEY=<file>` picks another location.
+
 Copy the bundles to the server and extract them:
 
 ```sh
@@ -312,9 +314,11 @@ Coming from a version without logins, the dashboard is locked after the upgrade 
 
 Coming from a version with rules in `alerts.json`, the collector imports the file on its first start and adds the "Host not reporting" rule for every host. From then on rules are edited on the dashboard, see [Alerts](#alerts).
 
-**Checking versions.** Every binary prints its version with `-version`, for example `/opt/symon/collector_linux_x86_64/collector_linux_x86_64 -version`, and logs it when it starts. The dashboard footer shows its own version, and the collector's too when they differ. Each host's page shows the version of its agent, so you can see which hosts still need the upgrade below.
+**Checking versions.** Every binary prints its version with `-version`, for example `/opt/symon/collector_linux_x86_64/collector_linux_x86_64 -version`, and logs it when it starts. The dashboard footer shows its own version, and the collector's too when they differ. The hosts page flags agents that are not on the dashboard's version.
 
-**Hosts.** Run the install command again on each host. No token is needed: the script sees the host is already enrolled, replaces the agent with the build the dashboard now serves, and keeps the key and the settings.
+**Hosts.** After the server upgrade, the hosts page offers to update every outdated agent, and each host's page has an Update agent button. Both are for admins. The agent picks the request up within a minute, downloads its build from the dashboard, and installs it only when it is signed with your key, runs on the host, and is the version asked for. Then it restarts, and the host's page shows the new version, or why it failed.
+
+Agents from before this feature cannot update themselves yet. Run the install command on each of them once. No token is needed: the script sees the host is already enrolled, replaces the agent with the build the dashboard now serves, and keeps the key and the settings.
 
 ```sh
 curl -fsSL --connect-timeout 10 http://symon.example.lan:8080/install.sh | sudo sh
@@ -380,6 +384,8 @@ sudo -u postgres dropuser symon
 **A container shows "host network".** It shares the host's network, so its traffic is already counted in the host's own network charts.
 
 **The dashboard shows data only for part of a long range.** Longer ranges come from 1 minute and 1 hour averages, which are refreshed every few minutes. Recent data appears there shortly after it arrives.
+
+**An agent update fails with "not signed with this agent's update key".** The dashboard's agent builds were signed with another key than the agent was built with, or not signed at all, for example after building on another machine. Rebuild with the original key, or run the install command on the host once to switch it to the new key.
 
 **Forgot a password.** On the collector's host, `collector -reset-password <name>` prints a new one. Logged in users change their own on the Account page, which the user name in the header links to.
 
