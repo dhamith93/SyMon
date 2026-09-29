@@ -36,12 +36,28 @@ type fakeCollector struct {
 	loggedOut      atomic.Value
 }
 
-const testSession = "test-session"
+const (
+	testSession   = "test-session"
+	viewerSession = "viewer-session"
+)
+
+func (f *fakeCollector) ChangePassword(ctx context.Context, in *api.ChangePasswordRequest) (*api.Message, error) {
+	switch {
+	case in.Current != "correct horse battery":
+		return nil, status.Error(codes.Unauthenticated, "wrong user name or password")
+	case len(in.NewPassword) < 12:
+		return nil, status.Error(codes.InvalidArgument, "invalid request: a password needs at least 12 characters")
+	}
+	return &api.Message{Body: "ok"}, nil
+}
 
 func (f *fakeCollector) CheckSession(ctx context.Context, in *api.SessionRequest) (*api.SessionInfo, error) {
 	f.sessionChecks.Add(1)
-	if in.Token == testSession || in.Token == "new-token" {
-		return &api.SessionInfo{User: "tester", Expires: time.Now().Add(time.Hour).Unix()}, nil
+	switch in.Token {
+	case testSession, "new-token":
+		return &api.SessionInfo{User: "tester", Role: "admin", Expires: time.Now().Add(time.Hour).Unix()}, nil
+	case viewerSession:
+		return &api.SessionInfo{User: "vera", Role: "viewer", Expires: time.Now().Add(time.Hour).Unix()}, nil
 	}
 	return nil, status.Error(codes.Unauthenticated, "not logged in")
 }
@@ -60,7 +76,7 @@ func (f *fakeCollector) Login(ctx context.Context, in *api.Credentials) (*api.Se
 	if err := f.checkCredentials(in); err != nil {
 		return nil, err
 	}
-	return &api.SessionInfo{Token: "new-token", User: in.User, Expires: 1900000000}, nil
+	return &api.SessionInfo{Token: "new-token", User: in.User, Role: "admin", Expires: 1900000000}, nil
 }
 
 func (f *fakeCollector) CheckPassword(ctx context.Context, in *api.Credentials) (*api.Message, error) {

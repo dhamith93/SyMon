@@ -17,17 +17,17 @@ import (
 // Dashboard users are managed from the command line. A new password is
 // made up and printed once, unless -password-stdin gives one.
 
-func addUser(ctx context.Context, st *store.Store, config *config.Collector, name string, fromStdin bool) {
+func addUser(ctx context.Context, st *store.Store, config *config.Collector, name string, role string, fromStdin bool) {
 	migrateOrExit(ctx, st)
 	password := newPassword(fromStdin)
-	err := st.AddUser(ctx, name, password)
+	err := st.AddUser(ctx, name, password, role)
 	if errors.Is(err, store.ErrUserExists) {
 		exit("User " + name + " already exists. Use -reset-password to give it a new password.")
 	}
 	if err != nil {
 		exit("cannot add the user: " + err.Error())
 	}
-	fmt.Printf("Created user %s.\n", name)
+	fmt.Printf("Created user %s, %s.\n", name, roleWords(role))
 	if !fromStdin {
 		printPassword(password)
 	}
@@ -48,6 +48,25 @@ func resetPassword(ctx context.Context, st *store.Store, name string, fromStdin 
 	if !fromStdin {
 		printPassword(password)
 	}
+}
+
+func setRole(ctx context.Context, st *store.Store, name string, role string) {
+	migrateOrExit(ctx, st)
+	err := st.SetRole(ctx, name, role)
+	if errors.Is(err, store.ErrNotFound) {
+		exit("There is no user " + name + ".")
+	}
+	if err != nil {
+		exit("cannot set the role: " + err.Error())
+	}
+	fmt.Printf("%s is now %s. The dashboard picks it up within a minute.\n", name, roleWords(role))
+}
+
+func roleWords(role string) string {
+	if role == store.RoleViewer {
+		return "a viewer, who can look but not change alert rules"
+	}
+	return "an admin, who can change alert rules"
 }
 
 func removeUser(ctx context.Context, st *store.Store, name string) {
@@ -73,13 +92,13 @@ func listUsers(ctx context.Context, st *store.Store) {
 		return
 	}
 	table := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(table, "USER\tCREATED\tLAST LOGIN")
+	fmt.Fprintln(table, "USER\tROLE\tCREATED\tLAST LOGIN")
 	for _, user := range users {
 		lastLogin := "never"
 		if !user.LastLogin.IsZero() {
 			lastLogin = user.LastLogin.Local().Format("Jan 2 2006 15:04")
 		}
-		fmt.Fprintf(table, "%s\t%s\t%s\n", user.Name, user.CreatedAt.Local().Format("Jan 2 2006"), lastLogin)
+		fmt.Fprintf(table, "%s\t%s\t%s\t%s\n", user.Name, user.Role, user.CreatedAt.Local().Format("Jan 2 2006"), lastLogin)
 	}
 	table.Flush()
 }

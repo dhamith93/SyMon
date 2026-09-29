@@ -82,6 +82,7 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("GET /api/v1/alerts", s.getAlerts)
 	data.HandleFunc("GET /api/v1/endpoints", s.getEndpoints)
 	data.HandleFunc("GET /api/v1/endpoints/series", s.getEndpointSeries)
+	data.HandleFunc("POST /api/v1/password", s.postPassword)
 	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})

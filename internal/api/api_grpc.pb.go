@@ -39,6 +39,7 @@ const (
 	MonitorDataService_Login_FullMethodName                   = "/api.MonitorDataService/Login"
 	MonitorDataService_CheckSession_FullMethodName            = "/api.MonitorDataService/CheckSession"
 	MonitorDataService_Logout_FullMethodName                  = "/api.MonitorDataService/Logout"
+	MonitorDataService_ChangePassword_FullMethodName          = "/api.MonitorDataService/ChangePassword"
 	MonitorDataService_CheckPassword_FullMethodName           = "/api.MonitorDataService/CheckPassword"
 	MonitorDataService_HasUsers_FullMethodName                = "/api.MonitorDataService/HasUsers"
 )
@@ -72,6 +73,8 @@ type MonitorDataServiceClient interface {
 	Login(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*SessionInfo, error)
 	CheckSession(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*SessionInfo, error)
 	Logout(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*Message, error)
+	// a logged in user changing their own password
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*Message, error)
 	// for HTTP basic auth, like Prometheus scraping /metrics
 	CheckPassword(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*Message, error)
 	// the dashboard stays locked until the first user exists
@@ -286,6 +289,16 @@ func (c *monitorDataServiceClient) Logout(ctx context.Context, in *SessionReques
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_ChangePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *monitorDataServiceClient) CheckPassword(ctx context.Context, in *Credentials, opts ...grpc.CallOption) (*Message, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Message)
@@ -335,6 +348,8 @@ type MonitorDataServiceServer interface {
 	Login(context.Context, *Credentials) (*SessionInfo, error)
 	CheckSession(context.Context, *SessionRequest) (*SessionInfo, error)
 	Logout(context.Context, *SessionRequest) (*Message, error)
+	// a logged in user changing their own password
+	ChangePassword(context.Context, *ChangePasswordRequest) (*Message, error)
 	// for HTTP basic auth, like Prometheus scraping /metrics
 	CheckPassword(context.Context, *Credentials) (*Message, error)
 	// the dashboard stays locked until the first user exists
@@ -408,6 +423,9 @@ func (UnimplementedMonitorDataServiceServer) CheckSession(context.Context, *Sess
 }
 func (UnimplementedMonitorDataServiceServer) Logout(context.Context, *SessionRequest) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) CheckPassword(context.Context, *Credentials) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPassword not implemented")
@@ -796,6 +814,24 @@ func _MonitorDataService_Logout_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MonitorDataService_CheckPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Credentials)
 	if err := dec(in); err != nil {
@@ -918,6 +954,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _MonitorDataService_Logout_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _MonitorDataService_ChangePassword_Handler,
 		},
 		{
 			MethodName: "CheckPassword",

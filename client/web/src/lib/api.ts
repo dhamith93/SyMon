@@ -219,12 +219,16 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return response.json();
 }
 
-// who is logged in, or without a session whether there are users at all
-export type SessionState = { user: string } | { user: null; hasUsers: boolean };
+// who is logged in, or without a session whether there are users at all.
+// role is admin, who can change alert rules, or viewer.
+export type SessionState = { user: string; role: string } | { user: null; hasUsers: boolean };
 
 async function session(): Promise<SessionState> {
   const response = await fetch('/api/v1/session');
-  if (response.ok) return { user: (await response.json()).user };
+  if (response.ok) {
+    const body = await response.json();
+    return { user: body.user, role: body.role };
+  }
   if (response.status !== 401) return fail(response);
   return { user: null, hasUsers: !!(await response.json()).hasUsers };
 }
@@ -249,6 +253,7 @@ export const api = {
   session,
   login: (user: string, password: string) => post<{ user: string }>('/api/v1/login', { user, password }),
   logout: () => post<object>('/api/v1/logout', {}),
+  changePassword: (current: string, next: string) => post<object>('/api/v1/password', { current, new: next }),
   // collectorVersion is empty when the collector cannot say
   config: () => get<{ refreshSeconds: number; version: string; collectorVersion: string }>('/api/v1/config'),
   fleet: () => get<{ hosts: HostSummary[] }>('/api/v1/fleet'),

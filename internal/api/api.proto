@@ -251,11 +251,18 @@ message Credentials {
     string password = 2;
 }
 
-// token is only set by Login
+// token is only set by Login. role is admin or viewer.
 message SessionInfo {
     string token = 1;
     string user = 2;
     int64 expires = 3;
+    string role = 4;
+}
+
+message ChangePasswordRequest {
+    string token = 1;
+    string current = 2;
+    string newPassword = 3;
 }
 
 message SessionRequest {
@@ -294,6 +301,8 @@ service MonitorDataService {
     rpc Login(Credentials) returns (SessionInfo) {}
     rpc CheckSession(SessionRequest) returns (SessionInfo) {}
     rpc Logout(SessionRequest) returns (Message) {}
+    // a logged in user changing their own password
+    rpc ChangePassword(ChangePasswordRequest) returns (Message) {}
     // for HTTP basic auth, like Prometheus scraping /metrics
     rpc CheckPassword(Credentials) returns (Message) {}
     // the dashboard stays locked until the first user exists

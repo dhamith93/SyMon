@@ -33,6 +33,8 @@ func main() {
 	addUserName := flag.String("add-user", "", "Create a dashboard user and print its password")
 	resetPasswordName := flag.String("reset-password", "", "Give a dashboard user a new password and log them out everywhere")
 	passwordStdin := flag.Bool("password-stdin", false, "With -add-user or -reset-password: read the password from stdin instead of making one up")
+	role := flag.String("role", "admin", "With -add-user or -set-role: admin, who can change alert rules, or viewer, who can only look")
+	setRoleName := flag.String("set-role", "", "Give a dashboard user the role in -role")
 	removeUserName := flag.String("remove-user", "", "Remove a dashboard user")
 	listUsersPtr := flag.Bool("list-users", false, "List the dashboard users")
 	envFile := flag.String("env", config.DefaultEnvFile("collector"), "Settings file with KEY=value lines, loaded if it exists")
@@ -77,7 +79,10 @@ func main() {
 	}
 	switch {
 	case *addUserName != "":
-		addUser(ctx, st, &config, *addUserName, *passwordStdin)
+		addUser(ctx, st, &config, *addUserName, *role, *passwordStdin)
+		return
+	case *setRoleName != "":
+		setRole(ctx, st, *setRoleName, *role)
 		return
 	case *resetPasswordName != "":
 		resetPassword(ctx, st, *resetPasswordName, *passwordStdin)

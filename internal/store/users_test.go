@@ -39,16 +39,16 @@ func TestUsersAndSessions(t *testing.T) {
 	if has, err := st.HasUsers(ctx); err != nil || has {
 		t.Fatalf("expected no users in a new database, got %v %v", has, err)
 	}
-	if err := st.AddUser(ctx, "alice", "correct horse battery"); err != nil {
+	if err := st.AddUser(ctx, "alice", "correct horse battery", RoleAdmin); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.AddUser(ctx, "alice", "another long password"); !errors.Is(err, ErrUserExists) {
+	if err := st.AddUser(ctx, "alice", "another long password", RoleAdmin); !errors.Is(err, ErrUserExists) {
 		t.Errorf("expected ErrUserExists, got %v", err)
 	}
-	if err := st.AddUser(ctx, "bob smith", "correct horse battery"); !errors.Is(err, ErrInvalid) {
+	if err := st.AddUser(ctx, "bob smith", "correct horse battery", RoleAdmin); !errors.Is(err, ErrInvalid) {
 		t.Errorf("expected ErrInvalid for a name with a space, got %v", err)
 	}
-	if err := st.AddUser(ctx, "bob", "short"); !errors.Is(err, ErrInvalid) {
+	if err := st.AddUser(ctx, "bob", "short", RoleAdmin); !errors.Is(err, ErrInvalid) {
 		t.Errorf("expected ErrInvalid for a short password, got %v", err)
 	}
 	if has, err := st.HasUsers(ctx); err != nil || !has {
@@ -140,5 +140,60 @@ func TestUsersAndSessions(t *testing.T) {
 	}
 	if err := st.RemoveUser(ctx, "alice"); !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected ErrNotFound removing a user twice, got %v", err)
+	}
+}
+
+func TestRolesAndPasswordChange(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	if err := st.AddUser(ctx, "vera", "correct horse battery", RoleViewer); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AddUser(ctx, "root", "correct horse battery", "root"); !errors.Is(err, ErrInvalid) {
+		t.Errorf("expected ErrInvalid for an unknown role, got %v", err)
+	}
+
+	session, err := st.Login(ctx, "vera", "correct horse battery")
+	if err != nil || session.Role != RoleViewer {
+		t.Fatalf("expected a viewer's session, got %+v %v", session, err)
+	}
+	if err := st.SetRole(ctx, "vera", RoleAdmin); err != nil {
+		t.Fatal(err)
+	}
+	if found, err := st.Session(ctx, session.Token); err != nil || found.Role != RoleAdmin {
+		t.Errorf("expected the new role on the session, got %+v %v", found, err)
+	}
+	if err := st.SetRole(ctx, "nobody", RoleAdmin); !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound for an unknown user, got %v", err)
+	}
+	if users, err := st.Users(ctx); err != nil || users[0].Role != RoleAdmin {
+		t.Errorf("expected vera as an admin, got %+v %v", users, err)
+	}
+
+	// changing a password keeps this session and ends the others
+	other, err := st.Login(ctx, "vera", "correct horse battery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.ChangePassword(ctx, session.Token, "wrong horse battery", "a brand new password"); !errors.Is(err, ErrBadLogin) {
+		t.Errorf("expected ErrBadLogin for a wrong current password, got %v", err)
+	}
+	if err := st.ChangePassword(ctx, session.Token, "correct horse battery", "short"); !errors.Is(err, ErrInvalid) {
+		t.Errorf("expected ErrInvalid for a short new password, got %v", err)
+	}
+	if err := st.ChangePassword(ctx, "not-a-token", "correct horse battery", "a brand new password"); !errors.Is(err, ErrBadSession) {
+		t.Errorf("expected ErrBadSession without a session, got %v", err)
+	}
+	if err := st.ChangePassword(ctx, session.Token, "correct horse battery", "a brand new password"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Session(ctx, session.Token); err != nil {
+		t.Errorf("expected this session to stay, got %v", err)
+	}
+	if _, err := st.Session(ctx, other.Token); !errors.Is(err, ErrBadSession) {
+		t.Errorf("expected the other session to end, got %v", err)
+	}
+	if _, err := st.Login(ctx, "vera", "a brand new password"); err != nil {
+		t.Errorf("expected the new password to work, got %v", err)
 	}
 }
