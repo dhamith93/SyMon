@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -125,5 +126,69 @@ func TestLoadQuery30Days(t *testing.T) {
 	}
 	if best > 100*time.Millisecond {
 		t.Errorf("query took %v, over 100ms", best)
+	}
+}
+
+// a host sending its top processes every 15s for 7 days, the raw
+// retention, then the busiest processes over the last day and over a day
+// in compressed chunks
+func TestLoadProcessUsage7Days(t *testing.T) {
+	st := loadStore(t)
+	ctx := context.Background()
+	if err := st.AddHost(ctx, "web1", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+	hostID, err := st.hostID(ctx, "web1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 30 programs, top 10 by CPU and by memory in each snapshot, some in both
+	process := func() monitor.Process {
+		n := rand.Intn(30)
+		return monitor.Process{Pid: 1000 + n*10 + rand.Intn(3), Name: fmt.Sprintf("program%02d", n), ExecPath: fmt.Sprintf("/usr/bin/program%02d", n),
+			User: "root", CPUUsage: rand.Float32() * 50, MemUsage: rand.Float32() * 10, Threads: 4}
+	}
+	end := time.Now().Truncate(time.Second)
+	start := end.Add(-7 * 24 * time.Hour)
+	var rows [][]any
+	for at := start; at.Before(end); at = at.Add(15 * time.Second) {
+		var processes monitor.Processes
+		for i := 0; i < 10; i++ {
+			processes.CPU = append(processes.CPU, process())
+			processes.Memory = append(processes.Memory, process())
+		}
+		rows = append(rows, []any{at, hostID, processes})
+	}
+	copied, err := st.pool.CopyFrom(ctx, pgx.Identifier{"process_snapshots"}, []string{"time", "host_id", "processes"}, pgx.CopyFromRows(rows))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// the compression policy would have compressed these by now
+	var compressed int
+	err = st.pool.QueryRow(ctx, `SELECT count(compress_chunk(c)) FROM show_chunks('process_snapshots', older_than => now() - INTERVAL '2 days') c`).Scan(&compressed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("inserted %d snapshots, compressed %d chunks", copied, compressed)
+
+	for _, daysAgo := range []int{0, 5} {
+		to := end.Add(-time.Duration(daysAgo) * 24 * time.Hour)
+		var best time.Duration
+		var result ProcessUsageResult
+		for i := 0; i < 3; i++ {
+			started := time.Now()
+			result, err = st.ProcessUsage(ctx, "web1", to.Add(-processUsageMaxRange), to)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if took := time.Since(started); best == 0 || took < best {
+				best = took
+			}
+		}
+		t.Logf("day ending %d days ago: %d snapshots, %d programs, best of 3 %v", daysAgo, result.Snapshots, len(result.Processes), best)
+		if best > time.Second {
+			t.Errorf("day ending %d days ago took %v, over 1s", daysAgo, best)
+		}
 	}
 }
