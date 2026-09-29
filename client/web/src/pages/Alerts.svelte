@@ -1,7 +1,7 @@
 <script lang="ts">
   import { api, type AlertRecord } from '../lib/api';
   import { appConfig } from '../lib/config.svelte';
-  import { formatDateTime, formatDuration, formatNumber, formatPercent } from '../lib/format';
+  import { formatDateTime, formatDays, formatDuration, formatNumber, formatPercent } from '../lib/format';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import StatTile from '../components/StatTile.svelte';
@@ -78,6 +78,7 @@
       case 'ping':
         return 'Heartbeat';
       case 'disks':
+      case 'disk_forecast':
       case 'services':
         return alert.target;
       default:
@@ -94,6 +95,9 @@
         return formatPercent(alert.value);
       case 'ping':
         return `silent ${formatDuration(alert.value)}`;
+      case 'disk_forecast':
+        // the collector reads a disk that is not filling up as 365 days
+        return alert.value >= 365 ? 'not filling up' : `full in ${formatDays(alert.value)}`;
       case 'services':
         return alert.value ? 'Running' : 'Stopped';
       default:
