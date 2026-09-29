@@ -4,7 +4,8 @@
   import { appConfig } from '../lib/config.svelte';
   import { formatAgo, formatDays, formatDuration, formatRate } from '../lib/format';
   import { poll } from '../lib/poll';
-  import { agentOutdated } from '../lib/versions';
+  import { isAdmin } from '../lib/auth.svelte';
+  import { agentOutdated, agentState } from '../lib/versions';
   import { hostPath } from '../lib/router.svelte';
   import Meter from '../components/Meter.svelte';
   import Sparkline from '../components/Sparkline.svelte';
@@ -64,6 +65,23 @@
 
   const up = $derived(hosts.filter((h) => h.up).length);
   const outdatedAgents = $derived(hosts.filter(outdated).length);
+  // agents that update themselves when asked, including ones whose last try failed
+  const updatable = $derived(hosts.filter((h) => outdated(h) && ['available', 'failed'].includes(agentState(h, appConfig.version))));
+  let updateMessage = $state('');
+  let updating = $state(false);
+
+  async function updateAgents() {
+    updating = true;
+    try {
+      const result = await api.updateAgents(updatable.map((h) => h.name));
+      updateMessage = `Asked ${result.requested} agent${result.requested === 1 ? '' : 's'} to update to ${result.version}. They pick it up within a minute.`;
+      await loadFleet();
+    } catch (e) {
+      updateMessage = `Could not ask the agents to update: ${(e as Error).message}`;
+    } finally {
+      updating = false;
+    }
+  }
   const openAlerts = $derived(hosts.reduce((sum, h) => sum + h.activeAlerts, 0));
 
   const visible = $derived.by(() => {
@@ -103,11 +121,18 @@
     {#if outdatedAgents > 0}
       <StatTile label="Outdated agents" value={outdatedAgents}>
         {#snippet extra()}
-          <span class="secondary">Not on {appConfig.version}</span>
+          {#if isAdmin() && updatable.length > 0}
+            <button class="control update" disabled={updating} onclick={updateAgents}>
+              Update {updatable.length} to {appConfig.version}
+            </button>
+          {:else}
+            <span class="secondary">Not on {appConfig.version}</span>
+          {/if}
         {/snippet}
       </StatTile>
     {/if}
   </section>
+  {#if updateMessage}<p class="update-message secondary" role="status">{updateMessage}</p>{/if}
 
   <div class="filters">
     <input class="control search" type="search" placeholder="Search hosts" aria-label="Search hosts" bind:value={search} />
@@ -177,7 +202,14 @@
               <StatusBadge status="warning" label="Disk full in {formatDays(host.diskFullDays ?? 0)}" />
             {/if}
             {#if outdated(host)}
-              <StatusBadge status="warning" label="Agent outdated" />
+              {@const state = agentState(host, appConfig.version)}
+              {#if state === 'requested'}
+                <StatusBadge status="warning" label="Agent updating" />
+              {:else if state === 'failed'}
+                <StatusBadge status="critical" label="Agent update failed" />
+              {:else}
+                <StatusBadge status="warning" label="Agent outdated" />
+              {/if}
             {/if}
           </div>
         {/if}
@@ -265,6 +297,16 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
+  }
+
+  .update {
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .update-message {
+    margin: -6px 0 16px;
+    font-size: 13px;
   }
 
   .alerts {

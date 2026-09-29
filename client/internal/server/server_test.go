@@ -30,11 +30,12 @@ type fakeCollector struct {
 
 	// login: testSession is valid, alice's password is "correct horse
 	// battery", and the user "locked" has failed too often
-	noUsers        atomic.Bool
-	sessionChecks  atomic.Int32
-	passwordChecks atomic.Int32
-	loggedOut      atomic.Value
-	lastRuleBy     atomic.Value
+	noUsers         atomic.Bool
+	sessionChecks   atomic.Int32
+	passwordChecks  atomic.Int32
+	loggedOut       atomic.Value
+	lastRuleBy      atomic.Value
+	lastAgentUpdate atomic.Value
 }
 
 const (
@@ -189,6 +190,12 @@ func (f *fakeCollector) SaveRule(ctx context.Context, in *api.SaveRuleRequest) (
 
 func (f *fakeCollector) DeleteRule(ctx context.Context, in *api.RuleRequest) (*api.Message, error) {
 	return &api.Message{Body: "ok"}, nil
+}
+
+// RequestAgentUpdate asks every host it is given
+func (f *fakeCollector) RequestAgentUpdate(ctx context.Context, in *api.AgentUpdateRequest) (*api.AgentUpdateResult, error) {
+	f.lastAgentUpdate.Store(in)
+	return &api.AgentUpdateResult{Requested: int32(len(in.Hosts))}, nil
 }
 
 func floatPtr(v float64) *float64 {

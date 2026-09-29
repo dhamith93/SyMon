@@ -1,12 +1,13 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { Aligned, NamedSeries } from '../lib/align';
-  import { api, diskFullSoonDays, type DiskForecast, type HostDetail } from '../lib/api';
+  import { api, diskFullSoonDays, type DiskForecast, type HostDetail, type HostSummary } from '../lib/api';
   import { hostSections, loadChart, loadCores, type ChartSpec } from '../lib/charts';
   import { appConfig } from '../lib/config.svelte';
   import { formatAgo, formatBytes, formatDate, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
   import { noForecastText, projectDisks } from '../lib/projection';
-  import { agentOutdated } from '../lib/versions';
+  import { isAdmin } from '../lib/auth.svelte';
+  import { agentOutdated, agentState } from '../lib/versions';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
@@ -25,6 +26,10 @@
   const range = $derived(resolveRange(location.query, now));
 
   let detail = $state<HostDetail | null>(null);
+  // the fleet's view of this host, for the state of its agent
+  let summary = $state<HostSummary | null>(null);
+  let updateError = $state('');
+  let updating = $state(false);
   let detailError = $state('');
   let charts = $state<Record<string, { data: Aligned | null; loading: boolean; error: string }>>({});
   let cores = $state<NamedSeries[]>([]);
@@ -43,6 +48,24 @@
       detailError = '';
     } catch (e) {
       detailError = (e as Error).message;
+    }
+    try {
+      summary = (await api.fleet()).hosts.find((h) => h.name === host) ?? null;
+    } catch {
+      // the notice falls back to the install command
+    }
+  }
+
+  async function updateAgent() {
+    updating = true;
+    updateError = '';
+    try {
+      await api.updateAgents([host]);
+      await loadDetail();
+    } catch (e) {
+      updateError = (e as Error).message;
+    } finally {
+      updating = false;
     }
   }
 
@@ -156,14 +179,35 @@
     {#if hasCustomMetrics}<a class="control link-button" href={hostPath(host, true)}>Custom metrics</a>{/if}
   </header>
 
-  {#if snapshot && agentOutdated(snapshot.AgentVersion, appConfig.version)}
+  {#if snapshot && agentOutdated(summary?.agentVersion ?? snapshot.AgentVersion, appConfig.version)}
+    {@const state = summary ? agentState(summary, appConfig.version) : 'manual'}
+    {@const running = summary?.agentVersion || snapshot.AgentVersion}
     <div class="card upgrade">
-      <StatusBadge status="warning" label="Agent outdated" />
-      <p class="secondary">
-        This host runs {snapshot.AgentVersion ? `agent ${snapshot.AgentVersion}` : 'an agent from before versions'}, and the dashboard
-        hands out {appConfig.version}. To upgrade it, run on the host:
-      </p>
-      <code>curl -fsSL {window.location.origin}/install.sh | sudo sh</code>
+      {#if state === 'requested'}
+        <StatusBadge status="warning" label="Agent updating" />
+        <p class="secondary">
+          Asked {formatAgo(summary?.updateRequestedAt ?? 0)} to update to {summary?.updateVersion}. The agent picks it up within a minute
+          and restarts.
+        </p>
+      {:else if state === 'manual'}
+        <StatusBadge status="warning" label="Agent outdated" />
+        <p class="secondary">
+          This host runs {running ? `agent ${running}` : 'an agent from before versions'}, and the dashboard hands out {appConfig.version}.
+          This agent cannot update itself yet, so run this on the host once. After that it updates from here.
+        </p>
+        <code>curl -fsSL {window.location.origin}/install.sh | sudo sh</code>
+      {:else}
+        <StatusBadge status={state === 'failed' ? 'critical' : 'warning'} label={state === 'failed' ? 'Agent update failed' : 'Agent outdated'} />
+        <p class="secondary">
+          This host runs agent {running}, and the dashboard hands out {appConfig.version}.
+          {#if state === 'failed'}The last try failed: {summary?.updateError}{/if}
+          {#if !isAdmin()}An admin can update it from here.{/if}
+        </p>
+        {#if isAdmin()}
+          <button class="control" disabled={updating} onclick={updateAgent}>{state === 'failed' ? 'Try again' : 'Update agent'}</button>
+        {/if}
+      {/if}
+      {#if updateError}<p class="error">{updateError}</p>{/if}
     </div>
   {/if}
 
@@ -410,6 +454,11 @@
 
   .upgrade p {
     margin: 0;
+  }
+
+  .upgrade .error {
+    flex-basis: 100%;
+    color: var(--critical-ink);
   }
 
   .upgrade code {
