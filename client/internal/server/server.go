@@ -18,6 +18,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/transport"
+	"github.com/dhamith93/SyMon/internal/version"
 	"github.com/gorilla/handlers"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -58,7 +59,7 @@ func Run(address string) {
 		Handler:           handlers.CompressHandler(s.routes()),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
-	logger.Log("info", "dashboard started on "+address)
+	logger.Log("info", "dashboard "+version.String()+" started on "+address)
 	log.Fatal(httpServer.ListenAndServe())
 }
 
@@ -86,7 +87,16 @@ func (s *server) routes() http.Handler {
 }
 
 func (s *server) getConfig(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]int{"refreshSeconds": s.refreshSeconds})
+	// empty when the collector cannot say, like one older than the call
+	collectorVersion := ""
+	if response, err := s.collector.Version(r.Context(), &api.Void{}); err == nil {
+		collectorVersion = response.Body
+	}
+	writeJSON(w, map[string]any{
+		"refreshSeconds":   s.refreshSeconds,
+		"version":          version.String(),
+		"collectorVersion": collectorVersion,
+	})
 }
 
 type hostSummary struct {

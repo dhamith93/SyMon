@@ -40,6 +40,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 - Raw data kept for 7 days, 1 minute averages for 30 days and 1 hour averages for a year, all adjustable
 - Each host has its own key, and components can talk over TLS
 - A Prometheus endpoint, for Grafana or a Prometheus you already run
+- Every part reports its version: `-version` on each binary, the dashboard footer, and each host's page for its agent
 
 ## Screenshots
 

@@ -2225,7 +2225,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x12\n" +
 	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
-	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\x80\a\n" +
+	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\xa6\a\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x12-\n" +
 	"\n" +
@@ -2243,7 +2243,8 @@ const file_api_api_proto_rawDesc = "" +
 	"\fProcessUsage\x12\x18.api.ProcessUsageRequest\x1a\x15.api.ProcessUsageList\"\x00\x12+\n" +
 	"\tSnapshots\x12\t.api.Void\x1a\x11.api.SnapshotList\"\x00\x127\n" +
 	"\tEndpoints\x12\x15.api.EndpointsRequest\x1a\x11.api.EndpointList\"\x00\x12C\n" +
-	"\x0eEndpointSeries\x12\x1a.api.EndpointSeriesRequest\x1a\x13.api.SeriesResponse\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"\x0eEndpointSeries\x12\x1a.api.EndpointSeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x12$\n" +
+	"\aVersion\x12\t.api.Void\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -2317,24 +2318,26 @@ var file_api_api_proto_depIdxs = []int32{
 	0,  // 22: api.MonitorDataService.Snapshots:input_type -> api.Void
 	27, // 23: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
 	30, // 24: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
-	5,  // 25: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	1,  // 26: api.MonitorDataService.HandlePing:output_type -> api.Message
-	1,  // 27: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 28: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 29: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	7,  // 30: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	9,  // 31: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	13, // 32: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	15, // 33: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	16, // 34: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	19, // 35: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	21, // 36: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	24, // 37: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	26, // 38: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	29, // 39: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	13, // 40: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	25, // [25:41] is the sub-list for method output_type
-	9,  // [9:25] is the sub-list for method input_type
+	0,  // 25: api.MonitorDataService.Version:input_type -> api.Void
+	5,  // 26: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	1,  // 27: api.MonitorDataService.HandlePing:output_type -> api.Message
+	1,  // 28: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 29: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 30: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	7,  // 31: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	9,  // 32: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	13, // 33: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	15, // 34: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	16, // 35: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	19, // 36: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	21, // 37: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	24, // 38: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	26, // 39: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	29, // 40: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	13, // 41: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 42: api.MonitorDataService.Version:output_type -> api.Message
+	26, // [26:43] is the sub-list for method output_type
+	9,  // [9:26] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name

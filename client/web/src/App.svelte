@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appConfig } from './lib/config.svelte';
   import { handleLinkClick, location, match } from './lib/router.svelte';
   import { setTheme, theme, type ThemeChoice } from './lib/theme.svelte';
   import Alerts from './pages/Alerts.svelte';
@@ -11,6 +12,8 @@
   const onAlerts = $derived(page.name === 'alerts');
   const onEndpoints = $derived(page.name === 'endpoints');
   const onHosts = $derived(!onAlerts && !onEndpoints);
+  // one version when the dashboard and collector match, both when they do not
+  const sameVersion = $derived(!appConfig.collectorVersion || appConfig.collectorVersion === appConfig.version);
 </script>
 
 <svelte:document onclick={handleLinkClick} />
@@ -58,6 +61,16 @@
     </div>
   {/if}
 </main>
+
+{#if appConfig.version}
+  <footer class="app-footer muted">
+    {#if sameVersion}
+      SyMon {appConfig.version}
+    {:else}
+      Dashboard {appConfig.version} · Collector {appConfig.collectorVersion}
+    {/if}
+  </footer>
+{/if}
 
 <style>
   .app-header {
@@ -119,6 +132,13 @@
 
   main :global(h1) {
     font-size: 22px;
+  }
+
+  .app-footer {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 16px 24px;
+    font-size: 12px;
   }
 
   @media (max-width: 560px) {

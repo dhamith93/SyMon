@@ -35,6 +35,7 @@ const (
 	MonitorDataService_Snapshots_FullMethodName               = "/api.MonitorDataService/Snapshots"
 	MonitorDataService_Endpoints_FullMethodName               = "/api.MonitorDataService/Endpoints"
 	MonitorDataService_EndpointSeries_FullMethodName          = "/api.MonitorDataService/EndpointSeries"
+	MonitorDataService_Version_FullMethodName                 = "/api.MonitorDataService/Version"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -60,6 +61,8 @@ type MonitorDataServiceClient interface {
 	Snapshots(ctx context.Context, in *Void, opts ...grpc.CallOption) (*SnapshotList, error)
 	Endpoints(ctx context.Context, in *EndpointsRequest, opts ...grpc.CallOption) (*EndpointList, error)
 	EndpointSeries(ctx context.Context, in *EndpointSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
+	// the collector's build, in the body
+	Version(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error)
 }
 
 type monitorDataServiceClient struct {
@@ -230,6 +233,16 @@ func (c *monitorDataServiceClient) EndpointSeries(ctx context.Context, in *Endpo
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) Version(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_Version_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -253,6 +266,8 @@ type MonitorDataServiceServer interface {
 	Snapshots(context.Context, *Void) (*SnapshotList, error)
 	Endpoints(context.Context, *EndpointsRequest) (*EndpointList, error)
 	EndpointSeries(context.Context, *EndpointSeriesRequest) (*SeriesResponse, error)
+	// the collector's build, in the body
+	Version(context.Context, *Void) (*Message, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -310,6 +325,9 @@ func (UnimplementedMonitorDataServiceServer) Endpoints(context.Context, *Endpoin
 }
 func (UnimplementedMonitorDataServiceServer) EndpointSeries(context.Context, *EndpointSeriesRequest) (*SeriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EndpointSeries not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Version(context.Context, *Void) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Version not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -620,6 +638,24 @@ func _MonitorDataService_EndpointSeries_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_Version_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Version(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Version_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Version(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -690,6 +726,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EndpointSeries",
 			Handler:    _MonitorDataService_EndpointSeries_Handler,
+		},
+		{
+			MethodName: "Version",
+			Handler:    _MonitorDataService_Version_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

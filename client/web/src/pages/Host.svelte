@@ -146,6 +146,7 @@
           {#if cpu?.Model}<span>{cpu.Model}</span>{/if}
           {#if cpu?.NoOfCores}<span>{cpu.NoOfCores} CPUs</span>{/if}
           {#if snapshot?.Memory.Total}<span>{formatMiB(snapshot.Memory.Total)} memory</span>{/if}
+          {#if snapshot?.AgentVersion}<span>agent {snapshot.AgentVersion}</span>{/if}
         {:else if detailError}
           <span>{detailError === 'no data found' ? 'This host has not sent any data yet.' : `Could not load host: ${detailError}`}</span>
         {/if}

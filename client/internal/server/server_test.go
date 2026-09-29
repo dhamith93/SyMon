@@ -15,6 +15,7 @@ import (
 
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/transport"
+	"github.com/dhamith93/SyMon/internal/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -88,6 +89,10 @@ func (f *fakeCollector) EndpointSeries(ctx context.Context, in *api.EndpointSeri
 	}}, nil
 }
 
+func (f *fakeCollector) Version(ctx context.Context, in *api.Void) (*api.Message, error) {
+	return &api.Message{Body: "v3.1.0"}, nil
+}
+
 func floatPtr(v float64) *float64 {
 	return &v
 }
@@ -131,6 +136,16 @@ func get(t *testing.T, s *server, url string) (int, string, string) {
 	rec := httptest.NewRecorder()
 	s.routes().ServeHTTP(rec, httptest.NewRequest("GET", url, nil))
 	return rec.Code, rec.Body.String(), logs.String()
+}
+
+func TestConfig(t *testing.T) {
+	version.Version = "v3.1.1"
+	t.Cleanup(func() { version.Version = "" })
+	s, _ := newTestServer(t, nil)
+	code, body, _ := get(t, s, "/api/v1/config")
+	if code != 200 || strings.TrimSpace(body) != `{"collectorVersion":"v3.1.0","refreshSeconds":15,"version":"v3.1.1"}` {
+		t.Errorf("unexpected response %d: %s", code, body)
+	}
 }
 
 func TestFleet(t *testing.T) {

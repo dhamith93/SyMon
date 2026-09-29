@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -10,12 +11,18 @@ import (
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/transport"
+	"github.com/dhamith93/SyMon/internal/version"
 	"github.com/dhamith93/SyMon/pkg/memdb"
 )
 
 func main() {
 	envFile := flag.String("env", config.DefaultEnvFile("alertprocessor"), "Settings file with KEY=value lines, loaded if it exists")
+	versionPtr := flag.Bool("version", false, "Print the version and exit")
 	flag.Parse()
+	if *versionPtr {
+		fmt.Println("SyMon alert processor " + version.String())
+		return
+	}
 	if err := config.LoadEnvFile(*envFile); err != nil {
 		log.Fatal(err)
 	}
@@ -64,6 +71,7 @@ func main() {
 	}
 
 	alertapi.RegisterAlertServiceServer(grpcServer, &s)
+	logger.Log("info", "alert processor "+version.String()+" started on :"+config.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}

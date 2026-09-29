@@ -10,18 +10,23 @@ COPY client/web ./
 RUN npm run build
 
 FROM golang:1.26-alpine AS build
+# the version the binaries report, for example
+#   docker build --build-arg VERSION=$(git describe --tags --always --dirty) ...
+# .git is not copied in, so without it they report "dev"
+ARG VERSION=
+ENV LDFLAGS="-X github.com/dhamith93/SyMon/internal/version.Version=${VERSION}"
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web /web/dist ./client/web/dist
 RUN for c in agent collector alertprocessor client; do \
-        CGO_ENABLED=0 go build -o /out/$c ./$c || exit 1; \
+        CGO_ENABLED=0 go build -ldflags "$LDFLAGS" -o /out/$c ./$c || exit 1; \
     done
 # agent builds that new hosts download from the dashboard
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/downloads/agent-linux-amd64 ./agent \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /out/downloads/agent-linux-arm64 ./agent \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -o /out/downloads/agent-linux-arm ./agent
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o /out/downloads/agent-linux-amd64 ./agent \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$LDFLAGS" -o /out/downloads/agent-linux-arm64 ./agent \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -ldflags "$LDFLAGS" -o /out/downloads/agent-linux-arm ./agent
 
 FROM alpine:3.22 AS collector
 RUN adduser -D -H symon

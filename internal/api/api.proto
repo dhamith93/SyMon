@@ -258,4 +258,6 @@ service MonitorDataService {
     rpc Snapshots(Void) returns (SnapshotList) {}
     rpc Endpoints(EndpointsRequest) returns (EndpointList) {}
     rpc EndpointSeries(EndpointSeriesRequest) returns (SeriesResponse) {}
+    // the collector's build, in the body
+    rpc Version(Void) returns (Message) {}
 }

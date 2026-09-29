@@ -169,6 +169,8 @@ export interface Snapshot {
   Services: { Name: string; Running: boolean }[] | null;
   Processes: Processes;
   Containers?: Container[];
+  // missing from agents older than it
+  AgentVersion?: string;
 }
 
 export interface HostDetail {
@@ -212,7 +214,8 @@ async function get<T>(path: string, params: Record<string, string | number | boo
 const host = (name: string) => `/api/v1/hosts/${encodeURIComponent(name)}`;
 
 export const api = {
-  config: () => get<{ refreshSeconds: number }>('/api/v1/config'),
+  // collectorVersion is empty when the collector cannot say
+  config: () => get<{ refreshSeconds: number; version: string; collectorVersion: string }>('/api/v1/config'),
   fleet: () => get<{ hosts: HostSummary[] }>('/api/v1/fleet'),
   host: (name: string) => get<HostDetail>(host(name)),
   series: (name: string, metric: string, from: number, to: number, options: { label?: string; maxPoints?: number; max?: boolean } = {}) =>

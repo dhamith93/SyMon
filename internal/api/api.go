@@ -11,6 +11,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/store"
+	"github.com/dhamith93/SyMon/internal/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -313,6 +314,10 @@ func (s *Server) EndpointSeries(ctx context.Context, in *EndpointSeriesRequest) 
 		return nil, toStatus(err)
 	}
 	return seriesResponse(in.Metric, result), nil
+}
+
+func (s *Server) Version(ctx context.Context, in *Void) (*Message, error) {
+	return &Message{Body: version.String()}, nil
 }
 
 func milliseconds(d time.Duration) float64 {
