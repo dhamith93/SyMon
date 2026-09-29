@@ -20,6 +20,9 @@ func (s *server) getMetrics(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "metrics are switched off with SYMON_CLIENT_METRICS_ENABLED=false", http.StatusNotFound)
 		return
 	}
+	if !s.metricsAllowed(w, r) {
+		return
+	}
 	response, err := s.collector.Snapshots(r.Context(), &api.Void{})
 	if err != nil {
 		writeGRPCError(w, "snapshots", err)
