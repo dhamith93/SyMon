@@ -98,7 +98,11 @@
           width: 2,
           fill: single && area ? colors[i] + '1a' : undefined,
           dash: projection ? [6, 4] : undefined,
-          points: projection ? { show: true, size: 8, fill: colors[i], stroke: colors[i] } : { show: false },
+          // a series with one point has no line to draw, so it gets a dot
+          points:
+            projection || data.values[i].filter((v) => v != null).length === 1
+              ? { show: true, size: 8, fill: colors[i], stroke: colors[i] }
+              : { show: false },
         })),
       ],
       hooks: {
@@ -175,7 +179,9 @@
 
   // rebuild when the series or the theme change, otherwise swap the data in
   $effect(() => {
-    const key = [theme.resolved, unit, yMax, height, area, projection, ...data.labels, ...(data.colors ?? [])].join('|');
+    // a series gains or loses its lone dot only on a rebuild
+    const lonePoints = data.values.map((values) => values.filter((v) => v != null).length === 1);
+    const key = [theme.resolved, unit, yMax, height, area, projection, ...data.labels, ...(data.colors ?? []), ...lonePoints].join('|');
     // a new range only needs the x scale to move, not a rebuild
     void from;
     void to;
