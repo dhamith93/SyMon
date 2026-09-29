@@ -74,6 +74,7 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
+	mux.HandleFunc("GET /metrics", s.getMetrics)
 	mux.HandleFunc("GET /install.sh", s.getInstallScript)
 	mux.HandleFunc("GET /downloads/{file}", s.getDownload)
 	mux.Handle("/", s.app())

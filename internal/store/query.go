@@ -92,6 +92,8 @@ func fillSummary(summary *HostSummary, data *monitor.MonitorData) {
 }
 
 type LatestSnapshot struct {
+	Host string
+	// Time is zero, and Snapshot empty, when the host never sent one
 	Time time.Time
 	// Snapshot is the MonitorData as the agent sent it
 	Snapshot []byte
@@ -100,7 +102,7 @@ type LatestSnapshot struct {
 
 // LatestSnapshot returns a host's newest snapshot and when it was last heard from
 func (s *Store) LatestSnapshot(ctx context.Context, host string) (LatestSnapshot, error) {
-	var latest LatestSnapshot
+	latest := LatestSnapshot{Host: host}
 	var lastSeen *time.Time
 	err := s.pool.QueryRow(ctx, `
 		SELECT l.time, l.snapshot, h.last_seen FROM host_latest l
@@ -113,6 +115,35 @@ func (s *Store) LatestSnapshot(ctx context.Context, host string) (LatestSnapshot
 		latest.LastSeen = *lastSeen
 	}
 	return latest, err
+}
+
+// LatestSnapshots returns every host with its newest snapshot
+func (s *Store) LatestSnapshots(ctx context.Context) ([]LatestSnapshot, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT h.name, h.last_seen, l.time, l.snapshot FROM hosts h
+		LEFT JOIN host_latest l ON l.host_id = h.id
+		ORDER BY h.name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	hosts := []LatestSnapshot{}
+	for rows.Next() {
+		var latest LatestSnapshot
+		var lastSeen, snapshotTime *time.Time
+		if err := rows.Scan(&latest.Host, &lastSeen, &snapshotTime, &latest.Snapshot); err != nil {
+			return nil, err
+		}
+		if lastSeen != nil {
+			latest.LastSeen = *lastSeen
+		}
+		if snapshotTime != nil {
+			latest.Time = *snapshotTime
+		}
+		hosts = append(hosts, latest)
+	}
+	return hosts, rows.Err()
 }
 
 // Processes returns the top process lists from the newest snapshot at or
