@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAgo, formatBytes, formatDuration, formatNumber, formatPercent, formatRate, formatValue } from './format';
+import { formatAgo, formatBytes, formatDays, formatDuration, formatNumber, formatPercent, formatRate, formatValue } from './format';
 
 describe('formatBytes', () => {
   it('uses binary units', () => {
@@ -43,5 +43,22 @@ describe('formatDuration', () => {
     expect(formatAgo(0)).toBe('never');
     expect(formatAgo(1000, 1010)).toBe('just now');
     expect(formatAgo(1000, 1000 + 180)).toBe('3m ago');
+  });
+});
+
+describe('formatDays', () => {
+  it('rounds to a unit that fits', () => {
+    expect(formatDays(0)).toBe('under a day');
+    expect(formatDays(0.4)).toBe('under a day');
+    expect(formatDays(1.2)).toBe('about 1 day');
+    expect(formatDays(9.4)).toBe('about 9 days');
+    expect(formatDays(20.4)).toBe('about 20 days');
+    expect(formatDays(35)).toBe('about 5 weeks');
+    expect(formatDays(120)).toBe('about 4 months');
+  });
+
+  it('handles bad input', () => {
+    expect(formatDays(-1)).toBe('–');
+    expect(formatDays(NaN)).toBe('–');
   });
 });

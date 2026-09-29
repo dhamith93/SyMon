@@ -26,7 +26,10 @@ type fakeCollector struct {
 }
 
 func (f *fakeCollector) Fleet(ctx context.Context, in *api.Void) (*api.FleetSummary, error) {
-	return &api.FleetSummary{Hosts: []*api.HostSummary{{Name: "web1", Up: true, CpuPct: 37, ActiveAlerts: 2}}}, nil
+	return &api.FleetSummary{Hosts: []*api.HostSummary{
+		{Name: "web1", Up: true, CpuPct: 37, ActiveAlerts: 2, DiskFullDays: floatPtr(12.5)},
+		{Name: "db1", Up: true},
+	}}, nil
 }
 
 func (f *fakeCollector) Snapshot(ctx context.Context, in *api.HostRequest) (*api.HostSnapshot, error) {
@@ -53,6 +56,17 @@ func (f *fakeCollector) QuerySeries(ctx context.Context, in *api.SeriesRequest) 
 
 func (f *fakeCollector) CustomMetricNames(ctx context.Context, in *api.HostRequest) (*api.NameList, error) {
 	return &api.NameList{}, nil
+}
+
+func (f *fakeCollector) DiskForecasts(ctx context.Context, in *api.HostRequest) (*api.DiskForecastList, error) {
+	return &api.DiskForecastList{Disks: []*api.DiskForecast{
+		{Device: "/dev/sda1", Mount: "/", UsedPct: 40},
+		{Device: "/dev/sdb1", Mount: "/data", UsedPct: 60, PctPerDay: 2, BytesPerDay: 2e7, DaysToFull: floatPtr(20)},
+	}}, nil
+}
+
+func floatPtr(v float64) *float64 {
+	return &v
 }
 
 func (f *fakeCollector) Alerts(ctx context.Context, in *api.AlertsRequest) (*api.AlertList, error) {
@@ -106,7 +120,21 @@ func TestFleet(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &out); err != nil {
 		t.Fatal(err)
 	}
-	if code != 200 || len(out.Hosts) != 1 || out.Hosts[0].Name != "web1" || out.Hosts[0].CPUPct != 37 || out.Hosts[0].ActiveAlerts != 2 {
+	if code != 200 || len(out.Hosts) != 2 || out.Hosts[0].Name != "web1" || out.Hosts[0].CPUPct != 37 || out.Hosts[0].ActiveAlerts != 2 {
+		t.Errorf("unexpected response %d: %s", code, body)
+	}
+	if !strings.Contains(body, `"diskFullDays":12.5`) || !strings.Contains(body, `"diskFullDays":null`) {
+		t.Errorf("expected a forecast for web1 and null for db1: %s", body)
+	}
+}
+
+func TestDiskForecasts(t *testing.T) {
+	s, _ := newTestServer(t, nil)
+	code, body, _ := get(t, s, "/api/v1/hosts/web1/disk-forecasts")
+	want := `{"disks":[` +
+		`{"device":"/dev/sda1","mount":"/","usedPct":40,"pctPerDay":0,"bytesPerDay":0,"daysToFull":null},` +
+		`{"device":"/dev/sdb1","mount":"/data","usedPct":60,"pctPerDay":2,"bytesPerDay":20000000,"daysToFull":20}]}`
+	if code != 200 || strings.TrimSpace(body) != want {
 		t.Errorf("unexpected response %d: %s", code, body)
 	}
 }

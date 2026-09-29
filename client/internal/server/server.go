@@ -68,6 +68,7 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/hosts/{host}/series", s.getSeries)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/processes", s.getProcesses)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
+	mux.HandleFunc("GET /api/v1/hosts/{host}/disk-forecasts", s.getDiskForecasts)
 	mux.HandleFunc("GET /api/v1/alerts", s.getAlerts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
@@ -98,6 +99,8 @@ type hostSummary struct {
 	ActiveAlerts  int32   `json:"activeAlerts"`
 	WorstSeverity int32   `json:"worstSeverity"`
 	Containers    int32   `json:"containers"`
+	// null when no disk is filling up
+	DiskFullDays *float64 `json:"diskFullDays"`
 }
 
 func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +127,7 @@ func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
 			ActiveAlerts:  h.ActiveAlerts,
 			WorstSeverity: h.WorstSeverity,
 			Containers:    h.Containers,
+			DiskFullDays:  h.DiskFullDays,
 		})
 	}
 	writeJSON(w, map[string]any{"hosts": hosts})
@@ -214,6 +218,37 @@ func (s *server) getCustomMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]any{"names": nonNil(names.Names)})
+}
+
+type diskForecast struct {
+	Device      string  `json:"device"`
+	Mount       string  `json:"mount"`
+	UsedPct     float64 `json:"usedPct"`
+	PctPerDay   float64 `json:"pctPerDay"`
+	BytesPerDay float64 `json:"bytesPerDay"`
+	// null when the disk is not filling up
+	DaysToFull *float64 `json:"daysToFull"`
+}
+
+func (s *server) getDiskForecasts(w http.ResponseWriter, r *http.Request) {
+	host := r.PathValue("host")
+	response, err := s.collector.DiskForecasts(r.Context(), &api.HostRequest{Host: host})
+	if err != nil {
+		writeGRPCError(w, "disk forecasts of "+host, err)
+		return
+	}
+	disks := make([]diskForecast, 0, len(response.Disks))
+	for _, d := range response.Disks {
+		disks = append(disks, diskForecast{
+			Device:      d.Device,
+			Mount:       d.Mount,
+			UsedPct:     d.UsedPct,
+			PctPerDay:   d.PctPerDay,
+			BytesPerDay: d.BytesPerDay,
+			DaysToFull:  d.DaysToFull,
+		})
+	}
+	writeJSON(w, map[string]any{"disks": disks})
 }
 
 type alert struct {
