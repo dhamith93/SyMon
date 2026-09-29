@@ -64,6 +64,17 @@ export function formatAgo(unixSeconds: number, now = Date.now() / 1000): string 
   return `${formatDuration(diff)} ago`;
 }
 
+// how long until something happens: "under a day", "about 9 days",
+// "about 5 weeks", "about 4 months"
+export function formatDays(days: number): string {
+  if (!Number.isFinite(days) || days < 0) return '–';
+  if (days < 1) return 'under a day';
+  if (days < 1.5) return 'about 1 day';
+  if (days < 21) return `about ${Math.round(days)} days`;
+  if (days < 60) return `about ${Math.round(days / 7)} weeks`;
+  return `about ${Math.round(days / 30)} months`;
+}
+
 export function formatDateTime(unixSeconds: number): string {
   if (!unixSeconds) return '–';
   return new Date(unixSeconds * 1000).toLocaleString(undefined, {

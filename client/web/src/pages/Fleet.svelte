@@ -1,8 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { api, type HostSummary } from '../lib/api';
+  import { api, diskFullSoonDays, type HostSummary } from '../lib/api';
   import { appConfig } from '../lib/config.svelte';
-  import { formatAgo, formatDuration, formatRate } from '../lib/format';
+  import { formatAgo, formatDays, formatDuration, formatRate } from '../lib/format';
   import { poll } from '../lib/poll';
   import { hostPath } from '../lib/router.svelte';
   import Meter from '../components/Meter.svelte';
@@ -51,6 +51,10 @@
     // untracked, so a fleet refresh does not restart this timer
     return poll(() => untrack(loadSparklines), 60);
   });
+
+  function fillsSoon(host: HostSummary): boolean {
+    return host.diskFullDays !== null && host.diskFullDays < diskFullSoonDays;
+  }
 
   const up = $derived(hosts.filter((h) => h.up).length);
   const openAlerts = $derived(hosts.reduce((sum, h) => sum + h.activeAlerts, 0));
@@ -147,12 +151,17 @@
           <p class="muted nodata">No data received yet.</p>
         {/if}
 
-        {#if host.activeAlerts > 0}
+        {#if host.activeAlerts > 0 || fillsSoon(host)}
           <div class="alerts">
-            <StatusBadge
-              status={host.worstSeverity === 2 ? 'critical' : 'warning'}
-              label="{host.activeAlerts} open alert{host.activeAlerts === 1 ? '' : 's'}"
-            />
+            {#if host.activeAlerts > 0}
+              <StatusBadge
+                status={host.worstSeverity === 2 ? 'critical' : 'warning'}
+                label="{host.activeAlerts} open alert{host.activeAlerts === 1 ? '' : 's'}"
+              />
+            {/if}
+            {#if fillsSoon(host)}
+              <StatusBadge status="warning" label="Disk full in {formatDays(host.diskFullDays ?? 0)}" />
+            {/if}
           </div>
         {/if}
       </a>
@@ -239,6 +248,12 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
+  }
+
+  .alerts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
   }
 
   .nodata {

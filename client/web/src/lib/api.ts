@@ -18,7 +18,23 @@ export interface HostSummary {
   worstSeverity: number;
   // running containers at the latest snapshot
   containers: number;
+  // days until the first disk is full, null when none is filling up
+  diskFullDays: number | null;
 }
+
+// A disk's growth over the last week and when it fills up at that rate
+export interface DiskForecast {
+  device: string;
+  mount: string;
+  usedPct: number;
+  pctPerDay: number;
+  bytesPerDay: number;
+  // null when the disk is not filling up
+  daysToFull: number | null;
+}
+
+// disks that fill up sooner than this many days are shown as warnings
+export const diskFullSoonDays = 30;
 
 export interface SeriesData {
   label: string;
@@ -175,6 +191,7 @@ export const api = {
     get<SeriesResponse>(`${host(name)}/series`, { metric, from, to, ...options }),
   processes: (name: string, at?: number) => get<{ time: number; processes: Processes }>(`${host(name)}/processes`, { at }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
+  diskForecasts: (name: string) => get<{ disks: DiskForecast[] }>(`${host(name)}/disk-forecasts`),
   alerts: (filter: { host?: string; open?: boolean; from?: number; to?: number } = {}) =>
     get<{ alerts: AlertRecord[] }>('/api/v1/alerts', filter),
 };

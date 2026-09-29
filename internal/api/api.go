@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/logger"
@@ -22,9 +23,17 @@ const UpWindow = 61 * time.Second
 // result, for example a host with no services configured.
 var errNoData = status.Error(codes.NotFound, "no data found")
 
+// forecastCacheTTL is how long the fleet's disk forecasts are reused. The
+// fleet page asks on every refresh and forecasts change slowly.
+const forecastCacheTTL = 5 * time.Minute
+
 type Server struct {
 	UnimplementedMonitorDataServiceServer
 	Store *store.Store
+
+	forecastMu sync.Mutex
+	forecastAt time.Time
+	diskFull   map[string]float64
 }
 
 // toStatus turns a store error into a grpc status. Unexpected errors are
@@ -130,10 +139,11 @@ func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
 	if err != nil {
 		return nil, toStatus(err)
 	}
+	diskFull := s.soonestDiskFull(ctx)
 	now := time.Now()
 	fleet := &FleetSummary{}
 	for _, summary := range summaries {
-		fleet.Hosts = append(fleet.Hosts, &HostSummary{
+		host := &HostSummary{
 			Name:          summary.Name,
 			Up:            isUp(summary.LastSeen, now),
 			LastSeen:      unix(summary.LastSeen),
@@ -149,9 +159,52 @@ func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
 			ActiveAlerts:  int32(summary.ActiveAlerts),
 			WorstSeverity: int32(summary.WorstSeverity),
 			Containers:    int32(summary.Containers),
-		})
+		}
+		if days, ok := diskFull[summary.Name]; ok {
+			host.DiskFullDays = &days
+		}
+		fleet.Hosts = append(fleet.Hosts, host)
 	}
 	return fleet, nil
+}
+
+// soonestDiskFull returns the fleet's disk forecasts, cached for
+// forecastCacheTTL. When the query fails the fleet still loads, with the
+// previous forecasts.
+func (s *Server) soonestDiskFull(ctx context.Context) map[string]float64 {
+	s.forecastMu.Lock()
+	defer s.forecastMu.Unlock()
+	if time.Since(s.forecastAt) < forecastCacheTTL {
+		return s.diskFull
+	}
+	diskFull, err := s.Store.SoonestDiskFull(ctx)
+	if err != nil {
+		if !errors.Is(err, context.Canceled) {
+			logger.Log("error", "cannot forecast disks: "+err.Error())
+		}
+		return s.diskFull
+	}
+	s.diskFull, s.forecastAt = diskFull, time.Now()
+	return diskFull
+}
+
+func (s *Server) DiskForecasts(ctx context.Context, in *HostRequest) (*DiskForecastList, error) {
+	forecasts, err := s.Store.DiskForecasts(ctx, in.Host)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	list := &DiskForecastList{}
+	for _, forecast := range forecasts {
+		list.Disks = append(list.Disks, &DiskForecast{
+			Device:      forecast.Device,
+			Mount:       forecast.Mount,
+			UsedPct:     forecast.UsedPct,
+			PctPerDay:   forecast.PctPerDay,
+			BytesPerDay: forecast.BytesPerDay,
+			DaysToFull:  forecast.DaysToFull,
+		})
+	}
+	return list, nil
 }
 
 func (s *Server) Snapshot(ctx context.Context, in *HostRequest) (*HostSnapshot, error) {

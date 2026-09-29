@@ -1,10 +1,10 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { Aligned, NamedSeries } from '../lib/align';
-  import { api, type HostDetail } from '../lib/api';
+  import { api, diskFullSoonDays, type DiskForecast, type HostDetail } from '../lib/api';
   import { hostSections, loadChart, loadCores, type ChartSpec } from '../lib/charts';
   import { appConfig } from '../lib/config.svelte';
-  import { formatAgo, formatBytes, formatDuration, formatMiB, formatPercent } from '../lib/format';
+  import { formatAgo, formatBytes, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
@@ -29,6 +29,8 @@
   // the card stays hidden once we know the host sends no per core data
   const showCores = $derived(coresLoading || cores.length > 0);
   let hasCustomMetrics = $state(false);
+  // by device and mount
+  let forecasts = $state<Record<string, DiskForecast>>({});
   let processesAt = $state(0);
   let tick = $state(0);
 
@@ -90,6 +92,19 @@
       .customMetrics(host)
       .then((response) => (hasCustomMetrics = response.names.length > 0))
       .catch(() => (hasCustomMetrics = false));
+  });
+
+  // forecasts change slowly, so they refresh every few minutes
+  $effect(() => {
+    const name = host;
+    return poll(async () => {
+      try {
+        const response = await api.diskForecasts(name);
+        forecasts = Object.fromEntries(response.disks.map((d) => [`${d.device} ${d.mount}`, d]));
+      } catch {
+        forecasts = {};
+      }
+    }, 300);
   });
 
   function zoom(from: number, to: number) {
@@ -212,9 +227,10 @@
           <h3>Disks</h3>
           <div class="table-scroll">
             <table class="data">
-              <thead><tr><th>Mount</th><th>Device</th><th>Type</th><th class="right">Used</th><th class="right">Size</th><th class="right">Inodes</th></tr></thead>
+              <thead><tr><th>Mount</th><th>Device</th><th>Type</th><th class="right">Used</th><th class="right">Size</th><th class="right">Inodes</th><th class="right">Full in</th></tr></thead>
               <tbody>
                 {#each snapshot.Disk ?? [] as disk (disk.FileSystem + disk.MountedOn)}
+                  {@const forecast = forecasts[`${disk.FileSystem} ${disk.MountedOn}`]}
                   <tr>
                     <td>{disk.MountedOn}</td>
                     <td class="secondary">{disk.FileSystem}</td>
@@ -222,6 +238,15 @@
                     <td class="right num">{disk.Usage.Usage}</td>
                     <td class="right num">{formatBytes(disk.Usage.Size)}</td>
                     <td class="right num">{disk.Inodes.Usage}</td>
+                    <td class="right" title={forecast?.daysToFull != null ? `Growing ${formatBytes(forecast.bytesPerDay)} a day` : undefined}>
+                      {#if forecast?.daysToFull == null}
+                        <span class="muted">–</span>
+                      {:else if forecast.daysToFull < diskFullSoonDays}
+                        <StatusBadge status="warning" label={formatDays(forecast.daysToFull)} />
+                      {:else}
+                        <span class="num">{formatDays(forecast.daysToFull)}</span>
+                      {/if}
+                    </td>
                   </tr>
                 {/each}
               </tbody>
