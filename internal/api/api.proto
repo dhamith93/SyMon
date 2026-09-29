@@ -186,8 +186,19 @@ message ProcessUsageList {
     repeated ProcessUsage processes = 3;
 }
 
+// The newest value of one of a host's custom metrics
+message CustomValue {
+    string host = 1;
+    string name = 2;
+    string unit = 3;
+    double value = 4;
+    int64 time = 5;
+}
+
 message SnapshotList {
     repeated HostSnapshot hosts = 1;
+    // custom metrics sent in the last 2 days
+    repeated CustomValue customMetrics = 2;
 }
 
 service MonitorDataService {

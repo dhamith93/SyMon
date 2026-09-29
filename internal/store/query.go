@@ -266,6 +266,51 @@ func (s *Store) ProcessUsage(ctx context.Context, host string, from time.Time, t
 	return result, rows.Err()
 }
 
+// CustomValue is the newest value of one of a host's custom metrics
+type CustomValue struct {
+	Host  string
+	Name  string
+	Unit  string
+	Value float64
+	Time  time.Time
+}
+
+// customValueWindow is how far back LatestCustomValues looks. Two days keeps
+// daily jobs in and only reads chunks that are not compressed yet.
+const customValueWindow = 48 * time.Hour
+
+// LatestCustomValues returns the newest value of every custom metric sent
+// within customValueWindow
+func (s *Store) LatestCustomValues(ctx context.Context) ([]CustomValue, error) {
+	since := time.Now().Add(-customValueWindow)
+	// the hourly rollup finds the metric names cheaply, then the index on
+	// (host_id, name, time) finds each one's newest value
+	rows, err := s.pool.Query(ctx, `
+		SELECT h.name, k.name, c.unit, c.value, c.time
+		FROM (SELECT DISTINCT host_id, name FROM custom_metrics_1h WHERE bucket > $1::timestamptz - INTERVAL '1 hour') k
+		JOIN hosts h ON h.id = k.host_id
+		CROSS JOIN LATERAL (
+			SELECT unit, value, time FROM custom_metrics
+			WHERE host_id = k.host_id AND name = k.name AND time >= $1 AND value IS NOT NULL
+			ORDER BY time DESC LIMIT 1
+		) c
+		ORDER BY h.name, k.name`, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	values := []CustomValue{}
+	for rows.Next() {
+		var value CustomValue
+		if err := rows.Scan(&value.Host, &value.Name, &value.Unit, &value.Value, &value.Time); err != nil {
+			return nil, err
+		}
+		values = append(values, value)
+	}
+	return values, rows.Err()
+}
+
 // CustomMetricNames lists the custom metrics a host has sent within the
 // hourly retention
 func (s *Store) CustomMetricNames(ctx context.Context, host string) ([]string, error) {

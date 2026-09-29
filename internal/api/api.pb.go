@@ -1628,16 +1628,95 @@ func (x *ProcessUsageList) GetProcesses() []*ProcessUsage {
 	return nil
 }
 
-type SnapshotList struct {
+// The newest value of one of a host's custom metrics
+type CustomValue struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hosts         []*HostSnapshot        `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Unit          string                 `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
+	Value         float64                `protobuf:"fixed64,4,opt,name=value,proto3" json:"value,omitempty"`
+	Time          int64                  `protobuf:"varint,5,opt,name=time,proto3" json:"time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CustomValue) Reset() {
+	*x = CustomValue{}
+	mi := &file_api_api_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CustomValue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CustomValue) ProtoMessage() {}
+
+func (x *CustomValue) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CustomValue.ProtoReflect.Descriptor instead.
+func (*CustomValue) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *CustomValue) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *CustomValue) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CustomValue) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *CustomValue) GetValue() float64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *CustomValue) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+type SnapshotList struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Hosts []*HostSnapshot        `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	// custom metrics sent in the last 2 days
+	CustomMetrics []*CustomValue `protobuf:"bytes,2,rep,name=customMetrics,proto3" json:"customMetrics,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SnapshotList) Reset() {
 	*x = SnapshotList{}
-	mi := &file_api_api_proto_msgTypes[25]
+	mi := &file_api_api_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1649,7 +1728,7 @@ func (x *SnapshotList) String() string {
 func (*SnapshotList) ProtoMessage() {}
 
 func (x *SnapshotList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[25]
+	mi := &file_api_api_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1662,12 +1741,19 @@ func (x *SnapshotList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotList.ProtoReflect.Descriptor instead.
 func (*SnapshotList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{25}
+	return file_api_api_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *SnapshotList) GetHosts() []*HostSnapshot {
 	if x != nil {
 		return x.Hosts
+	}
+	return nil
+}
+
+func (x *SnapshotList) GetCustomMetrics() []*CustomValue {
+	if x != nil {
+		return x.CustomMetrics
 	}
 	return nil
 }
@@ -1803,9 +1889,16 @@ const file_api_api_proto_rawDesc = "" +
 	"\x10ProcessUsageList\x12\x1c\n" +
 	"\tsnapshots\x18\x01 \x01(\x05R\tsnapshots\x12\x1c\n" +
 	"\tfirstTime\x18\x02 \x01(\x03R\tfirstTime\x12/\n" +
-	"\tprocesses\x18\x03 \x03(\v2\x11.api.ProcessUsageR\tprocesses\"7\n" +
+	"\tprocesses\x18\x03 \x03(\v2\x11.api.ProcessUsageR\tprocesses\"s\n" +
+	"\vCustomValue\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04unit\x18\x03 \x01(\tR\x04unit\x12\x14\n" +
+	"\x05value\x18\x04 \x01(\x01R\x05value\x12\x12\n" +
+	"\x04time\x18\x05 \x01(\x03R\x04time\"o\n" +
 	"\fSnapshotList\x12'\n" +
-	"\x05hosts\x18\x01 \x03(\v2\x11.api.HostSnapshotR\x05hosts2\x82\x06\n" +
+	"\x05hosts\x18\x01 \x03(\v2\x11.api.HostSnapshotR\x05hosts\x126\n" +
+	"\rcustomMetrics\x18\x02 \x03(\v2\x10.api.CustomValueR\rcustomMetrics2\x82\x06\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x12-\n" +
 	"\n" +
@@ -1835,7 +1928,7 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),                // 0: api.Void
 	(*Message)(nil),             // 1: api.Message
@@ -1862,7 +1955,8 @@ var file_api_api_proto_goTypes = []any{
 	(*ProcessUsageRequest)(nil), // 22: api.ProcessUsageRequest
 	(*ProcessUsage)(nil),        // 23: api.ProcessUsage
 	(*ProcessUsageList)(nil),    // 24: api.ProcessUsageList
-	(*SnapshotList)(nil),        // 25: api.SnapshotList
+	(*CustomValue)(nil),         // 25: api.CustomValue
+	(*SnapshotList)(nil),        // 26: api.SnapshotList
 }
 var file_api_api_proto_depIdxs = []int32{
 	6,  // 0: api.FleetSummary.hosts:type_name -> api.HostSummary
@@ -1872,39 +1966,40 @@ var file_api_api_proto_depIdxs = []int32{
 	20, // 4: api.DiskForecastList.disks:type_name -> api.DiskForecast
 	23, // 5: api.ProcessUsageList.processes:type_name -> api.ProcessUsage
 	9,  // 6: api.SnapshotList.hosts:type_name -> api.HostSnapshot
-	4,  // 7: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
-	2,  // 8: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	2,  // 9: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	3,  // 10: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	3,  // 11: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0,  // 12: api.MonitorDataService.Fleet:input_type -> api.Void
-	8,  // 13: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	10, // 14: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	14, // 15: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	8,  // 16: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	17, // 17: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	8,  // 18: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
-	22, // 19: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
-	0,  // 20: api.MonitorDataService.Snapshots:input_type -> api.Void
-	5,  // 21: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	1,  // 22: api.MonitorDataService.HandlePing:output_type -> api.Message
-	1,  // 23: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 24: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 25: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	7,  // 26: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	9,  // 27: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	13, // 28: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	15, // 29: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	16, // 30: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	19, // 31: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	21, // 32: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	24, // 33: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	25, // 34: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	21, // [21:35] is the sub-list for method output_type
-	7,  // [7:21] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	25, // 7: api.SnapshotList.customMetrics:type_name -> api.CustomValue
+	4,  // 8: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
+	2,  // 9: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 10: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	3,  // 11: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	3,  // 12: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 13: api.MonitorDataService.Fleet:input_type -> api.Void
+	8,  // 14: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	10, // 15: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	14, // 16: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	8,  // 17: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	17, // 18: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	8,  // 19: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
+	22, // 20: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
+	0,  // 21: api.MonitorDataService.Snapshots:input_type -> api.Void
+	5,  // 22: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	1,  // 23: api.MonitorDataService.HandlePing:output_type -> api.Message
+	1,  // 24: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 25: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 26: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	7,  // 27: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	9,  // 28: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	13, // 29: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	15, // 30: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	16, // 31: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	19, // 32: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	21, // 33: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	24, // 34: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	26, // 35: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	22, // [22:36] is the sub-list for method output_type
+	8,  // [8:22] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -1920,7 +2015,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

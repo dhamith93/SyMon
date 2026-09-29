@@ -27,7 +27,9 @@ func (s *server) getMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	metrics := newMetricsWriter()
+	up := map[string]bool{}
 	for _, host := range response.Hosts {
+		up[host.Host] = host.Up
 		metrics.gauge("symon_up", "1 when the host reported within the last minute.", boolValue(host.Up), "host", host.Host)
 		if host.LastSeen > 0 {
 			metrics.gauge("symon_last_seen_timestamp_seconds", "When the host was last heard from.", float64(host.LastSeen), "host", host.Host)
@@ -43,6 +45,15 @@ func (s *server) getMetrics(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		addHostMetrics(metrics, host.Host, &data)
+	}
+	for _, custom := range response.CustomMetrics {
+		if !up[custom.Host] {
+			continue
+		}
+		metrics.gauge("symon_custom_metric", "The newest value of a custom metric sent in the last 2 days.", custom.Value,
+			"host", custom.Host, "name", custom.Name, "unit", custom.Unit)
+		metrics.gauge("symon_custom_metric_timestamp_seconds", "When the custom metric was last sent.", float64(custom.Time),
+			"host", custom.Host, "name", custom.Name)
 	}
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
