@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/monitor"
@@ -131,6 +132,100 @@ func (s *Store) Processes(ctx context.Context, host string, at time.Time) (time.
 		return time.Time{}, nil, ErrNotFound
 	}
 	return snapshotTime, processes, err
+}
+
+// ProcessUsage is one program's share of a time range. Processes with the
+// same name, like the workers of a web server, are added up per snapshot.
+type ProcessUsage struct {
+	Name    string
+	CPUAvg  float64
+	CPUPeak float64
+	MemAvg  float64
+	MemPeak float64
+	// SeenPct is the share of snapshots the program was in the top lists
+	SeenPct float64
+}
+
+type ProcessUsageResult struct {
+	Snapshots int
+	// FirstTime is the first snapshot in the range, zero when there is none
+	FirstTime time.Time
+	// Processes has the busiest programs by CPU and by memory, busiest CPU first
+	Processes []ProcessUsage
+}
+
+// processUsageLimit is how many programs ProcessUsage returns for each of
+// CPU and memory
+const processUsageLimit = 15
+
+// ProcessUsage adds up each program's CPU and memory over a range. Snapshots
+// only keep the top processes, so a program counts as 0 where it was not
+// among them, and the averages are a lower bound.
+func (s *Store) ProcessUsage(ctx context.Context, host string, from time.Time, to time.Time) (ProcessUsageResult, error) {
+	if !to.After(from) {
+		return ProcessUsageResult{}, fmt.Errorf("%w: from must be before to", ErrInvalid)
+	}
+	hostID, err := s.hostID(ctx, host)
+	if err != nil {
+		return ProcessUsageResult{}, err
+	}
+
+	result := ProcessUsageResult{Processes: []ProcessUsage{}}
+	var first *time.Time
+	err = s.pool.QueryRow(ctx, `
+		SELECT count(*), min(time) FROM process_snapshots
+		WHERE host_id = $1 AND time >= $2 AND time < $3`, hostID, from, to).Scan(&result.Snapshots, &first)
+	if err != nil || result.Snapshots == 0 {
+		return result, err
+	}
+	result.FirstTime = *first
+
+	// the CPU and Memory lists overlap, so each pid counts once per snapshot
+	rows, err := s.pool.Query(ctx, `
+		WITH processes AS (
+			SELECT DISTINCT ON (s.time, p->>'Pid')
+			       s.time,
+			       coalesce(nullif(p->>'Name', ''), nullif(p->>'ExecPath', ''), 'unknown') AS name,
+			       coalesce((p->>'CPUUsage')::float8, 0) AS cpu,
+			       coalesce((p->>'MemUsage')::float8, 0) AS mem
+			FROM process_snapshots s,
+			     jsonb_path_query(s.processes, '$.*[*] ? (@.type() == "object")') AS p
+			WHERE s.host_id = $1 AND s.time >= $2 AND s.time < $3
+		),
+		per_snapshot AS (
+			SELECT time, name, sum(cpu) AS cpu, sum(mem) AS mem
+			FROM processes
+			GROUP BY time, name
+		),
+		ranked AS (
+			SELECT name, sum(cpu) AS cpu_sum, max(cpu) AS cpu_peak, sum(mem) AS mem_sum, max(mem) AS mem_peak, count(*) AS seen,
+			       row_number() OVER (ORDER BY sum(cpu) DESC, name) AS cpu_rank,
+			       row_number() OVER (ORDER BY sum(mem) DESC, name) AS mem_rank
+			FROM per_snapshot
+			GROUP BY name
+		)
+		SELECT name, cpu_sum, cpu_peak, mem_sum, mem_peak, seen FROM ranked
+		WHERE cpu_rank <= $4 OR mem_rank <= $4
+		ORDER BY cpu_sum DESC, name`, hostID, from, to, processUsageLimit)
+	if err != nil {
+		return ProcessUsageResult{}, err
+	}
+	defer rows.Close()
+
+	snapshots := float64(result.Snapshots)
+	for rows.Next() {
+		var usage ProcessUsage
+		var cpuSum, memSum float64
+		var seen int
+		if err := rows.Scan(&usage.Name, &cpuSum, &usage.CPUPeak, &memSum, &usage.MemPeak, &seen); err != nil {
+			return ProcessUsageResult{}, err
+		}
+		usage.CPUAvg = cpuSum / snapshots
+		usage.MemAvg = memSum / snapshots
+		usage.SeenPct = 100 * float64(seen) / snapshots
+		result.Processes = append(result.Processes, usage)
+	}
+	return result, rows.Err()
 }
 
 // CustomMetricNames lists the custom metrics a host has sent within the

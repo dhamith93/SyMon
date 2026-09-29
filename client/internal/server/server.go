@@ -67,6 +67,7 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/hosts/{host}", s.getHost)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/series", s.getSeries)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/processes", s.getProcesses)
+	mux.HandleFunc("GET /api/v1/hosts/{host}/process-usage", s.getProcessUsage)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
 	mux.HandleFunc("GET /api/v1/hosts/{host}/disk-forecasts", s.getDiskForecasts)
 	mux.HandleFunc("GET /api/v1/alerts", s.getAlerts)
@@ -207,6 +208,47 @@ func (s *server) getProcesses(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"time":      response.Time,
 		"processes": json.RawMessage(response.ProcessesJson),
+	})
+}
+
+type processUsage struct {
+	Name    string  `json:"name"`
+	CPUAvg  float64 `json:"cpuAvg"`
+	CPUPeak float64 `json:"cpuPeak"`
+	MemAvg  float64 `json:"memAvg"`
+	MemPeak float64 `json:"memPeak"`
+	SeenPct float64 `json:"seenPct"`
+}
+
+// getProcessUsage returns the busiest programs over a range
+func (s *server) getProcessUsage(w http.ResponseWriter, r *http.Request) {
+	host := r.PathValue("host")
+	query := r.URL.Query()
+	from, to, err := timeRange(query.Get("from"), query.Get("to"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	response, err := s.collector.ProcessUsage(r.Context(), &api.ProcessUsageRequest{Host: host, From: from, To: to})
+	if err != nil {
+		writeGRPCError(w, "process usage of "+host, err)
+		return
+	}
+	processes := make([]processUsage, 0, len(response.Processes))
+	for _, p := range response.Processes {
+		processes = append(processes, processUsage{
+			Name:    p.Name,
+			CPUAvg:  p.CpuAvg,
+			CPUPeak: p.CpuPeak,
+			MemAvg:  p.MemAvg,
+			MemPeak: p.MemPeak,
+			SeenPct: p.SeenPct,
+		})
+	}
+	writeJSON(w, map[string]any{
+		"snapshots": response.Snapshots,
+		"firstTime": response.FirstTime,
+		"processes": processes,
 	})
 }
 

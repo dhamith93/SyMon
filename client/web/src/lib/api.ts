@@ -76,6 +76,17 @@ export interface Process {
   Threads: number;
 }
 
+// One program's share of a time range, with its processes added up
+export interface ProcessUsage {
+  name: string;
+  cpuAvg: number;
+  cpuPeak: number;
+  memAvg: number;
+  memPeak: number;
+  // share of snapshots the program was in the top lists
+  seenPct: number;
+}
+
 export interface Processes {
   CPU: Process[] | null;
   Memory: Process[] | null;
@@ -190,6 +201,8 @@ export const api = {
   series: (name: string, metric: string, from: number, to: number, options: { label?: string; maxPoints?: number; max?: boolean } = {}) =>
     get<SeriesResponse>(`${host(name)}/series`, { metric, from, to, ...options }),
   processes: (name: string, at?: number) => get<{ time: number; processes: Processes }>(`${host(name)}/processes`, { at }),
+  processUsage: (name: string, from: number, to: number) =>
+    get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
   diskForecasts: (name: string) => get<{ disks: DiskForecast[] }>(`${host(name)}/disk-forecasts`),
   alerts: (filter: { host?: string; open?: boolean; from?: number; to?: number } = {}) =>

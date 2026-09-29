@@ -8,6 +8,7 @@
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
+  import BusiestProcesses from '../components/BusiestProcesses.svelte';
   import ChartCard from '../components/ChartCard.svelte';
   import ContainerTable from '../components/ContainerTable.svelte';
   import Heatmap from '../components/Heatmap.svelte';
@@ -216,7 +217,10 @@
 
   <section id="processes">
     <h2>Processes</h2>
-    <ProcessTable {host} at={processesAt} {tick} onlatest={() => (processesAt = 0)} />
+    <div class="processes">
+      <ProcessTable {host} at={processesAt} {tick} onlatest={() => (processesAt = 0)} />
+      <BusiestProcesses {host} from={range.from} to={range.to} />
+    </div>
   </section>
 
   {#if snapshot}
@@ -374,6 +378,13 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
     gap: 12px;
+  }
+
+  .processes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+    gap: 12px;
+    align-items: start;
   }
 
   .box {
