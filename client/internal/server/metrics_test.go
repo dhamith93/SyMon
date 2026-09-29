@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -67,6 +68,15 @@ func TestMetrics(t *testing.T) {
 	// web1 has no transmit rate, as if it were on the host network
 	if strings.Contains(body, "symon_container_transmit_bytes_per_second") {
 		t.Errorf("expected no transmit rate:\n%s", body)
+	}
+}
+
+func TestMetricsSwitchedOff(t *testing.T) {
+	s, _ := newTestServer(t, nil)
+	s.metricsEnabled = false
+	code, body, _ := get(t, s, "/metrics")
+	if code != http.StatusNotFound || !strings.Contains(body, "SYMON_CLIENT_METRICS_ENABLED") {
+		t.Errorf("unexpected response %d: %s", code, body)
 	}
 }
 

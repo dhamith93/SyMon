@@ -16,6 +16,10 @@ import (
 // getMetrics serves every host's latest values in the Prometheus text
 // format, so Prometheus can scrape the dashboard
 func (s *server) getMetrics(w http.ResponseWriter, r *http.Request) {
+	if !s.metricsEnabled {
+		http.Error(w, "metrics are switched off with SYMON_CLIENT_METRICS_ENABLED=false", http.StatusNotFound)
+		return
+	}
 	response, err := s.collector.Snapshots(r.Context(), &api.Void{})
 	if err != nil {
 		writeGRPCError(w, "snapshots", err)

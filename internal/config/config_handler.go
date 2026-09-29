@@ -50,6 +50,8 @@ type Client struct {
 	// collector. Empty means CollectorEndpoint, with localhost replaced by
 	// the dashboard's host name.
 	AgentCollectorEndpoint string
+	// MetricsEnabled serves /metrics for Prometheus, on unless set to false
+	MetricsEnabled bool
 }
 
 type AlertProcessor struct {
@@ -209,6 +211,7 @@ func GetClient() Client {
 		RefreshSeconds:              refreshSeconds,
 		DownloadsDir:                downloadsDir,
 		AgentCollectorEndpoint:      os.Getenv("SYMON_CLIENT_AGENT_COLLECTOR_ENDPOINT"),
+		MetricsEnabled:              strings.ToUpper(os.Getenv("SYMON_CLIENT_METRICS_ENABLED")) != "FALSE",
 	}
 }
 

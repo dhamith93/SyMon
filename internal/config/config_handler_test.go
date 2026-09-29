@@ -78,3 +78,12 @@ func TestAgentDefaults(t *testing.T) {
 		t.Errorf("unexpected default key path %q", agent.AgentKeyPath)
 	}
 }
+
+func TestClientMetricsSetting(t *testing.T) {
+	for value, want := range map[string]bool{"": true, "true": true, "false": false, "FALSE": false} {
+		t.Setenv("SYMON_CLIENT_METRICS_ENABLED", value)
+		if got := config.GetClient().MetricsEnabled; got != want {
+			t.Errorf("SYMON_CLIENT_METRICS_ENABLED=%q: got %v, want %v", value, got, want)
+		}
+	}
+}

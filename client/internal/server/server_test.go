@@ -103,7 +103,7 @@ func newTestServer(t *testing.T, files fstest.MapFS) (*server, *fakeCollector) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { conn.Close() })
-	return &server{collector: api.NewMonitorDataServiceClient(conn), refreshSeconds: 15, files: files}, fake
+	return &server{collector: api.NewMonitorDataServiceClient(conn), refreshSeconds: 15, files: files, metricsEnabled: true}, fake
 }
 
 // get calls the server and returns the status, the body and what was logged

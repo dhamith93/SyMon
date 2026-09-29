@@ -115,4 +115,4 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
     * Alerts, newest first. `open=1` leaves out resolved ones
 
-The Client also serves `GET /metrics`, every host's latest values in the Prometheus text format. See [Prometheus and Grafana](docs/install.md#prometheus-and-grafana).
+The Client also serves `GET /metrics`, every host's latest values in the Prometheus text format, unless `SYMON_CLIENT_METRICS_ENABLED=false`. See [Prometheus and Grafana](docs/install.md#prometheus-and-grafana).
