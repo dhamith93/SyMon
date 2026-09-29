@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -100,15 +102,39 @@ func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error
 	return &Message{Body: "agent added"}, nil
 }
 
-func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*Message, error) {
+// HandlePing records that the host is alive and what its agent says about
+// itself, and hands the agent an update an admin asked for
+func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*PingResponse, error) {
 	host := in.ServerName
 	if authenticated, ok := agentHost(ctx); ok {
 		host = authenticated
 	}
-	if err := s.Store.Heartbeat(ctx, host, time.Now()); err != nil {
+	update, err := s.Store.AgentCheckIn(ctx, host, time.Now(), in.AgentVersion, in.Arch, in.UpdateError)
+	if err != nil {
 		return nil, agentStatus(host, err)
 	}
-	return &Message{Body: "pong"}, nil
+	if in.UpdateError != "" {
+		logger.Log("error", "agent on "+host+" could not update: "+in.UpdateError)
+	}
+	response := &PingResponse{Body: "pong"}
+	if update != nil {
+		response.Update = &AgentUpdate{Version: update.Version, DownloadUrl: update.URL, RequestedAt: unix(update.RequestedAt)}
+	}
+	return response, nil
+}
+
+// RequestAgentUpdate asks agents to install the build the dashboard hands
+// out. Agents that cannot update themselves are left out.
+func (s *Server) RequestAgentUpdate(ctx context.Context, in *AgentUpdateRequest) (*AgentUpdateResult, error) {
+	if in.Version == "" || !strings.HasPrefix(in.DownloadUrl, "http://") && !strings.HasPrefix(in.DownloadUrl, "https://") {
+		return nil, status.Error(codes.InvalidArgument, "an update needs a version and the dashboard's address")
+	}
+	requested, err := s.Store.RequestAgentUpdate(ctx, in.Hosts, in.Version, in.DownloadUrl)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	logger.Log("info", fmt.Sprintf("agent update to %s asked of %d hosts by %q", in.Version, requested, in.By))
+	return &AgentUpdateResult{Requested: int32(requested)}, nil
 }
 
 func (s *Server) HandleMonitorData(ctx context.Context, in *MonitorData) (*Message, error) {
@@ -165,6 +191,12 @@ func (s *Server) Fleet(ctx context.Context, in *Void) (*FleetSummary, error) {
 			WorstSeverity: int32(summary.WorstSeverity),
 			Containers:    int32(summary.Containers),
 			AgentVersion:  summary.AgentVersion,
+			CanUpdate:     summary.CanUpdate,
+			UpdateVersion: summary.UpdateVersion,
+			UpdateError:   summary.UpdateError,
+		}
+		if !summary.UpdateRequestedAt.IsZero() {
+			host.UpdateRequestedAt = summary.UpdateRequestedAt.Unix()
 		}
 		if days, ok := diskFull[summary.Name]; ok {
 			host.DiskFullDays = &days

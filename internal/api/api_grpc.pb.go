@@ -45,6 +45,7 @@ const (
 	MonitorDataService_AlertRules_FullMethodName              = "/api.MonitorDataService/AlertRules"
 	MonitorDataService_SaveRule_FullMethodName                = "/api.MonitorDataService/SaveRule"
 	MonitorDataService_DeleteRule_FullMethodName              = "/api.MonitorDataService/DeleteRule"
+	MonitorDataService_RequestAgentUpdate_FullMethodName      = "/api.MonitorDataService/RequestAgentUpdate"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -53,7 +54,7 @@ const (
 type MonitorDataServiceClient interface {
 	// agent
 	Enroll(ctx context.Context, in *EnrollRequest, opts ...grpc.CallOption) (*EnrollResponse, error)
-	HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
+	HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*PingResponse, error)
 	InitAgent(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error)
 	HandleMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
 	HandleCustomMonitorData(ctx context.Context, in *MonitorData, opts ...grpc.CallOption) (*Message, error)
@@ -86,6 +87,8 @@ type MonitorDataServiceClient interface {
 	AlertRules(ctx context.Context, in *Void, opts ...grpc.CallOption) (*AlertRuleList, error)
 	SaveRule(ctx context.Context, in *SaveRuleRequest, opts ...grpc.CallOption) (*AlertRuleInfo, error)
 	DeleteRule(ctx context.Context, in *RuleRequest, opts ...grpc.CallOption) (*Message, error)
+	// ask agents to update themselves, from the dashboard
+	RequestAgentUpdate(ctx context.Context, in *AgentUpdateRequest, opts ...grpc.CallOption) (*AgentUpdateResult, error)
 }
 
 type monitorDataServiceClient struct {
@@ -106,9 +109,9 @@ func (c *monitorDataServiceClient) Enroll(ctx context.Context, in *EnrollRequest
 	return out, nil
 }
 
-func (c *monitorDataServiceClient) HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*Message, error) {
+func (c *monitorDataServiceClient) HandlePing(ctx context.Context, in *ServerInfo, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Message)
+	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, MonitorDataService_HandlePing_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -356,13 +359,23 @@ func (c *monitorDataServiceClient) DeleteRule(ctx context.Context, in *RuleReque
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) RequestAgentUpdate(ctx context.Context, in *AgentUpdateRequest, opts ...grpc.CallOption) (*AgentUpdateResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AgentUpdateResult)
+	err := c.cc.Invoke(ctx, MonitorDataService_RequestAgentUpdate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
 type MonitorDataServiceServer interface {
 	// agent
 	Enroll(context.Context, *EnrollRequest) (*EnrollResponse, error)
-	HandlePing(context.Context, *ServerInfo) (*Message, error)
+	HandlePing(context.Context, *ServerInfo) (*PingResponse, error)
 	InitAgent(context.Context, *ServerInfo) (*Message, error)
 	HandleMonitorData(context.Context, *MonitorData) (*Message, error)
 	HandleCustomMonitorData(context.Context, *MonitorData) (*Message, error)
@@ -395,6 +408,8 @@ type MonitorDataServiceServer interface {
 	AlertRules(context.Context, *Void) (*AlertRuleList, error)
 	SaveRule(context.Context, *SaveRuleRequest) (*AlertRuleInfo, error)
 	DeleteRule(context.Context, *RuleRequest) (*Message, error)
+	// ask agents to update themselves, from the dashboard
+	RequestAgentUpdate(context.Context, *AgentUpdateRequest) (*AgentUpdateResult, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -408,7 +423,7 @@ type UnimplementedMonitorDataServiceServer struct{}
 func (UnimplementedMonitorDataServiceServer) Enroll(context.Context, *EnrollRequest) (*EnrollResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Enroll not implemented")
 }
-func (UnimplementedMonitorDataServiceServer) HandlePing(context.Context, *ServerInfo) (*Message, error) {
+func (UnimplementedMonitorDataServiceServer) HandlePing(context.Context, *ServerInfo) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandlePing not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) InitAgent(context.Context, *ServerInfo) (*Message, error) {
@@ -482,6 +497,9 @@ func (UnimplementedMonitorDataServiceServer) SaveRule(context.Context, *SaveRule
 }
 func (UnimplementedMonitorDataServiceServer) DeleteRule(context.Context, *RuleRequest) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRule not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) RequestAgentUpdate(context.Context, *AgentUpdateRequest) (*AgentUpdateResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestAgentUpdate not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -972,6 +990,24 @@ func _MonitorDataService_DeleteRule_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_RequestAgentUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AgentUpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).RequestAgentUpdate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_RequestAgentUpdate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).RequestAgentUpdate(ctx, req.(*AgentUpdateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1082,6 +1118,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRule",
 			Handler:    _MonitorDataService_DeleteRule_Handler,
+		},
+		{
+			MethodName: "RequestAgentUpdate",
+			Handler:    _MonitorDataService_RequestAgentUpdate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
