@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAgo, formatBytes, formatDays, formatDuration, formatNumber, formatPercent, formatRate, formatValue } from './format';
+import { formatAgo, formatAxis, formatBytes, formatDays, formatDuration, formatMs, formatNumber, formatPercent, formatRate, formatValue } from './format';
 
 describe('formatBytes', () => {
   it('uses binary units', () => {
@@ -21,6 +21,9 @@ describe('formatValue', () => {
     expect(formatValue(4.25, 'percent')).toBe('4.3%');
     expect(formatValue(512, 'mib')).toBe('512.0 MiB');
     expect(formatValue(48.25, 'celsius')).toBe('48.3 °C');
+    expect(formatValue(850.4, 'ms')).toBe('850 ms');
+    expect(formatMs(4.25)).toBe('4.3 ms');
+    expect(formatMs(1250)).toBe('1.25 s');
     expect(formatPercent(12.345, 1)).toBe('12.3%');
   });
 
@@ -60,5 +63,13 @@ describe('formatDays', () => {
   it('handles bad input', () => {
     expect(formatDays(-1)).toBe('–');
     expect(formatDays(NaN)).toBe('–');
+  });
+});
+
+describe('formatAxis', () => {
+  it('writes response times in ms, or seconds from a second up', () => {
+    expect(formatAxis([0, 100, 200], 'ms')).toEqual(['0 ms', '100 ms', '200 ms']);
+    expect(formatAxis([0, 500, 1000, 1500], 'ms')).toEqual(['0.0 s', '0.5 s', '1.0 s', '1.5 s']);
+    expect(formatAxis([0, 2000, 4000], 'ms')).toEqual(['0 s', '2 s', '4 s']);
   });
 });

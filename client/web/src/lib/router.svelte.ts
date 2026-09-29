@@ -5,6 +5,7 @@ export type Page =
   | { name: 'host'; host: string }
   | { name: 'custom'; host: string }
   | { name: 'alerts' }
+  | { name: 'endpoints' }
   | { name: 'notfound' };
 
 export const location = $state({
@@ -45,6 +46,7 @@ export function handleLinkClick(event: MouseEvent) {
 export function match(path: string): Page {
   if (path === '/' || path === '') return { name: 'fleet' };
   if (path === '/alerts') return { name: 'alerts' };
+  if (path === '/endpoints') return { name: 'endpoints' };
   const host = path.match(/^\/hosts\/([^/]+)(\/custom)?\/?$/);
   if (host) {
     const name = decodeURIComponent(host[1]);

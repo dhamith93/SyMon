@@ -3,11 +3,14 @@
   import { setTheme, theme, type ThemeChoice } from './lib/theme.svelte';
   import Alerts from './pages/Alerts.svelte';
   import CustomMetrics from './pages/CustomMetrics.svelte';
+  import Endpoints from './pages/Endpoints.svelte';
   import Fleet from './pages/Fleet.svelte';
   import Host from './pages/Host.svelte';
 
   const page = $derived(match(location.path));
   const onAlerts = $derived(page.name === 'alerts');
+  const onEndpoints = $derived(page.name === 'endpoints');
+  const onHosts = $derived(!onAlerts && !onEndpoints);
 </script>
 
 <svelte:document onclick={handleLinkClick} />
@@ -22,7 +25,8 @@
       SyMon
     </a>
     <nav>
-      <a href="/" class:active={!onAlerts} aria-current={!onAlerts ? 'page' : undefined}>Hosts</a>
+      <a href="/" class:active={onHosts} aria-current={onHosts ? 'page' : undefined}>Hosts</a>
+      <a href="/endpoints" class:active={onEndpoints} aria-current={onEndpoints ? 'page' : undefined}>Endpoints</a>
       <a href="/alerts" class:active={onAlerts} aria-current={onAlerts ? 'page' : undefined}>Alerts</a>
     </nav>
     <label class="theme secondary">
@@ -45,6 +49,8 @@
     {#key page.host}<CustomMetrics host={page.host} />{/key}
   {:else if page.name === 'alerts'}
     <Alerts />
+  {:else if page.name === 'endpoints'}
+    <Endpoints />
   {:else}
     <div class="page">
       <h1>Page not found</h1>

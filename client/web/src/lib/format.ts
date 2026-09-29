@@ -38,6 +38,13 @@ export function formatNumber(value: number, digits = 1): string {
   return value.toFixed(abs < 10 ? 2 : digits);
 }
 
+// 850 -> "850 ms", 1250 -> "1.25 s"
+export function formatMs(ms: number): string {
+  if (!Number.isFinite(ms)) return '–';
+  if (ms < 1000) return `${ms.toFixed(ms < 10 ? 1 : 0)} ms`;
+  return `${(ms / 1000).toFixed(2)} s`;
+}
+
 export function formatCelsius(value: number): string {
   if (!Number.isFinite(value)) return '–';
   return `${value.toFixed(1)} °C`;
@@ -100,7 +107,7 @@ export function formatTime(unixSeconds: number, spanSeconds: number): string {
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: spanSeconds < 3600 ? '2-digit' : undefined });
 }
 
-export type Unit = 'percent' | 'rate' | 'bytes' | 'mib' | 'celsius' | 'number';
+export type Unit = 'percent' | 'rate' | 'bytes' | 'mib' | 'celsius' | 'ms' | 'number';
 
 export function formatValue(value: number, unit: Unit): string {
   switch (unit) {
@@ -114,6 +121,8 @@ export function formatValue(value: number, unit: Unit): string {
       return formatMiB(value);
     case 'celsius':
       return formatCelsius(value);
+    case 'ms':
+      return formatMs(value);
     default:
       return formatNumber(value);
   }
@@ -124,12 +133,17 @@ export function formatValue(value: number, unit: Unit): string {
 export function formatAxis(ticks: number[], unit: Unit): string[] {
   const step = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : Math.abs(ticks[0] ?? 1);
   const digits = step >= 1 || step === 0 ? 0 : step >= 0.1 ? 1 : 2;
+  // response times switch to seconds once the axis reaches a second
+  const seconds = unit === 'ms' && Math.max(...ticks.map(Math.abs)) >= 1000;
+  const secondDigits = step >= 1000 || step === 0 ? 0 : step >= 100 ? 1 : 2;
   return ticks.map((value) => {
     switch (unit) {
       case 'percent':
         return `${value.toFixed(digits)}%`;
       case 'celsius':
         return `${value.toFixed(digits)} °C`;
+      case 'ms':
+        return seconds ? `${(value / 1000).toFixed(secondDigits)} s` : `${value.toFixed(digits)} ms`;
       case 'number':
         return Math.abs(value) >= 1e4 ? formatNumber(value) : value.toFixed(digits);
       default:

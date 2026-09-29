@@ -22,6 +22,23 @@ export interface HostSummary {
   diskFullDays: number | null;
 }
 
+// An endpoint's newest check up to the end of a range, and how it did over it
+export interface EndpointStatus {
+  name: string;
+  url: string;
+  method: string;
+  time: number;
+  ok: boolean;
+  // 0 when there was no response
+  statusCode: number;
+  latencyMs: number;
+  error: string;
+  checks: number;
+  uptimePct: number;
+  // over the checks that got a response
+  avgLatencyMs: number;
+}
+
 // A disk's growth over the last week and when it fills up at that rate
 export interface DiskForecast {
   device: string;
@@ -205,6 +222,9 @@ export const api = {
     get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
   diskForecasts: (name: string) => get<{ disks: DiskForecast[] }>(`${host(name)}/disk-forecasts`),
+  endpoints: (from: number, to: number) => get<{ endpoints: EndpointStatus[] }>('/api/v1/endpoints', { from, to }),
+  endpointSeries: (name: string, metric: 'latency' | 'availability', from: number, to: number) =>
+    get<SeriesResponse>('/api/v1/endpoints/series', { name, metric, from, to }),
   alerts: (filter: { host?: string; open?: boolean; from?: number; to?: number } = {}) =>
     get<{ alerts: AlertRecord[] }>('/api/v1/alerts', filter),
 };

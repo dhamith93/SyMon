@@ -20,6 +20,9 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 - Every running container on a host: Docker, Podman, containerd, LXC and systemd-nspawn
 - CPU, memory, network and disk IO per container, grouped by Compose project
 
+**Endpoints**
+- HTTP checks of any URL from the server, with response time and uptime history
+
 **Custom metrics**
 - Send any number from a script or cron job and get a chart for it
 
@@ -113,6 +116,10 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
 * `GET /api/v1/hosts/{host}/custom-metrics`
     * Names of the host's custom metrics
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
-    * Alerts, newest first. `open=1` leaves out resolved ones
+    * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint alerts have an empty `host`
+* `GET /api/v1/endpoints?from=&to=`
+    * Every endpoint checked within the range: its newest check, the number of checks, the share that passed and the average response time
+* `GET /api/v1/endpoints/series?name=&metric=latency&from=&to=`
+    * An endpoint's response time in milliseconds (`latency`) or share of passing checks (`availability`) over time, in the same shape as a host's series
 
 The Client also serves `GET /metrics`, every host's latest values in the Prometheus text format, unless `SYMON_CLIENT_METRICS_ENABLED=false`. See [Prometheus and Grafana](docs/install.md#prometheus-and-grafana).
