@@ -23,9 +23,12 @@
     onpick?: (time: number) => void;
     // a picked time to mark with a line, 0 for none
     marker?: number;
+    // dashed lines with dots at their ends, for values that are projected
+    projection?: boolean;
   }
 
-  let { data, unit, yMax, syncKey, from, to, area = false, height = 180, onzoom, onpick, marker = 0 }: Props = $props();
+  let { data, unit, yMax, syncKey, from, to, area = false, height = 180, onzoom, onpick, marker = 0, projection = false }: Props =
+    $props();
 
   let wrapper: HTMLDivElement;
   // uPlot owns this element, Svelte owns the tooltip next to it
@@ -45,8 +48,10 @@
 
   const font = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
 
+  // one color per series, from its palette slot
   function seriesColors(): string[] {
-    return Array.from({ length: 8 }, (_, i) => cssVar(`--series-${i + 1}`));
+    const palette = Array.from({ length: 8 }, (_, i) => cssVar(`--series-${i + 1}`));
+    return data.labels.map((_, i) => palette[data.colors?.[i] ?? i]);
   }
 
   function plotData(d: Aligned): uPlot.AlignedData {
@@ -92,7 +97,8 @@
           stroke: colors[i],
           width: 2,
           fill: single && area ? colors[i] + '1a' : undefined,
-          points: { show: false },
+          dash: projection ? [6, 4] : undefined,
+          points: projection ? { show: true, size: 8, fill: colors[i], stroke: colors[i] } : { show: false },
         })),
       ],
       hooks: {
@@ -169,7 +175,7 @@
 
   // rebuild when the series or the theme change, otherwise swap the data in
   $effect(() => {
-    const key = [theme.resolved, unit, yMax, height, area, ...data.labels].join('|');
+    const key = [theme.resolved, unit, yMax, height, area, projection, ...data.labels, ...(data.colors ?? [])].join('|');
     // a new range only needs the x scale to move, not a rebuild
     void from;
     void to;

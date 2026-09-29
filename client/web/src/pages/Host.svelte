@@ -4,7 +4,8 @@
   import { api, diskFullSoonDays, type DiskForecast, type HostDetail } from '../lib/api';
   import { hostSections, loadChart, loadCores, type ChartSpec } from '../lib/charts';
   import { appConfig } from '../lib/config.svelte';
-  import { formatAgo, formatBytes, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
+  import { formatAgo, formatBytes, formatDate, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
+  import { projectDisks } from '../lib/projection';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
@@ -124,6 +125,9 @@
     return !!chart?.data && chart.data.labels.length > 0;
   }
 
+  // follows the disk space chart's series, so each disk keeps its color
+  const projection = $derived(projectDisks(Object.values(forecasts), now, charts['disk_used']?.data?.labels ?? []));
+
   const snapshot = $derived(detail?.snapshot);
   const system = $derived(snapshot?.System);
   const cpu = $derived(snapshot?.ProcUsage);
@@ -179,6 +183,38 @@
               onpick={pickTime}
               marker={processesAt}
             />
+            {#if spec.key === 'disk_used' && projection}
+              <ChartCard
+                title="Disk space, projected"
+                unit="percent"
+                yMax={100}
+                note="Where each filling disk is headed at last week's growth. The time range does not apply."
+                data={projection.data}
+                syncKey="{host}-projection"
+                from={projection.from}
+                to={projection.to}
+                projection
+              >
+                {#snippet table()}
+                  <table class="data">
+                    <thead>
+                      <tr><th>Mount</th><th class="right">Used</th><th class="right">Growth a day</th><th class="right">Full in</th><th class="right">Full on</th></tr>
+                    </thead>
+                    <tbody>
+                      {#each projection.disks as disk (disk.device + disk.mount)}
+                        <tr>
+                          <td>{disk.mount}</td>
+                          <td class="right num">{formatPercent(disk.usedPct)}</td>
+                          <td class="right num">{formatBytes(disk.bytesPerDay)}</td>
+                          <td class="right">{formatDays(disk.daysToFull ?? 0)}</td>
+                          <td class="right num">{formatDate(now + (disk.daysToFull ?? 0) * 86400)}</td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                {/snippet}
+              </ChartCard>
+            {/if}
           {/each}
           {#if section.title === 'CPU' && showCores && cores.length === 0}
             <ChartCard title="CPU usage per core" unit="percent" data={null} loading syncKey={host} />
