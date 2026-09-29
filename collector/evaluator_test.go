@@ -17,7 +17,9 @@ type fakeStore struct {
 	value    float64
 	at       time.Time
 	lastSeen time.Time
-	alerts   []store.Alert
+	// daysUntilFull is keyed by device, a missing device has no forecast yet
+	daysUntilFull map[string]float64
+	alerts        []store.Alert
 }
 
 func (f *fakeStore) LatestValue(ctx context.Context, host string, metric string, target string, isCustom bool) (float64, time.Time, error) {
@@ -29,6 +31,14 @@ func (f *fakeStore) LatestValue(ctx context.Context, host string, metric string,
 
 func (f *fakeStore) LastSeen(ctx context.Context, host string) (time.Time, error) {
 	return f.lastSeen, nil
+}
+
+func (f *fakeStore) DaysUntilFull(ctx context.Context, host string, device string) (float64, error) {
+	days, ok := f.daysUntilFull[device]
+	if !ok {
+		return 0, store.ErrNotFound
+	}
+	return days, nil
 }
 
 func (f *fakeStore) OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error) {
@@ -203,5 +213,55 @@ func TestPingAlert(t *testing.T) {
 	check()
 	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Critical) {
 		t.Fatalf("expected a critical ping alert, got %+v", sent)
+	}
+}
+
+func TestDiskForecastAlert(t *testing.T) {
+	fake := &fakeStore{daysUntilFull: map[string]float64{}}
+	var sent []*alertapi.Alert
+	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	now := time.Unix(1700000000, 0)
+	e.now = func() time.Time { return now }
+	rule := alerts.AlertConfig{
+		Name:              "Data disk filling up",
+		MetricName:        monitor.DISK_FORECAST,
+		Disk:              "/dev/sdb1",
+		Op:                "<",
+		WarnThreshold:     14,
+		CriticalThreshold: 3,
+		TriggerIntveral:   60,
+		Template:          "{subject}",
+	}
+
+	check := func(days float64, forecast bool) {
+		t.Helper()
+		delete(fake.daysUntilFull, "/dev/sdb1")
+		if forecast {
+			fake.daysUntilFull["/dev/sdb1"] = days
+		}
+		if err := e.evaluate(context.Background(), &rule, "web1"); err != nil {
+			t.Fatal(err)
+		}
+		now = now.Add(30 * time.Second)
+	}
+
+	// too little history, then about 10 days left for a minute
+	check(0, false)
+	check(10, true)
+	check(10, true)
+	check(9.9, true)
+	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Warning) || sent[0].Disk != "/dev/sdb1" {
+		t.Fatalf("expected one warning for /dev/sdb1, got %+v", sent)
+	}
+	if len(fake.alerts) != 1 || fake.alerts[0].Target != "/dev/sdb1" {
+		t.Fatalf("expected an alert on /dev/sdb1, got %+v", fake.alerts)
+	}
+
+	// growth stops, so the disk reads as the forecast horizon and resolves
+	check(365, true)
+	check(365, true)
+	check(365, true)
+	if len(sent) != 2 || sent[1].Status != int32(alertstatus.Normal) || fake.alerts[0].ResolvedAt == nil {
+		t.Errorf("expected the alert to resolve, got %+v", sent)
 	}
 }

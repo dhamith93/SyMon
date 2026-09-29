@@ -373,7 +373,7 @@ func buildAlert(alert alerts.Alert, status alertstatus.AlertStatus, sendPagerdut
 		SlackChannel: slackChannel,
 	}
 
-	if alert.MetricName == monitor.DISKS {
+	if alert.MetricName == monitor.DISKS || alert.MetricName == monitor.DISK_FORECAST {
 		alertToSend.Disk = status.Alert.Disk
 	}
 	if alert.MetricName == monitor.SERVICES {

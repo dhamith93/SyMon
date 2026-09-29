@@ -30,6 +30,9 @@ const (
 	CONTAINERS   string = "containers"
 )
 
+// DISK_FORECAST is an alert metric, the days until a disk is full
+const DISK_FORECAST string = "disk_forecast"
+
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off
 const (
 	CollectorDiskIO     string = "diskio"

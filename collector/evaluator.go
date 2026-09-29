@@ -17,6 +17,7 @@ import (
 type alertStore interface {
 	LatestValue(ctx context.Context, host string, metric string, target string, isCustom bool) (float64, time.Time, error)
 	LastSeen(ctx context.Context, host string) (time.Time, error)
+	DaysUntilFull(ctx context.Context, host string, device string) (float64, error)
 	OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error)
 	CreateAlert(ctx context.Context, alert store.Alert) (int64, error)
 	UpdateAlert(ctx context.Context, id int64, severity int, value float64, at time.Time) error
@@ -55,7 +56,7 @@ func newEvaluator(st alertStore, send func(*alertapi.Alert)) *evaluator {
 // ruleTarget is the disk or service a rule watches, empty for other metrics
 func ruleTarget(rule *alerts.AlertConfig) string {
 	switch rule.MetricName {
-	case monitor.DISKS:
+	case monitor.DISKS, monitor.DISK_FORECAST:
 		return rule.Disk
 	case monitor.SERVICES:
 		return rule.Service
@@ -92,8 +93,13 @@ func (e *evaluator) evaluate(ctx context.Context, rule *alerts.AlertConfig, host
 }
 
 // latest returns the value a rule checks. For ping it is the number of
-// seconds since the host was last heard from.
+// seconds since the host was last heard from, for a disk forecast the days
+// until the disk is full.
 func (e *evaluator) latest(ctx context.Context, rule *alerts.AlertConfig, host string, target string) (float64, time.Time, error) {
+	if rule.MetricName == monitor.DISK_FORECAST {
+		days, err := e.store.DaysUntilFull(ctx, host, target)
+		return days, e.now(), err
+	}
 	if rule.MetricName != monitor.PING {
 		return e.store.LatestValue(ctx, host, rule.MetricName, target, rule.IsCustom)
 	}
