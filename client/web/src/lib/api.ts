@@ -190,6 +190,39 @@ export class ApiError extends Error {
   }
 }
 
+// called when the API says the session is gone, like after it expired
+let onUnauthorized = () => {};
+
+export function setUnauthorizedHandler(handler: () => void) {
+  onUnauthorized = handler;
+}
+
+async function fail(response: Response): Promise<never> {
+  let message = response.statusText;
+  try {
+    message = (await response.json()).error ?? message;
+  } catch {
+    // not json, keep the status text
+  }
+  throw new ApiError(response.status, message);
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!response.ok) return fail(response);
+  return response.json();
+}
+
+// who is logged in, or without a session whether there are users at all
+export type SessionState = { user: string } | { user: null; hasUsers: boolean };
+
+async function session(): Promise<SessionState> {
+  const response = await fetch('/api/v1/session');
+  if (response.ok) return { user: (await response.json()).user };
+  if (response.status !== 401) return fail(response);
+  return { user: null, hasUsers: !!(await response.json()).hasUsers };
+}
+
 async function get<T>(path: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<T> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -199,21 +232,17 @@ async function get<T>(path: string, params: Record<string, string | number | boo
   }
   const url = query.size > 0 ? `${path}?${query}` : path;
   const response = await fetch(url);
-  if (!response.ok) {
-    let message = response.statusText;
-    try {
-      message = (await response.json()).error ?? message;
-    } catch {
-      // not json, keep the status text
-    }
-    throw new ApiError(response.status, message);
-  }
+  if (response.status === 401) onUnauthorized();
+  if (!response.ok) return fail(response);
   return response.json();
 }
 
 const host = (name: string) => `/api/v1/hosts/${encodeURIComponent(name)}`;
 
 export const api = {
+  session,
+  login: (user: string, password: string) => post<{ user: string }>('/api/v1/login', { user, password }),
+  logout: () => post<object>('/api/v1/logout', {}),
   // collectorVersion is empty when the collector cannot say
   config: () => get<{ refreshSeconds: number; version: string; collectorVersion: string }>('/api/v1/config'),
   fleet: () => get<{ hosts: HostSummary[] }>('/api/v1/fleet'),

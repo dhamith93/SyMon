@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { appConfig } from './lib/config.svelte';
+  import { auth, checkSession, logOut } from './lib/auth.svelte';
+  import { appConfig, loadConfig } from './lib/config.svelte';
   import { handleLinkClick, location, match } from './lib/router.svelte';
   import { setTheme, theme, type ThemeChoice } from './lib/theme.svelte';
   import Alerts from './pages/Alerts.svelte';
@@ -7,6 +8,8 @@
   import Endpoints from './pages/Endpoints.svelte';
   import Fleet from './pages/Fleet.svelte';
   import Host from './pages/Host.svelte';
+  import Login from './pages/Login.svelte';
+  import Setup from './pages/Setup.svelte';
 
   const page = $derived(match(location.path));
   const onAlerts = $derived(page.name === 'alerts');
@@ -14,6 +17,11 @@
   const onHosts = $derived(!onAlerts && !onEndpoints);
   // one version when the dashboard and collector match, both when they do not
   const sameVersion = $derived(!appConfig.collectorVersion || appConfig.collectorVersion === appConfig.version);
+
+  checkSession();
+  $effect(() => {
+    if (auth.state === 'in') loadConfig();
+  });
 </script>
 
 <svelte:document onclick={handleLinkClick} />
@@ -28,10 +36,16 @@
       SyMon
     </a>
     <nav>
-      <a href="/" class:active={onHosts} aria-current={onHosts ? 'page' : undefined}>Hosts</a>
-      <a href="/endpoints" class:active={onEndpoints} aria-current={onEndpoints ? 'page' : undefined}>Endpoints</a>
-      <a href="/alerts" class:active={onAlerts} aria-current={onAlerts ? 'page' : undefined}>Alerts</a>
+      {#if auth.state === 'in'}
+        <a href="/" class:active={onHosts} aria-current={onHosts ? 'page' : undefined}>Hosts</a>
+        <a href="/endpoints" class:active={onEndpoints} aria-current={onEndpoints ? 'page' : undefined}>Endpoints</a>
+        <a href="/alerts" class:active={onAlerts} aria-current={onAlerts ? 'page' : undefined}>Alerts</a>
+      {/if}
     </nav>
+    {#if auth.state === 'in'}
+      <span class="user secondary">{auth.user}</span>
+      <button class="control" onclick={logOut}>Log out</button>
+    {/if}
     <label class="theme secondary">
       <span class="sr-only">Theme</span>
       <select class="control" value={theme.choice} onchange={(e) => setTheme(e.currentTarget.value as ThemeChoice)}>
@@ -44,7 +58,19 @@
 </header>
 
 <main>
-  {#if page.name === 'fleet'}
+  {#if auth.state === 'checking'}
+    <!-- nothing to show until the session is known -->
+  {:else if auth.state === 'setup'}
+    <Setup />
+  {:else if auth.state === 'out'}
+    <Login />
+  {:else if auth.state === 'error'}
+    <div class="page">
+      <h1>SyMon is not reachable</h1>
+      <p class="secondary">{auth.error}</p>
+      <button class="control" onclick={checkSession}>Try again</button>
+    </div>
+  {:else if page.name === 'fleet'}
     <Fleet />
   {:else if page.name === 'host'}
     {#key page.host}<Host host={page.host} />{/key}
@@ -62,7 +88,7 @@
   {/if}
 </main>
 
-{#if appConfig.version}
+{#if auth.state === 'in' && appConfig.version}
   <footer class="app-footer muted">
     {#if sameVersion}
       SyMon {appConfig.version}
@@ -112,6 +138,10 @@
 
   nav a:hover {
     background: var(--hover);
+  }
+
+  .user {
+    font-size: 13px;
   }
 
   nav a.active {

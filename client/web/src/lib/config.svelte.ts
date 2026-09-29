@@ -1,11 +1,13 @@
 import { api } from './api';
 
-// settings from the client, loaded once
+// settings from the client, loaded once logged in
 export const appConfig = $state({ refreshSeconds: 15, version: '', collectorVersion: '' });
 
-api
-  .config()
-  .then((config) => Object.assign(appConfig, config))
-  .catch(() => {
-    // keep the default
-  });
+export function loadConfig() {
+  api
+    .config()
+    .then((config) => Object.assign(appConfig, config))
+    .catch(() => {
+      // keep the defaults
+    });
+}

@@ -1,5 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 
+// the dashboard needs a login, so every test starts logged in as this user
+const user = process.env.SYMON_E2E_USER ?? '';
+const password = process.env.SYMON_E2E_PASSWORD ?? '';
+
+test.beforeEach(async ({ page }) => {
+  expect(user && password, 'set SYMON_E2E_USER and SYMON_E2E_PASSWORD').toBeTruthy();
+  const response = await page.request.post('/api/v1/login', { data: { user, password } });
+  expect(response.ok(), `log in as ${user}`).toBeTruthy();
+});
+
 // fail on anything the app logs as an error
 function watchErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -63,8 +73,8 @@ test('unknown pages and hosts are handled', async ({ page }) => {
   await expect(page.getByText('This host has not sent any data yet.')).toBeVisible();
 });
 
-test('containers show on a host that runs them', async ({ page, request }) => {
-  const fleet = await (await request.get('/api/v1/fleet')).json();
+test('containers show on a host that runs them', async ({ page }) => {
+  const fleet = await (await page.request.get('/api/v1/fleet')).json();
   const host = fleet.hosts.find((h: { containers: number }) => h.containers > 0);
   test.skip(!host, 'no host reports containers');
 
@@ -73,4 +83,11 @@ test('containers show on a host that runs them', async ({ page, request }) => {
   await expect(table).toBeVisible();
   await expect(table.locator('tbody tr')).not.toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Container CPU, share of the host' })).toBeVisible();
+});
+
+test('logging out brings back the login page', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible();
+  expect((await page.request.get('/api/v1/fleet')).status()).toBe(401);
 });
