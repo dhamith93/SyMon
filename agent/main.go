@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -86,6 +87,10 @@ func main() {
 	}
 
 	logger.Log("info", "agent "+version.String()+" started for "+config.ServerId)
+	// right away, so the dashboard sees this agent's version, and an update
+	// that restarted it is confirmed
+	updates := newUpdater()
+	sendPing(client, &config, updates)
 	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
 	collector := monitor.NewCollector(&config)
 	ticker := time.NewTicker(interval)
@@ -118,7 +123,7 @@ func main() {
 		for {
 			select {
 			case <-tickerForPing.C:
-				sendPing(client, &config)
+				sendPing(client, &config, updates)
 			case <-quitForPing:
 				ticker.Stop()
 				return
@@ -193,13 +198,22 @@ func initAgent(client api.MonitorDataServiceClient, config *config.Agent) {
 	fmt.Printf("%s \n", response.Body)
 }
 
-func sendPing(client api.MonitorDataServiceClient, config *config.Agent) {
+// sendPing tells the collector the host is alive, and which agent it runs.
+// The reply may carry an update an admin asked for.
+func sendPing(client api.MonitorDataServiceClient, config *config.Agent, updates *updater) {
 	ctx, cancel := transport.Context()
 	defer cancel()
-	_, err := client.HandlePing(ctx, &api.ServerInfo{ServerName: config.ServerId})
+	response, err := client.HandlePing(ctx, &api.ServerInfo{
+		ServerName:   config.ServerId,
+		AgentVersion: version.String(),
+		Arch:         runtime.GOARCH,
+		UpdateError:  updates.err(),
+	})
 	if err != nil {
 		logger.Log("error", "error sending ping: "+err.Error())
+		return
 	}
+	updates.handle(response.Update)
 }
 
 func sendMonitorData(client api.MonitorDataServiceClient, monitorData string, config *config.Agent) {
