@@ -23,7 +23,7 @@ func (s *Server) HandleAlerts(ctx context.Context, in *Alert) (*Response, error)
 	sendEmail := in.Email
 	sendSlack := in.Slack
 
-	if in.MetricName == monitor.DISKS {
+	if in.MetricName == monitor.DISKS || in.MetricName == monitor.DISK_FORECAST {
 		metricName = in.Disk
 	}
 	if in.MetricName == monitor.SERVICES {
