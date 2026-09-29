@@ -126,7 +126,7 @@ func (rule *AlertConfig) checkServers() error {
 	}
 	for _, server := range rule.Servers {
 		if strings.TrimSpace(server) == "" {
-			return errors.New("Servers has an empty host name")
+			return errors.New("a host name in Servers is empty")
 		}
 	}
 	return nil
