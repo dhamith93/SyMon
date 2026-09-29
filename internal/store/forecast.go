@@ -8,7 +8,8 @@ import (
 
 // A disk is forecast to fill up only when its usage has grown steadily over
 // the window. Disks that jump up and down, like ones with rotating logs,
-// have a low r2 and get no forecast.
+// have a low r2 and get no forecast. The fit is on bytes, since the agent
+// sends df's percent as a whole number, which hides slow growth.
 const (
 	forecastWindow     = 7 * 24 * time.Hour
 	forecastMinSamples = 24
@@ -34,16 +35,20 @@ type DiskForecast struct {
 }
 
 // forecastDays returns how many days are left until a disk is full, and
-// false when the disk is not filling up or there is too little history to say
-func forecastDays(usedPct float64, pctPerDay float64, r2 float64, samples int) (float64, bool) {
-	if samples < forecastMinSamples || pctPerDay <= 0 || r2 < forecastMinR2 {
+// false when the disk is not filling up or there is too little history to
+// say. df's percent is used / (used + available), where available leaves
+// out the blocks reserved for root, so the space left comes from it rather
+// than from the disk size.
+func forecastDays(usedPct float64, usedBytes float64, bytesPerDay float64, r2 float64, samples int) (float64, bool) {
+	if samples < forecastMinSamples || bytesPerDay <= 0 || r2 < forecastMinR2 || usedPct <= 0 {
 		return 0, false
 	}
-	days := (100 - usedPct) / pctPerDay
+	left := max(usedBytes*(100-usedPct)/usedPct, 0)
+	days := left / bytesPerDay
 	if days > forecastHorizonDays {
 		return 0, false
 	}
-	return max(days, 0), true
+	return days, true
 }
 
 // DiskForecasts returns a forecast for each of a host's disks
@@ -112,10 +117,10 @@ func (s *Store) queryForecasts(ctx context.Context, filter string, args ...any) 
 	sql := fmt.Sprintf(`
 		SELECT h.name, d.device, d.mount,
 		       last(d.used_pct, d.bucket),
-		       regr_slope(d.used_pct, extract(epoch FROM d.bucket - $1::timestamptz) / 86400),
+		       last(d.used_bytes, d.bucket),
 		       regr_slope(d.used_bytes, extract(epoch FROM d.bucket - $1::timestamptz) / 86400),
-		       regr_r2(d.used_pct, extract(epoch FROM d.bucket - $1::timestamptz) / 86400),
-		       count(d.used_pct)
+		       regr_r2(d.used_bytes, extract(epoch FROM d.bucket - $1::timestamptz) / 86400),
+		       count(d.used_bytes)
 		FROM disk_metrics_1h d
 		JOIN hosts h ON h.id = d.host_id
 		WHERE d.bucket >= $1 %s
@@ -130,15 +135,18 @@ func (s *Store) queryForecasts(ctx context.Context, filter string, args ...any) 
 	forecasts := []DiskForecast{}
 	for rows.Next() {
 		var forecast DiskForecast
-		var usedPct, pctPerDay, bytesPerDay, r2 *float64
-		if err := rows.Scan(&forecast.Host, &forecast.Device, &forecast.Mount, &usedPct, &pctPerDay, &bytesPerDay, &r2, &forecast.Samples); err != nil {
+		var usedPct, usedBytes, bytesPerDay, r2 *float64
+		if err := rows.Scan(&forecast.Host, &forecast.Device, &forecast.Mount, &usedPct, &usedBytes, &bytesPerDay, &r2, &forecast.Samples); err != nil {
 			return nil, err
 		}
 		// nulls come from a single sample or no usable values
 		forecast.UsedPct = valueOrZero(usedPct)
-		forecast.PctPerDay = valueOrZero(pctPerDay)
 		forecast.BytesPerDay = valueOrZero(bytesPerDay)
-		if days, ok := forecastDays(forecast.UsedPct, forecast.PctPerDay, valueOrZero(r2), forecast.Samples); ok {
+		// the growth in df's percent points, at the current size
+		if used := valueOrZero(usedBytes); used > 0 {
+			forecast.PctPerDay = forecast.BytesPerDay * forecast.UsedPct / used
+		}
+		if days, ok := forecastDays(forecast.UsedPct, valueOrZero(usedBytes), forecast.BytesPerDay, valueOrZero(r2), forecast.Samples); ok {
 			forecast.DaysToFull = &days
 		}
 		forecasts = append(forecasts, forecast)
