@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/config"
@@ -23,7 +22,6 @@ import (
 
 func main() {
 	var removeAgentVal string
-	var alertConfig []alerts.AlertConfig
 	initPtr := flag.Bool("init", false, "Create the database schema and print a new SYMON_KEY")
 	flag.StringVar(&removeAgentVal, "remove-agent", "", "Remove an agent. Its metrics are kept until retention drops them.")
 	enrollTokenPtr := flag.Bool("enroll-token", false, "Print a token and command that enroll a new host")
@@ -37,6 +35,8 @@ func main() {
 	setRoleName := flag.String("set-role", "", "Give a dashboard user the role in -role")
 	removeUserName := flag.String("remove-user", "", "Remove a dashboard user")
 	listUsersPtr := flag.Bool("list-users", false, "List the dashboard users")
+	importRulesPath := flag.String("import-rules", "", "Add the alert rules in an alerts.json file, and replace the ones with the same name")
+	exportRulesPtr := flag.Bool("export-rules", false, "Print the alert rules as alerts.json")
 	envFile := flag.String("env", config.DefaultEnvFile("collector"), "Settings file with KEY=value lines, loaded if it exists")
 	versionPtr := flag.Bool("version", false, "Print the version and exit")
 	flag.Parse()
@@ -93,14 +93,12 @@ func main() {
 	case *listUsersPtr:
 		listUsers(ctx, st)
 		return
-	}
-
-	// a broken file would otherwise leave the collector running with no alerts
-	if len(config.AlertsFilePath) > 0 {
-		alertConfig, err = alerts.LoadRules(config.AlertsFilePath)
-		if err != nil {
-			log.Fatal("cannot load alert rules, fix the file or unset SYMON_ALERTS_CONFIG_PATH: ", err)
-		}
+	case *importRulesPath != "":
+		importRules(ctx, st, *importRulesPath)
+		return
+	case *exportRulesPtr:
+		exportRules(ctx, st)
+		return
 	}
 
 	if err := st.Migrate(ctx); err != nil {
@@ -109,10 +107,9 @@ func main() {
 	if err := st.ApplyRetention(ctx); err != nil {
 		log.Fatal("cannot set retention: ", err)
 	}
+	setupRules(ctx, st, &config)
 
-	if alertConfig != nil {
-		go handleAlerts(alertConfig, &config, st)
-	}
+	go handleAlerts(&config, st)
 	go purgeOldRecords(st)
 
 	lis, err := net.Listen("tcp", ":"+config.Port)

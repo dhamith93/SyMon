@@ -22,10 +22,17 @@ import (
 // endpointTimeout is how long a check waits for the response headers
 const endpointTimeout = 30 * time.Second
 
-// runEndpointChecks checks every endpoint rule now and then every interval,
-// and stores the results. The rule loop raises the alerts from them.
-func runEndpointChecks(rules []alerts.AlertConfig, interval time.Duration, st *store.Store) {
+// runEndpointChecks checks every enabled endpoint rule now and then every
+// interval, and stores the results. The rule loop raises the alerts from them.
+func runEndpointChecks(interval time.Duration, st *store.Store) {
 	checkAll := func() {
+		ctx, cancel := transport.Context()
+		rules, err := st.EnabledRules(ctx)
+		cancel()
+		if err != nil {
+			logger.Log("error", "cannot read endpoint rules: "+err.Error())
+			return
+		}
 		var wg sync.WaitGroup
 		for i := range rules {
 			rule := &rules[i]

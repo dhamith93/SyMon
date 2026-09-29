@@ -176,21 +176,22 @@ func GetCollector() Collector {
 		}
 	}
 	return Collector{
-		Port:                      os.Getenv("SYMON_PORT"),
-		AlertEndpoint:             os.Getenv("SYMON_ALERT_ENDPOINT"),
-		AlertEndpointCACertPath:   os.Getenv("SYMON_ALERT_ENDPOINT_CERT_PATH"),
-		TLSEnabled:                strings.ToUpper(os.Getenv("SYMON_TLS_ENABLED")) == "TRUE",
-		CertPath:                  os.Getenv("SYMON_TLS_CERT_PATH"),
-		KeyPath:                   os.Getenv("SYMON_TLS_KEY_PATH"),
-		LogFileEnabled:            strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
-		LogFilePath:               os.Getenv("SYMON_LOG_FILE_PATH"),
-		DatabaseURL:               os.Getenv("SYMON_DATABASE_URL"),
-		DashboardURL:              os.Getenv("SYMON_DASHBOARD_URL"),
-		RetentionRawDays:          positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
-		RetentionMinuteDays:       positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
-		RetentionHourDays:         positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),
-		AlertsFilePath:            os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
-		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) == "TRUE",
+		Port:                    os.Getenv("SYMON_PORT"),
+		AlertEndpoint:           os.Getenv("SYMON_ALERT_ENDPOINT"),
+		AlertEndpointCACertPath: os.Getenv("SYMON_ALERT_ENDPOINT_CERT_PATH"),
+		TLSEnabled:              strings.ToUpper(os.Getenv("SYMON_TLS_ENABLED")) == "TRUE",
+		CertPath:                os.Getenv("SYMON_TLS_CERT_PATH"),
+		KeyPath:                 os.Getenv("SYMON_TLS_KEY_PATH"),
+		LogFileEnabled:          strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
+		LogFilePath:             os.Getenv("SYMON_LOG_FILE_PATH"),
+		DatabaseURL:             os.Getenv("SYMON_DATABASE_URL"),
+		DashboardURL:            os.Getenv("SYMON_DASHBOARD_URL"),
+		RetentionRawDays:        positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
+		RetentionMinuteDays:     positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
+		RetentionHourDays:       positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),
+		AlertsFilePath:          os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
+		// on unless false, so endpoint rules added on the dashboard work
+		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) != "FALSE",
 		EndpointCheckInterval:     checkIntervalInt,
 	}
 }

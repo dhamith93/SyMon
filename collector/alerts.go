@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -21,39 +22,74 @@ import (
 // alertClient is created once in handleAlerts and shared by all alert checks
 var alertClient alertapi.AlertServiceClient
 
-func handleAlerts(alertConfigs []alerts.AlertConfig, config *config.Collector, st *store.Store) {
-	conn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath, transport.SharedKey())
-	if err != nil {
-		log.Fatal("cannot create alert processor client: ", err)
+// handleAlerts checks the enabled rules every 15 seconds. The rules are
+// read from the database each time, so changes on the dashboard apply
+// right away.
+func handleAlerts(config *config.Collector, st *store.Store) {
+	send := sendAlert
+	if config.AlertEndpoint == "" {
+		logger.Log("info", "no SYMON_ALERT_ENDPOINT, so alerts only show on the dashboard")
+		send = func(*alertapi.Alert) {}
+	} else {
+		conn, err := transport.Dial(config.AlertEndpoint, config.AlertEndpointCACertPath, transport.SharedKey())
+		if err != nil {
+			log.Fatal("cannot create alert processor client: ", err)
+		}
+		defer conn.Close()
+		alertClient = alertapi.NewAlertServiceClient(conn)
 	}
-	defer conn.Close()
-	alertClient = alertapi.NewAlertServiceClient(conn)
 
 	if config.EndpointMonitoringEnabled {
 		logger.Log("info", "starting endpoint monitor")
-		go runEndpointChecks(alertConfigs, time.Duration(config.EndpointCheckInterval)*time.Second, st)
+		go runEndpointChecks(time.Duration(config.EndpointCheckInterval)*time.Second, st)
 	}
 
 	logger.Log("info", "starting alert checker")
-	rules := newEvaluator(st, sendAlert)
+	evaluator := newEvaluator(st, send)
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 	for range ticker.C {
-		for _, alert := range alertConfigs {
-			// endpoint rules are checked from the collector, not on a host
-			hosts := alert.Servers
-			if alert.MetricName == monitor.ENDPOINT {
-				hosts = []string{""}
-			}
-			for _, server := range hosts {
+		ctx, cancel := transport.Context()
+		rules, err := st.EnabledRules(ctx)
+		if err != nil {
+			cancel()
+			logger.Log("error", "cannot read alert rules: "+err.Error())
+			continue
+		}
+		hosts, err := st.Hosts(ctx)
+		cancel()
+		if err != nil {
+			logger.Log("error", "cannot read hosts: "+err.Error())
+			continue
+		}
+		names := make([]string, 0, len(hosts))
+		for _, host := range hosts {
+			names = append(names, host.Name)
+		}
+
+		for i := range rules {
+			rule := &rules[i]
+			for _, host := range ruleHosts(rule, names) {
 				ctx, cancel := transport.Context()
-				if err := rules.evaluate(ctx, &alert, server); err != nil {
-					logger.Log("error", "alert "+alert.Name+" on "+cmp.Or(server, alert.Endpoint)+": "+err.Error())
+				if err := evaluator.evaluate(ctx, rule, host); err != nil {
+					logger.Log("error", "alert "+rule.Name+" on "+cmp.Or(host, rule.Endpoint)+": "+err.Error())
 				}
 				cancel()
 			}
 		}
 	}
+}
+
+// ruleHosts are the hosts a rule checks. "*" is every registered host, and
+// endpoint rules are checked from the collector, so they have none.
+func ruleHosts(rule *alerts.AlertConfig, hosts []string) []string {
+	if rule.MetricName == monitor.ENDPOINT {
+		return []string{""}
+	}
+	if slices.Contains(rule.Servers, alerts.AllHosts) {
+		return hosts
+	}
+	return rule.Servers
 }
 
 // buildEndpointAlert fills an endpoint rule's template. id is the alert's
