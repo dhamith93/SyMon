@@ -90,12 +90,11 @@ SYMON_PORT=9000
 SYMON_DATABASE_URL=postgres://symon:change-me@localhost:5432/symon?sslmode=disable
 # where new hosts download the agent, as they reach it
 SYMON_DASHBOARD_URL=http://symon.example.lan:8080
-SYMON_ALERTS_CONFIG_PATH=/etc/symon/alerts.json
 # only with the alert processor
 SYMON_ALERT_ENDPOINT=localhost:5999
 ```
 
-Alert rules go in `/etc/symon/alerts.json`, described under [Alerts](#alerts). The bundle has an example. Leave `SYMON_ALERTS_CONFIG_PATH` out to run without alerts.
+Alert rules are edited on the dashboard, see [Alerts](#alerts).
 
 Create the database tables and a shared key:
 
@@ -191,7 +190,22 @@ Where the install script cannot be used, for example on a host that cannot reach
 
 ## Alerts
 
-The collector checks the rules in `SYMON_ALERTS_CONFIG_PATH` and shows open alerts on the dashboard. To also send them by email, Slack or PagerDuty, run the alert processor.
+Alert rules are edited on the dashboard's Rules page. The collector checks the rules that are on every 15 seconds, so a change applies right away, and shows open alerts on the dashboard. To also send them by email, Slack or PagerDuty, run the alert processor.
+
+A new install starts with one rule, "Host not reporting", which goes critical when any host sends nothing for 5 minutes. Rules can watch every host, including ones added later, or a list of hosts.
+
+Only admins can change rules. Users are admins unless created with `-role viewer`, and `collector -set-role <name> -role viewer` changes it. Viewers see everything but cannot change rules.
+
+### Rules as a file
+
+The rules have the same format as the old `alerts.json`. On its first start after the upgrade to rules on the dashboard, the collector imports the file in `SYMON_ALERTS_CONFIG_PATH` once. After that the file is no longer read, and the setting can go. To keep rules in a file anyway, for example in Ansible, load it while the collector runs:
+
+```sh
+sudo /opt/symon/collector_linux_x86_64/collector_linux_x86_64 -import-rules alerts.json
+sudo /opt/symon/collector_linux_x86_64/collector_linux_x86_64 -export-rules > alerts.json
+```
+
+`-import-rules` adds the rules and replaces the ones with the same name, and `-export-rules` prints the rules that are on. A file with a mistake is refused as a whole, with the line and column or the rule's name. Unknown fields count as mistakes, since they are almost always a misspelled one.
 
 A rule looks like this:
 
@@ -199,7 +213,7 @@ A rule looks like this:
 [
   {
     "Name": "Data disk",
-    "Servers": ["web-1", "web-2"],
+    "Servers": ["*"],
     "MetricName": "disks",
     "Disk": "/dev/sda1",
     "Op": ">",
@@ -224,16 +238,16 @@ A rule looks like this:
 | `disk_forecast` | days until the disk is full, at its growth over the last week | `Disk`, the device |
 | `services` | a service from the service list. `Op` `inactive` alerts when it stops, `active` when it runs | `Service`, the name from the service list |
 | `ping` | host silent for longer than `TriggerIntveral` seconds | |
-| `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert` |
+| `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert`, `CertWarnDays`, `CertCriticalDays` |
 | any name, with `"IsCustom": true` | a custom metric | |
 
-`Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
+`Servers` lists host names, or `"*"` for every host. `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
 
-`endpoint` rules need `SYMON_ENABLE_ENDPOINT_MONITORING=true` on the collector, which then requests each `Endpoint` every `SYMON_ENDPOINT_CHECK_INTERVAL` seconds (60 by default) and waits up to 30 seconds for an answer. A check passes when the status code is `ExpectedHTTPCode`, 200 if left out. The alert opens once checks have failed for `TriggerIntveral` seconds and resolves once they have passed for as long. Endpoint alerts belong to no host, and every check is kept as long as the 1 hour averages, for the response time and uptime charts on the dashboard's Endpoints page.
+The collector requests each `endpoint` rule's URL every `SYMON_ENDPOINT_CHECK_INTERVAL` seconds (60 by default) and waits up to 30 seconds for an answer. `SYMON_ENABLE_ENDPOINT_MONITORING=false` stops that. A check passes when the status code is `ExpectedHTTPCode`, 200 if left out. The alert opens once checks have failed for `TriggerIntveral` seconds and resolves once they have passed for as long. Endpoint alerts belong to no host, and every check is kept as long as the 1 hour averages, for the response time and uptime charts on the dashboard's Endpoints page.
+
+HTTPS endpoints also alert on their certificate: a warning when it expires in under `CertWarnDays` days (14 if left out) and critical under `CertCriticalDays` (3). 0 switches a level off. The Endpoints page shows when each certificate expires.
 
 `disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table and on a chart of where each filling disk is headed, and on the hosts page when a disk fills up within 30 days.
-
-The collector reads the rules when it starts, so restart it after editing them.
 
 ### The alert processor
 
@@ -295,6 +309,8 @@ sudo systemctl start symon_collector symon_client
 The collector updates the database schema by itself when it starts. Back up the database first (see below) if you want a way back, because schema changes are not undone by going back to an older build.
 
 Coming from a version without logins, the dashboard is locked after the upgrade until you create a user with `-add-user`, as in [Set up the dashboard](#4-set-up-the-dashboard).
+
+Coming from a version with rules in `alerts.json`, the collector imports the file on its first start and adds the "Host not reporting" rule for every host. From then on rules are edited on the dashboard, see [Alerts](#alerts).
 
 **Checking versions.** Every binary prints its version with `-version`, for example `/opt/symon/collector_linux_x86_64/collector_linux_x86_64 -version`, and logs it when it starts. The dashboard footer shows its own version, and the collector's too when they differ. Each host's page shows the version of its agent, so you can see which hosts still need the upgrade below.
 
@@ -365,7 +381,9 @@ sudo -u postgres dropuser symon
 
 **The dashboard shows data only for part of a long range.** Longer ranges come from 1 minute and 1 hour averages, which are refreshed every few minutes. Recent data appears there shortly after it arrives.
 
-**Forgot a password.** On the collector's host, `collector -reset-password <name>` prints a new one.
+**Forgot a password.** On the collector's host, `collector -reset-password <name>` prints a new one. Logged in users change their own on the Account page, which the user name in the header links to.
+
+**The collector does not start after an upgrade, with an error about the alert rules.** On its first start it imports `SYMON_ALERTS_CONFIG_PATH`, and refuses a file with a mistake rather than dropping rules. Fix the line the error names, or unset the setting to start without the file's rules.
 
 **"Too many failed logins".** That user name had 10 wrong passwords within 15 minutes. Wait 15 minutes, or reset the password.
 
