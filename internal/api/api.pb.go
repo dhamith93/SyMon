@@ -1298,8 +1298,13 @@ type DiskForecast struct {
 	UsedPct     float64                `protobuf:"fixed64,3,opt,name=usedPct,proto3" json:"usedPct,omitempty"`
 	PctPerDay   float64                `protobuf:"fixed64,4,opt,name=pctPerDay,proto3" json:"pctPerDay,omitempty"`
 	BytesPerDay float64                `protobuf:"fixed64,5,opt,name=bytesPerDay,proto3" json:"bytesPerDay,omitempty"`
-	// unset when the disk is not filling up
-	DaysToFull    *float64 `protobuf:"fixed64,6,opt,name=daysToFull,proto3,oneof" json:"daysToFull,omitempty"`
+	// unset when the disk is not filling up, and noForecast then says why:
+	// collecting (history under 24 hours), not_growing, not_steady or
+	// over_a_year
+	DaysToFull *float64 `protobuf:"fixed64,6,opt,name=daysToFull,proto3,oneof" json:"daysToFull,omitempty"`
+	NoForecast string   `protobuf:"bytes,7,opt,name=noForecast,proto3" json:"noForecast,omitempty"`
+	// hours of history behind the forecast
+	Samples       int32 `protobuf:"varint,8,opt,name=samples,proto3" json:"samples,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1372,6 +1377,20 @@ func (x *DiskForecast) GetBytesPerDay() float64 {
 func (x *DiskForecast) GetDaysToFull() float64 {
 	if x != nil && x.DaysToFull != nil {
 		return *x.DaysToFull
+	}
+	return 0
+}
+
+func (x *DiskForecast) GetNoForecast() string {
+	if x != nil {
+		return x.NoForecast
+	}
+	return ""
+}
+
+func (x *DiskForecast) GetSamples() int32 {
+	if x != nil {
+		return x.Samples
 	}
 	return 0
 }
@@ -2364,7 +2383,7 @@ const file_api_api_proto_rawDesc = "" +
 	" \x01(\x03R\n" +
 	"resolvedAt\"5\n" +
 	"\tAlertList\x12(\n" +
-	"\x06alerts\x18\x01 \x03(\v2\x10.api.AlertRecordR\x06alerts\"\xca\x01\n" +
+	"\x06alerts\x18\x01 \x03(\v2\x10.api.AlertRecordR\x06alerts\"\x84\x02\n" +
 	"\fDiskForecast\x12\x16\n" +
 	"\x06device\x18\x01 \x01(\tR\x06device\x12\x14\n" +
 	"\x05mount\x18\x02 \x01(\tR\x05mount\x12\x18\n" +
@@ -2373,7 +2392,11 @@ const file_api_api_proto_rawDesc = "" +
 	"\vbytesPerDay\x18\x05 \x01(\x01R\vbytesPerDay\x12#\n" +
 	"\n" +
 	"daysToFull\x18\x06 \x01(\x01H\x00R\n" +
-	"daysToFull\x88\x01\x01B\r\n" +
+	"daysToFull\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"noForecast\x18\a \x01(\tR\n" +
+	"noForecast\x12\x18\n" +
+	"\asamples\x18\b \x01(\x05R\asamplesB\r\n" +
 	"\v_daysToFull\";\n" +
 	"\x10DiskForecastList\x12'\n" +
 	"\x05disks\x18\x01 \x03(\v2\x11.api.DiskForecastR\x05disks\"M\n" +

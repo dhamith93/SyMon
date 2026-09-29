@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import type { DiskForecast } from './api';
-import { projectDisks } from './projection';
+import { noForecastText, projectDisks } from './projection';
 
 const now = 1_700_000_000;
 const day = 86400;
 
 function disk(mount: string, usedPct: number, pctPerDay: number, daysToFull: number | null): DiskForecast {
-  return { device: `/dev/${mount}`, mount, usedPct, pctPerDay, bytesPerDay: 1e9, daysToFull };
+  return { device: `/dev/${mount}`, mount, usedPct, pctPerDay, bytesPerDay: 1e9, daysToFull, noForecast: '', samples: 168 };
 }
+
+describe('noForecastText', () => {
+  it('says why there is no forecast', () => {
+    expect(noForecastText({ ...disk('/', 40, 0, null), noForecast: 'collecting', samples: 12 })).toBe('collecting history, 12 of 24 h');
+    expect(noForecastText({ ...disk('/', 40, 0, null), noForecast: 'not_growing' })).toBe('not filling up');
+    expect(noForecastText({ ...disk('/', 40, 0, null), noForecast: 'not_steady' })).toBe('growth not steady');
+    expect(noForecastText({ ...disk('/', 40, 0, null), noForecast: 'over_a_year' })).toBe('over a year');
+  });
+});
 
 describe('projectDisks', () => {
   it('leaves out disks that are not filling up', () => {

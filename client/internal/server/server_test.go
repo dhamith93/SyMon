@@ -115,7 +115,7 @@ func (f *fakeCollector) CustomMetricNames(ctx context.Context, in *api.HostReque
 
 func (f *fakeCollector) DiskForecasts(ctx context.Context, in *api.HostRequest) (*api.DiskForecastList, error) {
 	return &api.DiskForecastList{Disks: []*api.DiskForecast{
-		{Device: "/dev/sda1", Mount: "/", UsedPct: 40},
+		{Device: "/dev/sda1", Mount: "/", UsedPct: 40, NoForecast: "collecting", Samples: 12},
 		{Device: "/dev/sdb1", Mount: "/data", UsedPct: 60, PctPerDay: 2, BytesPerDay: 2e7, DaysToFull: floatPtr(20)},
 	}}, nil
 }
@@ -258,8 +258,8 @@ func TestDiskForecasts(t *testing.T) {
 	s, _ := newTestServer(t, nil)
 	code, body, _ := get(t, s, "/api/v1/hosts/web1/disk-forecasts")
 	want := `{"disks":[` +
-		`{"device":"/dev/sda1","mount":"/","usedPct":40,"pctPerDay":0,"bytesPerDay":0,"daysToFull":null},` +
-		`{"device":"/dev/sdb1","mount":"/data","usedPct":60,"pctPerDay":2,"bytesPerDay":20000000,"daysToFull":20}]}`
+		`{"device":"/dev/sda1","mount":"/","usedPct":40,"pctPerDay":0,"bytesPerDay":0,"daysToFull":null,"noForecast":"collecting","samples":12},` +
+		`{"device":"/dev/sdb1","mount":"/data","usedPct":60,"pctPerDay":2,"bytesPerDay":20000000,"daysToFull":20,"noForecast":"","samples":0}]}`
 	if code != 200 || strings.TrimSpace(body) != want {
 		t.Errorf("unexpected response %d: %s", code, body)
 	}

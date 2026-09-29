@@ -153,8 +153,13 @@ message DiskForecast {
     double usedPct = 3;
     double pctPerDay = 4;
     double bytesPerDay = 5;
-    // unset when the disk is not filling up
+    // unset when the disk is not filling up, and noForecast then says why:
+    // collecting (history under 24 hours), not_growing, not_steady or
+    // over_a_year
     optional double daysToFull = 6;
+    string noForecast = 7;
+    // hours of history behind the forecast
+    int32 samples = 8;
 }
 
 message DiskForecastList {

@@ -370,8 +370,11 @@ type diskForecast struct {
 	UsedPct     float64 `json:"usedPct"`
 	PctPerDay   float64 `json:"pctPerDay"`
 	BytesPerDay float64 `json:"bytesPerDay"`
-	// null when the disk is not filling up
+	// null when the disk is not filling up, and noForecast then says why
 	DaysToFull *float64 `json:"daysToFull"`
+	NoForecast string   `json:"noForecast"`
+	// hours of history behind the forecast
+	Samples int32 `json:"samples"`
 }
 
 func (s *server) getDiskForecasts(w http.ResponseWriter, r *http.Request) {
@@ -390,6 +393,8 @@ func (s *server) getDiskForecasts(w http.ResponseWriter, r *http.Request) {
 			PctPerDay:   d.PctPerDay,
 			BytesPerDay: d.BytesPerDay,
 			DaysToFull:  d.DaysToFull,
+			NoForecast:  d.NoForecast,
+			Samples:     d.Samples,
 		})
 	}
 	writeJSON(w, map[string]any{"disks": disks})

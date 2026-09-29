@@ -46,8 +46,12 @@ export interface DiskForecast {
   usedPct: number;
   pctPerDay: number;
   bytesPerDay: number;
-  // null when the disk is not filling up
+  // null when the disk is not filling up, and noForecast then says why:
+  // collecting, not_growing, not_steady or over_a_year
   daysToFull: number | null;
+  noForecast: string;
+  // hours of history behind the forecast
+  samples: number;
 }
 
 // disks that fill up sooner than this many days are shown as warnings

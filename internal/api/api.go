@@ -207,6 +207,8 @@ func (s *Server) DiskForecasts(ctx context.Context, in *HostRequest) (*DiskForec
 			PctPerDay:   forecast.PctPerDay,
 			BytesPerDay: forecast.BytesPerDay,
 			DaysToFull:  forecast.DaysToFull,
+			NoForecast:  forecast.NoForecast,
+			Samples:     int32(forecast.Samples),
 		})
 	}
 	return list, nil
