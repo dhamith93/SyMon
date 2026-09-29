@@ -21,9 +21,11 @@
     height?: number;
     onzoom?: (from: number, to: number) => void;
     onpick?: (time: number) => void;
+    // a picked time to mark with a line, 0 for none
+    marker?: number;
   }
 
-  let { data, unit, yMax, syncKey, from, to, area = false, height = 180, onzoom, onpick }: Props = $props();
+  let { data, unit, yMax, syncKey, from, to, area = false, height = 180, onzoom, onpick, marker = 0 }: Props = $props();
 
   let wrapper: HTMLDivElement;
   // uPlot owns this element, Svelte owns the tooltip next to it
@@ -94,6 +96,7 @@
         })),
       ],
       hooks: {
+        draw: [drawMarker],
         setCursor: [(u) => updateTooltip(u, colors)],
         setSelect: [
           (u) => {
@@ -120,6 +123,23 @@
       if (Number.isInteger(time)) onpick(time);
     });
     u.over.style.cursor = onpick ? 'crosshair' : 'default';
+  }
+
+  // a dashed line at the picked time, the moment the process table shows
+  function drawMarker(u: uPlot) {
+    if (!marker) return;
+    const x = Math.round(u.valToPos(marker, 'x', true));
+    if (x < u.bbox.left || x > u.bbox.left + u.bbox.width) return;
+    const ctx = u.ctx;
+    ctx.save();
+    ctx.strokeStyle = cssVar('--accent');
+    ctx.lineWidth = uPlot.pxRatio;
+    ctx.setLineDash([4 * uPlot.pxRatio, 3 * uPlot.pxRatio]);
+    ctx.beginPath();
+    ctx.moveTo(x, u.bbox.top);
+    ctx.lineTo(x, u.bbox.top + u.bbox.height);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function updateTooltip(u: uPlot, colors: string[]) {
@@ -161,6 +181,11 @@
       plot.setData(plotData(data));
       plot.setScale('x', { min: from ?? data.times[0], max: to ?? data.times[data.times.length - 1] });
     }
+  });
+
+  $effect(() => {
+    void marker;
+    plot?.redraw(false);
   });
 
   onMount(() => {
