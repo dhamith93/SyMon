@@ -177,6 +177,7 @@
               to={range.to}
               onzoom={zoom}
               onpick={pickTime}
+              marker={processesAt}
             />
           {/each}
           {#if section.title === 'CPU' && showCores && cores.length === 0}

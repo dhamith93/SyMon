@@ -19,13 +19,15 @@
     note?: string;
     onzoom?: (from: number, to: number) => void;
     onpick?: (time: number) => void;
+    // a picked time to mark on the chart, 0 for none
+    marker?: number;
     // replaces the line chart, like the per core heatmap
     body?: Snippet;
     // rows for the table view when body replaces the chart
     table?: Snippet;
   }
 
-  let { title, unit, data, loading = false, error = '', yMax, syncKey, from, to, area = false, note, onzoom, onpick, body, table }: Props = $props();
+  let { title, unit, data, loading = false, error = '', yMax, syncKey, from, to, area = false, note, onzoom, onpick, marker = 0, body, table }: Props = $props();
 
   let showTable = $state(false);
   const colors = ['--series-1', '--series-2', '--series-3', '--series-4', '--series-5', '--series-6', '--series-7', '--series-8'];
@@ -98,7 +100,7 @@
   {:else if body}
     {@render body()}
   {:else if data}
-    <TimeChart {data} {unit} {yMax} {syncKey} {from} {to} {area} {onzoom} {onpick} />
+    <TimeChart {data} {unit} {yMax} {syncKey} {from} {to} {area} {onzoom} {onpick} {marker} />
   {/if}
 
   {#if data && data.hidden.length > 0}
