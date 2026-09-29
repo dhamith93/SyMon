@@ -54,6 +54,8 @@ message HostSummary {
     int32 containers = 15;
     // days until the first disk fills up, unset when none is filling up
     optional double diskFullDays = 16;
+    // empty from agents older than versions
+    string agentVersion = 17;
 }
 
 message FleetSummary {

@@ -129,6 +129,8 @@ type hostSummary struct {
 	Containers    int32   `json:"containers"`
 	// null when no disk is filling up
 	DiskFullDays *float64 `json:"diskFullDays"`
+	// empty from agents older than versions
+	AgentVersion string `json:"agentVersion"`
 }
 
 func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
@@ -156,6 +158,7 @@ func (s *server) getFleet(w http.ResponseWriter, r *http.Request) {
 			WorstSeverity: h.WorstSeverity,
 			Containers:    h.Containers,
 			DiskFullDays:  h.DiskFullDays,
+			AgentVersion:  h.AgentVersion,
 		})
 	}
 	writeJSON(w, map[string]any{"hosts": hosts})

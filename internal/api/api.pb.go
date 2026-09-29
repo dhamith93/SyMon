@@ -330,7 +330,9 @@ type HostSummary struct {
 	// running containers at the latest snapshot
 	Containers int32 `protobuf:"varint,15,opt,name=containers,proto3" json:"containers,omitempty"`
 	// days until the first disk fills up, unset when none is filling up
-	DiskFullDays  *float64 `protobuf:"fixed64,16,opt,name=diskFullDays,proto3,oneof" json:"diskFullDays,omitempty"`
+	DiskFullDays *float64 `protobuf:"fixed64,16,opt,name=diskFullDays,proto3,oneof" json:"diskFullDays,omitempty"`
+	// empty from agents older than versions
+	AgentVersion  string `protobuf:"bytes,17,opt,name=agentVersion,proto3" json:"agentVersion,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -475,6 +477,13 @@ func (x *HostSummary) GetDiskFullDays() float64 {
 		return *x.DiskFullDays
 	}
 	return 0
+}
+
+func (x *HostSummary) GetAgentVersion() string {
+	if x != nil {
+		return x.AgentVersion
+	}
+	return ""
 }
 
 type FleetSummary struct {
@@ -2301,7 +2310,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\btimezone\x18\x03 \x01(\tR\btimezone\"H\n" +
 	"\x0eEnrollResponse\x12\x1a\n" +
 	"\bhostName\x18\x01 \x01(\tR\bhostName\x12\x1a\n" +
-	"\bagentKey\x18\x02 \x01(\tR\bagentKey\"\xe3\x03\n" +
+	"\bagentKey\x18\x02 \x01(\tR\bagentKey\"\x87\x04\n" +
 	"\vHostSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
 	"\x02up\x18\x02 \x01(\bR\x02up\x12\x1a\n" +
@@ -2323,7 +2332,8 @@ const file_api_api_proto_rawDesc = "" +
 	"\n" +
 	"containers\x18\x0f \x01(\x05R\n" +
 	"containers\x12'\n" +
-	"\fdiskFullDays\x18\x10 \x01(\x01H\x00R\fdiskFullDays\x88\x01\x01B\x0f\n" +
+	"\fdiskFullDays\x18\x10 \x01(\x01H\x00R\fdiskFullDays\x88\x01\x01\x12\"\n" +
+	"\fagentVersion\x18\x11 \x01(\tR\fagentVersionB\x0f\n" +
 	"\r_diskFullDays\"6\n" +
 	"\fFleetSummary\x12&\n" +
 	"\x05hosts\x18\x01 \x03(\v2\x10.api.HostSummaryR\x05hosts\"!\n" +

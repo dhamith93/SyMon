@@ -20,6 +20,8 @@ export interface HostSummary {
   containers: number;
   // days until the first disk is full, null when none is filling up
   diskFullDays: number | null;
+  // empty from agents older than versions
+  agentVersion: string;
 }
 
 // An endpoint's newest check up to the end of a range, and how it did over it

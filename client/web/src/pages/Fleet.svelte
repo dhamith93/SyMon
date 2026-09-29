@@ -4,6 +4,7 @@
   import { appConfig } from '../lib/config.svelte';
   import { formatAgo, formatDays, formatDuration, formatRate } from '../lib/format';
   import { poll } from '../lib/poll';
+  import { agentOutdated } from '../lib/versions';
   import { hostPath } from '../lib/router.svelte';
   import Meter from '../components/Meter.svelte';
   import Sparkline from '../components/Sparkline.svelte';
@@ -52,11 +53,17 @@
     return poll(() => untrack(loadSparklines), 60);
   });
 
+  // only hosts that sent a snapshot say which agent they run
+  function outdated(host: HostSummary): boolean {
+    return !!host.time && agentOutdated(host.agentVersion, appConfig.version);
+  }
+
   function fillsSoon(host: HostSummary): boolean {
     return host.diskFullDays !== null && host.diskFullDays < diskFullSoonDays;
   }
 
   const up = $derived(hosts.filter((h) => h.up).length);
+  const outdatedAgents = $derived(hosts.filter(outdated).length);
   const openAlerts = $derived(hosts.reduce((sum, h) => sum + h.activeAlerts, 0));
 
   const visible = $derived.by(() => {
@@ -93,6 +100,13 @@
         {#if openAlerts > 0}<a href="/alerts">See alerts</a>{/if}
       {/snippet}
     </StatTile>
+    {#if outdatedAgents > 0}
+      <StatTile label="Outdated agents" value={outdatedAgents}>
+        {#snippet extra()}
+          <span class="secondary">Not on {appConfig.version}</span>
+        {/snippet}
+      </StatTile>
+    {/if}
   </section>
 
   <div class="filters">
@@ -151,7 +165,7 @@
           <p class="muted nodata">No data received yet.</p>
         {/if}
 
-        {#if host.activeAlerts > 0 || fillsSoon(host)}
+        {#if host.activeAlerts > 0 || fillsSoon(host) || outdated(host)}
           <div class="alerts">
             {#if host.activeAlerts > 0}
               <StatusBadge
@@ -161,6 +175,9 @@
             {/if}
             {#if fillsSoon(host)}
               <StatusBadge status="warning" label="Disk full in {formatDays(host.diskFullDays ?? 0)}" />
+            {/if}
+            {#if outdated(host)}
+              <StatusBadge status="warning" label="Agent outdated" />
             {/if}
           </div>
         {/if}

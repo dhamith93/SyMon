@@ -82,7 +82,7 @@ func (f *fakeCollector) HasUsers(ctx context.Context, in *api.Void) (*api.UserSt
 
 func (f *fakeCollector) Fleet(ctx context.Context, in *api.Void) (*api.FleetSummary, error) {
 	return &api.FleetSummary{Hosts: []*api.HostSummary{
-		{Name: "web1", Up: true, CpuPct: 37, ActiveAlerts: 2, DiskFullDays: floatPtr(12.5)},
+		{Name: "web1", Up: true, CpuPct: 37, ActiveAlerts: 2, DiskFullDays: floatPtr(12.5), AgentVersion: "v3.1.0"},
 		{Name: "db1", Up: true},
 	}}, nil
 }
@@ -217,7 +217,7 @@ func TestFleet(t *testing.T) {
 	if code != 200 || len(out.Hosts) != 2 || out.Hosts[0].Name != "web1" || out.Hosts[0].CPUPct != 37 || out.Hosts[0].ActiveAlerts != 2 {
 		t.Errorf("unexpected response %d: %s", code, body)
 	}
-	if !strings.Contains(body, `"diskFullDays":12.5`) || !strings.Contains(body, `"diskFullDays":null`) {
+	if !strings.Contains(body, `"diskFullDays":12.5`) || !strings.Contains(body, `"diskFullDays":null`) || !strings.Contains(body, `"agentVersion":"v3.1.0"`) {
 		t.Errorf("expected a forecast for web1 and null for db1: %s", body)
 	}
 }
