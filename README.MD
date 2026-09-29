@@ -38,6 +38,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 **Running it**
 - Add a host with one command, with a single-use token
 - Raw data kept for 7 days, 1 minute averages for 30 days and 1 hour averages for a year, all adjustable
+- A login for the dashboard, with users created from the command line
 - Each host has its own key, and components can talk over TLS
 - A Prometheus endpoint, for Grafana or a Prometheus you already run
 - Every part reports its version: `-version` on each binary, the dashboard footer, and each host's page for its agent
@@ -73,7 +74,7 @@ Runs on every monitored host as root and sends a snapshot to the Collector every
 Receives data from agents, stores it in TimescaleDB, and checks the alert rules. It updates the database schema by itself when it starts. It listens on port 9000.
 
 ### Client
-The web dashboard and its JSON API, on port 8080. It reads everything from the Collector. It also serves the install script and agent builds that new hosts download. The dashboard has no login, so keep it on a private network or put nginx or Apache in front of it.
+The web dashboard and its JSON API, on port 8080. It reads everything from the Collector. It also serves the install script and agent builds that new hosts download. It needs a login, see [Security](#security).
 
 ### Alert processor
 Optional. The Collector sends it alerts as they open, change and resolve, and it passes them on to email, Slack and PagerDuty. Alerts show on the dashboard without it.
@@ -83,23 +84,30 @@ Optional. The Collector sends it alerts as they open, change and resolve, and it
 - **Agent keys.** Each enrolled host gets its own key, stored hashed on the server. It can only send data, and only as that host. `collector -remove-agent <name>` revokes it.
 - **Shared key.** The Collector, Client and Alert processor use a shared key from `collector -init`. Each call carries a short-lived token signed with it.
 - **TLS.** Traffic between components can be encrypted. See the `*_TLS_*` and `*_CERT_PATH` settings in each component's `.env-example`.
-- **Dashboard.** Use a reverse proxy for HTTPS and a login.
+- **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
+- **HTTPS.** Put a reverse proxy like Caddy or nginx in front of the dashboard, so passwords and the session cookie are encrypted.
 
 ## Local development
 
-`docker compose up --build` starts TimescaleDB, the Collector, the Alert processor, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. The stack is for development only.
+`docker compose up --build` starts TimescaleDB, the Collector, the Alert processor, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. Create a user to log in with `docker compose exec collector ./collector -add-user dev`. The stack is for development only.
 
 Building needs Go 1.26 and Node.js 22 or newer.
 
 - `make build-all` builds every component, with the dashboard embedded in the Client.
 - `go test ./...` runs the Go tests. The store tests run against a real database when `SYMON_TEST_DATABASE_URL` is set.
-- `npm run dev` in `client/web` serves the dashboard with live reload against a Client on port 8080. `npm test` and `npm run e2e` run its tests.
+- `npm run dev` in `client/web` serves the dashboard with live reload against a Client on port 8080. `npm test` and `npm run e2e` run its tests. The end to end tests log in as `SYMON_E2E_USER` with `SYMON_E2E_PASSWORD`.
 
 Components talk over gRPC, so other tools can read from or push into them. See the [API](internal/api/api.proto) and [alert API](internal/alertapi/alertapi.proto).
 
 ## API documentation
 
-The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors return a JSON body `{"error": "..."}` with a 4xx or 5xx status.
+The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors return a JSON body `{"error": "..."}` with a 4xx or 5xx status. Every call needs the session cookie from a login, and answers 401 without it.
+
+* `POST /api/v1/login` with `{"user": "...", "password": "..."}` as JSON
+    * Sets the `symon_session` cookie. 401 for a wrong password, 429 while the user is locked out
+* `POST /api/v1/logout` with `{}` as JSON
+* `GET /api/v1/session`
+    * `{"user": "..."}` when logged in, otherwise 401 with `hasUsers`, false until the first user exists
 
 * `GET /api/v1/fleet`
     * Every host with its status, latest usage, number of running containers, number of open alerts, and `diskFullDays`, the days until its first disk is full (null when none is filling up)
