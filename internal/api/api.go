@@ -221,6 +221,25 @@ func (s *Server) Snapshot(ctx context.Context, in *HostRequest) (*HostSnapshot, 
 	}, nil
 }
 
+func (s *Server) Snapshots(ctx context.Context, in *Void) (*SnapshotList, error) {
+	hosts, err := s.Store.LatestSnapshots(ctx)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	now := time.Now()
+	list := &SnapshotList{}
+	for _, latest := range hosts {
+		list.Hosts = append(list.Hosts, &HostSnapshot{
+			Host:         latest.Host,
+			Time:         unix(latest.Time),
+			SnapshotJson: string(latest.Snapshot),
+			LastSeen:     unix(latest.LastSeen),
+			Up:           isUp(latest.LastSeen, now),
+		})
+	}
+	return list, nil
+}
+
 func (s *Server) QuerySeries(ctx context.Context, in *SeriesRequest) (*SeriesResponse, error) {
 	result, err := s.Store.QuerySeries(ctx, store.SeriesQuery{
 		Host:      in.Host,

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -602,5 +603,34 @@ func TestProcessUsage(t *testing.T) {
 	}
 	if _, err := st.ProcessUsage(ctx, "web1", start, start); !errors.Is(err, ErrInvalid) {
 		t.Errorf("expected ErrInvalid for an empty range, got %v", err)
+	}
+}
+
+func TestLatestSnapshots(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	for _, host := range []string{"web1", "new1"} {
+		if err := st.AddHost(ctx, host, "UTC"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	at := time.Now().Add(-time.Minute).Truncate(time.Second)
+	if err := st.SaveSnapshot(ctx, testSnapshot("web1", at)); err != nil {
+		t.Fatal(err)
+	}
+
+	hosts, err := st.LatestSnapshots(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hosts) != 2 {
+		t.Fatalf("expected two hosts, got %+v", hosts)
+	}
+	// new1 has not sent anything yet
+	if hosts[0].Host != "new1" || !hosts[0].Time.IsZero() || len(hosts[0].Snapshot) != 0 {
+		t.Errorf("expected new1 without a snapshot, got %+v", hosts[0])
+	}
+	if hosts[1].Host != "web1" || !hosts[1].Time.Equal(at) || !strings.Contains(string(hosts[1].Snapshot), "Debian 13") {
+		t.Errorf("expected web1's snapshot, got %+v", hosts[1])
 	}
 }
