@@ -33,6 +33,9 @@ type server struct {
 	agentCollector    string
 	downloadsDir      string
 	metricsEnabled    bool
+	// metricsAuth makes /metrics need a user too
+	metricsAuth bool
+	auth        authCache
 }
 
 // Run starts the server on the given address, like ":8080"
@@ -53,6 +56,7 @@ func Run(address string) {
 		agentCollector:    config.AgentCollectorEndpoint,
 		downloadsDir:      config.DownloadsDir,
 		metricsEnabled:    config.MetricsEnabled,
+		metricsAuth:       config.MetricsAuth,
 	}
 	httpServer := &http.Server{
 		Addr:              address,
@@ -63,22 +67,30 @@ func Run(address string) {
 	log.Fatal(httpServer.ListenAndServe())
 }
 
+// routes serves the API's data only to logged in browsers. The login calls,
+// the app itself and what new hosts download need no login.
 func (s *server) routes() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/v1/config", s.getConfig)
-	mux.HandleFunc("GET /api/v1/fleet", s.getFleet)
-	mux.HandleFunc("GET /api/v1/hosts/{host}", s.getHost)
-	mux.HandleFunc("GET /api/v1/hosts/{host}/series", s.getSeries)
-	mux.HandleFunc("GET /api/v1/hosts/{host}/processes", s.getProcesses)
-	mux.HandleFunc("GET /api/v1/hosts/{host}/process-usage", s.getProcessUsage)
-	mux.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
-	mux.HandleFunc("GET /api/v1/hosts/{host}/disk-forecasts", s.getDiskForecasts)
-	mux.HandleFunc("GET /api/v1/alerts", s.getAlerts)
-	mux.HandleFunc("GET /api/v1/endpoints", s.getEndpoints)
-	mux.HandleFunc("GET /api/v1/endpoints/series", s.getEndpointSeries)
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+	data := http.NewServeMux()
+	data.HandleFunc("GET /api/v1/config", s.getConfig)
+	data.HandleFunc("GET /api/v1/fleet", s.getFleet)
+	data.HandleFunc("GET /api/v1/hosts/{host}", s.getHost)
+	data.HandleFunc("GET /api/v1/hosts/{host}/series", s.getSeries)
+	data.HandleFunc("GET /api/v1/hosts/{host}/processes", s.getProcesses)
+	data.HandleFunc("GET /api/v1/hosts/{host}/process-usage", s.getProcessUsage)
+	data.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
+	data.HandleFunc("GET /api/v1/hosts/{host}/disk-forecasts", s.getDiskForecasts)
+	data.HandleFunc("GET /api/v1/alerts", s.getAlerts)
+	data.HandleFunc("GET /api/v1/endpoints", s.getEndpoints)
+	data.HandleFunc("GET /api/v1/endpoints/series", s.getEndpointSeries)
+	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
+
+	mux := http.NewServeMux()
+	mux.Handle("/api/", s.requireLogin(data))
+	mux.HandleFunc("POST /api/v1/login", s.postLogin)
+	mux.HandleFunc("POST /api/v1/logout", s.postLogout)
+	mux.HandleFunc("GET /api/v1/session", s.getSession)
 	mux.HandleFunc("GET /metrics", s.getMetrics)
 	mux.HandleFunc("GET /install.sh", s.getInstallScript)
 	mux.HandleFunc("GET /downloads/{file}", s.getDownload)
@@ -505,6 +517,10 @@ func writeGRPCError(w http.ResponseWriter, what string, err error) {
 		writeError(w, 499, "canceled")
 	case codes.NotFound:
 		writeError(w, http.StatusNotFound, st.Message())
+	case codes.Unauthenticated:
+		writeError(w, http.StatusUnauthorized, st.Message())
+	case codes.ResourceExhausted:
+		writeError(w, http.StatusTooManyRequests, st.Message())
 	case codes.InvalidArgument:
 		writeError(w, http.StatusBadRequest, st.Message())
 	case codes.Unavailable, codes.DeadlineExceeded:

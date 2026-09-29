@@ -10,8 +10,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/dhamith93/SyMon/internal/api"
 	"github.com/dhamith93/SyMon/internal/transport"
@@ -25,6 +27,57 @@ type fakeCollector struct {
 	api.UnimplementedMonitorDataServiceServer
 	lastSeries       *api.SeriesRequest
 	lastProcessUsage *api.ProcessUsageRequest
+
+	// login: testSession is valid, alice's password is "correct horse
+	// battery", and the user "locked" has failed too often
+	noUsers        atomic.Bool
+	sessionChecks  atomic.Int32
+	passwordChecks atomic.Int32
+	loggedOut      atomic.Value
+}
+
+const testSession = "test-session"
+
+func (f *fakeCollector) CheckSession(ctx context.Context, in *api.SessionRequest) (*api.SessionInfo, error) {
+	f.sessionChecks.Add(1)
+	if in.Token == testSession || in.Token == "new-token" {
+		return &api.SessionInfo{User: "tester", Expires: time.Now().Add(time.Hour).Unix()}, nil
+	}
+	return nil, status.Error(codes.Unauthenticated, "not logged in")
+}
+
+func (f *fakeCollector) checkCredentials(in *api.Credentials) error {
+	switch {
+	case in.User == "locked":
+		return status.Error(codes.ResourceExhausted, "too many failed logins, try again later")
+	case in.User == "alice" && in.Password == "correct horse battery":
+		return nil
+	}
+	return status.Error(codes.Unauthenticated, "wrong user name or password")
+}
+
+func (f *fakeCollector) Login(ctx context.Context, in *api.Credentials) (*api.SessionInfo, error) {
+	if err := f.checkCredentials(in); err != nil {
+		return nil, err
+	}
+	return &api.SessionInfo{Token: "new-token", User: in.User, Expires: 1900000000}, nil
+}
+
+func (f *fakeCollector) CheckPassword(ctx context.Context, in *api.Credentials) (*api.Message, error) {
+	f.passwordChecks.Add(1)
+	if err := f.checkCredentials(in); err != nil {
+		return nil, err
+	}
+	return &api.Message{Body: "ok"}, nil
+}
+
+func (f *fakeCollector) Logout(ctx context.Context, in *api.SessionRequest) (*api.Message, error) {
+	f.loggedOut.Store(in.Token)
+	return &api.Message{Body: "ok"}, nil
+}
+
+func (f *fakeCollector) HasUsers(ctx context.Context, in *api.Void) (*api.UserStatus, error) {
+	return &api.UserStatus{HasUsers: !f.noUsers.Load()}, nil
 }
 
 func (f *fakeCollector) Fleet(ctx context.Context, in *api.Void) (*api.FleetSummary, error) {
@@ -126,7 +179,8 @@ func newTestServer(t *testing.T, files fstest.MapFS) (*server, *fakeCollector) {
 	return &server{collector: api.NewMonitorDataServiceClient(conn), refreshSeconds: 15, files: files, metricsEnabled: true}, fake
 }
 
-// get calls the server and returns the status, the body and what was logged
+// get calls the server as a logged in browser and returns the status, the
+// body and what was logged
 func get(t *testing.T, s *server, url string) (int, string, string) {
 	t.Helper()
 	var logs bytes.Buffer
@@ -134,7 +188,9 @@ func get(t *testing.T, s *server, url string) (int, string, string) {
 	t.Cleanup(func() { log.SetOutput(os.Stderr) })
 
 	rec := httptest.NewRecorder()
-	s.routes().ServeHTTP(rec, httptest.NewRequest("GET", url, nil))
+	request := httptest.NewRequest("GET", url, nil)
+	request.AddCookie(&http.Cookie{Name: sessionCookie, Value: testSession})
+	s.routes().ServeHTTP(rec, request)
 	return rec.Code, rec.Body.String(), logs.String()
 }
 

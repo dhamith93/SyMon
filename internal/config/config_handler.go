@@ -52,6 +52,8 @@ type Client struct {
 	AgentCollectorEndpoint string
 	// MetricsEnabled serves /metrics for Prometheus, on unless set to false
 	MetricsEnabled bool
+	// MetricsAuth makes /metrics need a user, by session or basic auth
+	MetricsAuth bool
 }
 
 type AlertProcessor struct {
@@ -212,6 +214,7 @@ func GetClient() Client {
 		DownloadsDir:                downloadsDir,
 		AgentCollectorEndpoint:      os.Getenv("SYMON_CLIENT_AGENT_COLLECTOR_ENDPOINT"),
 		MetricsEnabled:              strings.ToUpper(os.Getenv("SYMON_CLIENT_METRICS_ENABLED")) != "FALSE",
+		MetricsAuth:                 strings.ToUpper(os.Getenv("SYMON_CLIENT_METRICS_AUTH")) == "TRUE",
 	}
 }
 
