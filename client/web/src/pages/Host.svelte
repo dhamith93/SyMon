@@ -5,7 +5,7 @@
   import { hostSections, loadChart, loadCores, type ChartSpec } from '../lib/charts';
   import { appConfig } from '../lib/config.svelte';
   import { formatAgo, formatBytes, formatDate, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
-  import { projectDisks } from '../lib/projection';
+  import { noForecastText, projectDisks } from '../lib/projection';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
@@ -282,7 +282,7 @@
                     <td class="right num">{disk.Inodes.Usage}</td>
                     <td class="right" title={forecast?.daysToFull != null ? `Growing ${formatBytes(forecast.bytesPerDay)} a day` : undefined}>
                       {#if forecast?.daysToFull == null}
-                        <span class="muted">–</span>
+                        <span class="muted no-forecast">{forecast ? noForecastText(forecast) : '–'}</span>
                       {:else if forecast.daysToFull < diskFullSoonDays}
                         <StatusBadge status="warning" label={formatDays(forecast.daysToFull)} />
                       {:else}
@@ -428,6 +428,10 @@
   .box {
     padding: 14px;
     min-width: 0;
+  }
+
+  .no-forecast {
+    font-size: 12px;
   }
 
   .box h3 {

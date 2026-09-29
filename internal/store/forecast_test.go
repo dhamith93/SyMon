@@ -21,22 +21,22 @@ func TestForecastDays(t *testing.T) {
 		r2          float64
 		samples     int
 		wantDays    float64
-		wantOK      bool
+		wantReason  string
 	}{
-		{"steady growth", 60, 600 * gb, 20 * gb, 0.95, 168, 20, true},
-		{"flat", 60, 600 * gb, 0, 1, 168, 0, false},
-		{"shrinking", 60, 600 * gb, -10 * gb, 0.9, 168, 0, false},
-		{"noisy", 60, 600 * gb, 20 * gb, 0.3, 168, 0, false},
-		{"one day of history", 60, 600 * gb, 20 * gb, 0.95, 24, 20, true},
-		{"too little history", 60, 600 * gb, 20 * gb, 0.95, 23, 0, false},
-		{"beyond the horizon", 60, 600 * gb, 1 * gb, 0.95, 168, 0, false},
-		{"already full", 100, 600 * gb, 1 * gb, 0.95, 168, 0, true},
-		{"empty disk", 0, 0, 1 * gb, 0.95, 168, 0, false},
+		{"steady growth", 60, 600 * gb, 20 * gb, 0.95, 168, 20, ""},
+		{"flat", 60, 600 * gb, 0, 1, 168, 0, NoForecastNotGrowing},
+		{"shrinking", 60, 600 * gb, -10 * gb, 0.9, 168, 0, NoForecastNotGrowing},
+		{"noisy", 60, 600 * gb, 20 * gb, 0.3, 168, 0, NoForecastNotSteady},
+		{"one day of history", 60, 600 * gb, 20 * gb, 0.95, 24, 20, ""},
+		{"too little history", 60, 600 * gb, 20 * gb, 0.95, 23, 0, NoForecastCollecting},
+		{"beyond the horizon", 60, 600 * gb, 1 * gb, 0.95, 168, 0, NoForecastOverAYear},
+		{"already full", 100, 600 * gb, 1 * gb, 0.95, 168, 0, ""},
+		{"empty disk", 0, 0, 1 * gb, 0.95, 168, 0, NoForecastNotGrowing},
 	}
 	for _, tt := range tests {
-		days, ok := forecastDays(tt.usedPct, tt.usedBytes, tt.bytesPerDay, tt.r2, tt.samples)
-		if ok != tt.wantOK || days != tt.wantDays {
-			t.Errorf("%s: got %v %v, want %v %v", tt.name, days, ok, tt.wantDays, tt.wantOK)
+		days, reason := forecastDays(tt.usedPct, tt.usedBytes, tt.bytesPerDay, tt.r2, tt.samples)
+		if reason != tt.wantReason || days != tt.wantDays {
+			t.Errorf("%s: got %v %q, want %v %q", tt.name, days, reason, tt.wantDays, tt.wantReason)
 		}
 	}
 }
@@ -96,7 +96,7 @@ func TestDiskForecasts(t *testing.T) {
 		t.Fatalf("expected 2 disks, got %+v", forecasts)
 	}
 	root, data := forecasts[0], forecasts[1]
-	if root.Mount != "/" || root.DaysToFull != nil || root.PctPerDay != 0 {
+	if root.Mount != "/" || root.DaysToFull != nil || root.PctPerDay != 0 || root.NoForecast != NoForecastNotGrowing {
 		t.Errorf("expected / not to be filling up, got %+v", root)
 	}
 	if data.Mount != "/data" || data.DaysToFull == nil || math.Abs(*data.DaysToFull-20) > 2 {

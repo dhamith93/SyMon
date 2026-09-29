@@ -19,6 +19,16 @@ const (
 	forecastHorizonDays = 365
 )
 
+// Why a disk has no forecast
+const (
+	// NoForecastCollecting is under forecastMinSamples hours of history
+	NoForecastCollecting = "collecting"
+	NoForecastNotGrowing = "not_growing"
+	// NoForecastNotSteady is growth that jumps up and down
+	NoForecastNotSteady = "not_steady"
+	NoForecastOverAYear = "over_a_year"
+)
+
 // DiskForecast is a disk's growth over the forecast window and when it
 // fills up at that rate
 type DiskForecast struct {
@@ -28,27 +38,33 @@ type DiskForecast struct {
 	UsedPct     float64
 	PctPerDay   float64
 	BytesPerDay float64
-	// DaysToFull is nil when the disk is not filling up
+	// DaysToFull is nil when the disk is not filling up, and NoForecast
+	// then says why
 	DaysToFull *float64
+	NoForecast string
 	// Samples is the number of hourly values behind the forecast
 	Samples int
 }
 
-// forecastDays returns how many days are left until a disk is full, and
-// false when the disk is not filling up or there is too little history to
-// say. df's percent is used / (used + available), where available leaves
-// out the blocks reserved for root, so the space left comes from it rather
-// than from the disk size.
-func forecastDays(usedPct float64, usedBytes float64, bytesPerDay float64, r2 float64, samples int) (float64, bool) {
-	if samples < forecastMinSamples || bytesPerDay <= 0 || r2 < forecastMinR2 || usedPct <= 0 {
-		return 0, false
+// forecastDays returns how many days are left until a disk is full, or
+// why there is no forecast. df's percent is used / (used + available),
+// where available leaves out the blocks reserved for root, so the space
+// left comes from it rather than from the disk size.
+func forecastDays(usedPct float64, usedBytes float64, bytesPerDay float64, r2 float64, samples int) (float64, string) {
+	switch {
+	case samples < forecastMinSamples:
+		return 0, NoForecastCollecting
+	case bytesPerDay <= 0 || usedPct <= 0:
+		return 0, NoForecastNotGrowing
+	case r2 < forecastMinR2:
+		return 0, NoForecastNotSteady
 	}
 	left := max(usedBytes*(100-usedPct)/usedPct, 0)
 	days := left / bytesPerDay
 	if days > forecastHorizonDays {
-		return 0, false
+		return 0, NoForecastOverAYear
 	}
-	return days, true
+	return days, ""
 }
 
 // DiskForecasts returns a forecast for each of a host's disks
@@ -146,9 +162,11 @@ func (s *Store) queryForecasts(ctx context.Context, filter string, args ...any) 
 		if used := valueOrZero(usedBytes); used > 0 {
 			forecast.PctPerDay = forecast.BytesPerDay * forecast.UsedPct / used
 		}
-		if days, ok := forecastDays(forecast.UsedPct, valueOrZero(usedBytes), forecast.BytesPerDay, valueOrZero(r2), forecast.Samples); ok {
+		days, noForecast := forecastDays(forecast.UsedPct, valueOrZero(usedBytes), forecast.BytesPerDay, valueOrZero(r2), forecast.Samples)
+		if noForecast == "" {
 			forecast.DaysToFull = &days
 		}
+		forecast.NoForecast = noForecast
 		forecasts = append(forecasts, forecast)
 	}
 	return forecasts, rows.Err()

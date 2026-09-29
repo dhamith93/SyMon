@@ -3,6 +3,22 @@ import type { DiskForecast } from './api';
 
 const day = 86400;
 
+// why a disk has no forecast, in words
+export function noForecastText(forecast: DiskForecast): string {
+  switch (forecast.noForecast) {
+    case 'collecting':
+      return `collecting history, ${forecast.samples} of 24 h`;
+    case 'not_growing':
+      return 'not filling up';
+    case 'not_steady':
+      return 'growth not steady';
+    case 'over_a_year':
+      return 'over a year';
+    default:
+      return '–';
+  }
+}
+
 export interface Projection {
   data: Aligned;
   from: number;
