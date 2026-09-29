@@ -18,6 +18,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/store"
 	"github.com/dhamith93/SyMon/internal/transport"
+	"github.com/dhamith93/SyMon/internal/version"
 )
 
 func main() {
@@ -30,7 +31,12 @@ func main() {
 	tokenUses := flag.Int("uses", 1, "With -enroll-token: how many hosts the token can enroll")
 	tokenTTL := flag.Duration("ttl", time.Hour, "With -enroll-token: how long the token is valid")
 	envFile := flag.String("env", config.DefaultEnvFile("collector"), "Settings file with KEY=value lines, loaded if it exists")
+	versionPtr := flag.Bool("version", false, "Print the version and exit")
 	flag.Parse()
+	if *versionPtr {
+		fmt.Println("SyMon collector " + version.String())
+		return
+	}
 	if err := config.LoadEnvFile(*envFile); err != nil {
 		log.Fatal(err)
 	}
@@ -93,6 +99,7 @@ func main() {
 		log.Fatal(err)
 	}
 	api.RegisterMonitorDataServiceServer(grpcServer, &api.Server{Store: st})
+	logger.Log("info", "collector "+version.String()+" started on :"+config.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}

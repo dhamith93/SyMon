@@ -9,6 +9,7 @@ import (
 
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/version"
 	"github.com/dhamith93/systats"
 )
 
@@ -76,6 +77,10 @@ type MonitorData struct {
 	Pressure     *Pressure     `json:",omitempty"`
 	Temperatures []Temperature `json:",omitempty"`
 	Containers   []Container   `json:",omitempty"`
+
+	// AgentVersion is the build of the agent that sent the snapshot, empty
+	// from agents older than it
+	AgentVersion string `json:",omitempty"`
 }
 
 // Collector gathers a MonitorData snapshot on every tick. It keeps the
@@ -149,6 +154,8 @@ func (c *Collector) Collect(ctx context.Context) MonitorData {
 		Networks:  c.networks(),
 		Services:  c.services(ctx, unixTime),
 		Processes: c.processes(ctx),
+
+		AgentVersion: version.String(),
 	}
 
 	if c.enabled[CollectorDiskIO] {

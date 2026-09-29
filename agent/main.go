@@ -20,6 +20,7 @@ import (
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
 	"github.com/dhamith93/SyMon/internal/transport"
+	"github.com/dhamith93/SyMon/internal/version"
 	grpccreds "google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
@@ -36,7 +37,12 @@ func main() {
 	token := flag.String("token", "", "With -enroll: the enrollment token")
 	host := flag.String("host", "", "With -enroll: the host name to use, the machine's name by default")
 	envFile := flag.String("env", config.DefaultEnvFile("agent"), "Settings file with KEY=value lines, loaded if it exists")
+	versionPtr := flag.Bool("version", false, "Print the version and exit")
 	flag.Parse()
+	if *versionPtr {
+		fmt.Println("SyMon agent " + version.String())
+		return
+	}
 	if err := config.LoadEnvFile(*envFile); err != nil {
 		log.Fatal(err)
 	}
@@ -79,6 +85,7 @@ func main() {
 		return
 	}
 
+	logger.Log("info", "agent "+version.String()+" started for "+config.ServerId)
 	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
 	collector := monitor.NewCollector(&config)
 	ticker := time.NewTicker(interval)

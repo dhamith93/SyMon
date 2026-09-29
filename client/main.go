@@ -2,16 +2,23 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"sync"
 
 	"github.com/dhamith93/SyMon/client/internal/server"
 	"github.com/dhamith93/SyMon/internal/config"
+	"github.com/dhamith93/SyMon/internal/version"
 )
 
 func main() {
 	envFile := flag.String("env", config.DefaultEnvFile("client"), "Settings file with KEY=value lines, loaded if it exists")
+	versionPtr := flag.Bool("version", false, "Print the version and exit")
 	flag.Parse()
+	if *versionPtr {
+		fmt.Println("SyMon client " + version.String())
+		return
+	}
 	if err := config.LoadEnvFile(*envFile); err != nil {
 		log.Fatal(err)
 	}

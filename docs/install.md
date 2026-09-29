@@ -278,6 +278,8 @@ sudo systemctl start symon_collector symon_client
 
 The collector updates the database schema by itself when it starts. Back up the database first (see below) if you want a way back, because schema changes are not undone by going back to an older build.
 
+**Checking versions.** Every binary prints its version with `-version`, for example `/opt/symon/collector_linux_x86_64/collector_linux_x86_64 -version`, and logs it when it starts. The dashboard footer shows its own version, and the collector's too when they differ. Each host's page shows the version of its agent, so you can see which hosts still need the upgrade below.
+
 **Hosts.** Run the install command again on each host. No token is needed: the script sees the host is already enrolled, replaces the agent with the build the dashboard now serves, and keeps the key and the settings.
 
 ```sh

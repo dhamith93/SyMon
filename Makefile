@@ -1,5 +1,9 @@
 .PHONY: proto web clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
 
+# the version -version and the dashboard show, like v3.0.0-16-g2519821
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS := -ldflags "-X github.com/dhamith93/SyMon/internal/version.Version=$(VERSION)"
+
 proto:
 	cd internal && protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
@@ -26,16 +30,16 @@ clean:
 build-all: build-collector build-agent build-alertprocessor build-client
 
 build-collector:
-	cd collector && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o collector_linux_x86_64
+	cd collector && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o collector_linux_x86_64
 
 build-agent:
-	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o agent_linux_x86_64
+	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o agent_linux_x86_64
 
 build-alertprocessor:
-	cd alertprocessor && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o alertprocessor_linux_x86_64
+	cd alertprocessor && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o alertprocessor_linux_x86_64
 
 build-client: web
-	cd client && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o client_linux_x86_64
+	cd client && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o client_linux_x86_64
 
 pack-all: pack-collector pack-agent pack-alertprocessor pack-client
 
@@ -66,9 +70,9 @@ pack-alertprocessor: build-alertprocessor
 pack-client: build-client
 	mkdir -p release/client_linux_x86_64/downloads
 	cp client/client_linux_x86_64 release/client_linux_x86_64
-	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ../release/client_linux_x86_64/downloads/agent-linux-amd64
-	cd agent && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o ../release/client_linux_x86_64/downloads/agent-linux-arm64
-	cd agent && GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -o ../release/client_linux_x86_64/downloads/agent-linux-arm
+	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o ../release/client_linux_x86_64/downloads/agent-linux-amd64
+	cd agent && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build $(LDFLAGS) -o ../release/client_linux_x86_64/downloads/agent-linux-arm64
+	cd agent && GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build $(LDFLAGS) -o ../release/client_linux_x86_64/downloads/agent-linux-arm
 	cp client/.env-example release/client_linux_x86_64
 	cp client/Dockerfile release/client_linux_x86_64
 	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
