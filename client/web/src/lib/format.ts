@@ -75,6 +75,11 @@ export function formatDays(days: number): string {
   return `about ${Math.round(days / 30)} months`;
 }
 
+export function formatDate(unixSeconds: number): string {
+  if (!unixSeconds) return '–';
+  return new Date(unixSeconds * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export function formatDateTime(unixSeconds: number): string {
   if (!unixSeconds) return '–';
   return new Date(unixSeconds * 1000).toLocaleString(undefined, {

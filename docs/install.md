@@ -221,7 +221,7 @@ A rule looks like this:
 
 `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves. Endpoint checks need `SYMON_ENABLE_ENDPOINT_MONITORING=true` on the collector.
 
-`disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table, and on the hosts page when a disk fills up within 30 days.
+`disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table and on a chart of where each filling disk is headed, and on the hosts page when a disk fills up within 30 days.
 
 The collector reads the rules when it starts, so restart it after editing them.
 

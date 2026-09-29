@@ -16,6 +16,9 @@ export interface Aligned {
   values: Value[][];
   // labels left out because of the series cap
   hidden: string[];
+  // palette slot of each series, so a series keeps the color it has on
+  // another chart. By default a series takes the slot of its position.
+  colors?: number[];
 }
 
 // the categorical palette has 8 slots, more series than that do not get

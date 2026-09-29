@@ -11,7 +11,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 **Hosts**
 - CPU, overall and per core, load average, memory and swap
 - Disk space, disk IO and busy time, network traffic, TCP connections
-- When each disk will be full, at the rate it grew over the last week
+- When each disk will be full, at the rate it grew over the last week, with a chart of where it is headed
 - Pressure stall information and temperature sensors
 - The top processes by CPU and memory at any point in time, and the programs that used the most over any range
 - Whether chosen systemd services are running

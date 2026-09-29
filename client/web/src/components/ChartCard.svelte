@@ -21,13 +21,16 @@
     onpick?: (time: number) => void;
     // a picked time to mark on the chart, 0 for none
     marker?: number;
+    // dashed lines, for values that are projected
+    projection?: boolean;
     // replaces the line chart, like the per core heatmap
     body?: Snippet;
-    // rows for the table view when body replaces the chart
+    // rows for the table view, instead of one row per time
     table?: Snippet;
   }
 
-  let { title, unit, data, loading = false, error = '', yMax, syncKey, from, to, area = false, note, onzoom, onpick, marker = 0, body, table }: Props = $props();
+  let { title, unit, data, loading = false, error = '', yMax, syncKey, from, to, area = false, note, onzoom, onpick, marker = 0, projection = false, body, table }: Props =
+    $props();
 
   let showTable = $state(false);
   const colors = ['--series-1', '--series-2', '--series-3', '--series-4', '--series-5', '--series-6', '--series-7', '--series-8'];
@@ -59,7 +62,7 @@
     {#if data && data.labels.length > 1 && !showTable}
       <ul class="legend">
         {#each data.labels as label, i (label)}
-          <li><span class="key" style:background="var({colors[i]})"></span>{label}</li>
+          <li><span class="key" style:background="var({colors[data.colors?.[i] ?? i]})"></span>{label}</li>
         {/each}
       </ul>
     {/if}
@@ -73,7 +76,7 @@
     <p class="state muted">No data in this time range.</p>
   {:else if showTable}
     <div class="table-view table-scroll">
-      {#if body && table}
+      {#if table}
         {@render table()}
       {:else if data}
         <table class="data">
@@ -100,7 +103,7 @@
   {:else if body}
     {@render body()}
   {:else if data}
-    <TimeChart {data} {unit} {yMax} {syncKey} {from} {to} {area} {onzoom} {onpick} {marker} />
+    <TimeChart {data} {unit} {yMax} {syncKey} {from} {to} {area} {onzoom} {onpick} {marker} {projection} />
   {/if}
 
   {#if data && data.hidden.length > 0}
