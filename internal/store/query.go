@@ -189,12 +189,19 @@ type ProcessUsageResult struct {
 // CPU and memory
 const processUsageLimit = 15
 
+// processUsageMaxRange keeps ProcessUsage under a second. A day of
+// snapshots takes about 0.3s on the dev VM, a week over 2s.
+const processUsageMaxRange = 24 * time.Hour
+
 // ProcessUsage adds up each program's CPU and memory over a range. Snapshots
 // only keep the top processes, so a program counts as 0 where it was not
 // among them, and the averages are a lower bound.
 func (s *Store) ProcessUsage(ctx context.Context, host string, from time.Time, to time.Time) (ProcessUsageResult, error) {
 	if !to.After(from) {
 		return ProcessUsageResult{}, fmt.Errorf("%w: from must be before to", ErrInvalid)
+	}
+	if to.Sub(from) > processUsageMaxRange {
+		return ProcessUsageResult{}, fmt.Errorf("%w: pick 24 hours or less", ErrInvalid)
 	}
 	hostID, err := s.hostID(ctx, host)
 	if err != nil {

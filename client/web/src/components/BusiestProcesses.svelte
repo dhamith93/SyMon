@@ -6,6 +6,9 @@
   let { host, from, to }: { host: string; from: number; to: number } = $props();
 
   const limit = 15;
+  // the collector answers for up to a day, so a longer range shows its last day
+  const maxSpan = 24 * 3600;
+  const start = $derived(Math.max(from, to - maxSpan));
 
   let view = $state<'CPU' | 'Memory'>('CPU');
   let snapshots = $state(0);
@@ -18,7 +21,7 @@
   let requestId = 0;
 
   $effect(() => {
-    const request = { host, from, to, id: ++requestId };
+    const request = { host, from: start, to, id: ++requestId };
     loading = true;
     api
       .processUsage(request.host, request.from, request.to)
@@ -55,8 +58,9 @@
   </div>
   <p class="when muted">
     {#if snapshots > 0}
-      From {snapshots.toLocaleString()} snapshots since {formatDateTime(firstTime)}. Each keeps only the top 10 processes, so
-      averages are a lower bound.
+      {start > from ? 'The last 24 hours of this range, from' : 'From'}
+      {snapshots.toLocaleString()} snapshots since {formatDateTime(firstTime)}. Each keeps only the top 10 processes, so averages
+      are a lower bound.
     {:else if !error && !loading}
       No process lists recorded in this range.
     {/if}

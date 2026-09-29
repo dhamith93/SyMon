@@ -604,6 +604,9 @@ func TestProcessUsage(t *testing.T) {
 	if _, err := st.ProcessUsage(ctx, "web1", start, start); !errors.Is(err, ErrInvalid) {
 		t.Errorf("expected ErrInvalid for an empty range, got %v", err)
 	}
+	if _, err := st.ProcessUsage(ctx, "web1", start.Add(-25*time.Hour), start); !errors.Is(err, ErrInvalid) {
+		t.Errorf("expected ErrInvalid for a range over a day, got %v", err)
+	}
 }
 
 func TestLatestSnapshots(t *testing.T) {

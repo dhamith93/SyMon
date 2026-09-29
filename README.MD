@@ -107,7 +107,7 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
 * `GET /api/v1/hosts/{host}/processes?at=`
     * Top processes by CPU and by memory at or before `at`, or the latest
 * `GET /api/v1/hosts/{host}/process-usage?from=&to=`
-    * The programs that used the most CPU and memory over the range, with their average, peak and how often they were among the top processes. Processes with the same name are added up
+    * The programs that used the most CPU and memory over the range, 24 hours at most, with their average, peak and how often they were among the top processes. Processes with the same name are added up
 * `GET /api/v1/hosts/{host}/disk-forecasts`
     * Each disk's growth per day over the last week, and `daysToFull`, or null when the disk is not filling up
 * `GET /api/v1/hosts/{host}/custom-metrics`
