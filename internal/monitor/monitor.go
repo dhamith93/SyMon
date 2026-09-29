@@ -32,10 +32,12 @@ const (
 )
 
 // alert metrics that are not in a snapshot. DISK_FORECAST is the days until
-// a disk is full, ENDPOINT an HTTP check the collector runs.
+// a disk is full, ENDPOINT an HTTP check the collector runs, and
+// CERTIFICATE the days until an HTTPS endpoint's certificate expires.
 const (
 	DISK_FORECAST string = "disk_forecast"
 	ENDPOINT      string = "endpoint"
+	CERTIFICATE   string = "certificate"
 )
 
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off

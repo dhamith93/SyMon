@@ -19,6 +19,7 @@ type alertStore interface {
 	LastSeen(ctx context.Context, host string) (time.Time, error)
 	DaysUntilFull(ctx context.Context, host string, device string) (float64, error)
 	LatestEndpointCheck(ctx context.Context, name string) (store.EndpointCheck, error)
+	LatestCertificate(ctx context.Context, name string) (time.Time, time.Time, error)
 	OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error)
 	CreateAlert(ctx context.Context, alert store.Alert) (int64, error)
 	UpdateAlert(ctx context.Context, id int64, severity int, value float64, at time.Time) error
@@ -66,7 +67,7 @@ func ruleTarget(rule *alerts.AlertConfig) string {
 		return rule.Disk
 	case monitor.SERVICES:
 		return rule.Service
-	case monitor.ENDPOINT:
+	case monitor.ENDPOINT, monitor.CERTIFICATE:
 		return rule.Endpoint
 	}
 	return ""
@@ -112,6 +113,10 @@ func (e *evaluator) latest(ctx context.Context, rule *alerts.AlertConfig, host s
 		}
 		e.checkErrors[rule.Name] = check.Error
 		return float64(check.StatusCode), check.Time, nil
+	}
+	if rule.MetricName == monitor.CERTIFICATE {
+		expires, checked, err := e.store.LatestCertificate(ctx, rule.Name)
+		return expires.Sub(checked).Hours() / 24, checked, err
 	}
 	if rule.MetricName == monitor.DISK_FORECAST {
 		days, err := e.store.DaysUntilFull(ctx, host, target)
@@ -214,10 +219,30 @@ func (e *evaluator) openIfBreached(ctx context.Context, rule *alerts.AlertConfig
 // message builds what is sent to the alert processor. Endpoint rules have
 // their own template fields, like the status code and the error.
 func (e *evaluator) message(rule *alerts.AlertConfig, host string, id int64, status alertstatus.StatusType, value float64, at time.Time) *alertapi.Alert {
-	if rule.MetricName == monitor.ENDPOINT {
+	switch rule.MetricName {
+	case monitor.ENDPOINT:
 		return buildEndpointAlert(rule, id, int(value), e.checkErrors[rule.Name], status == alertstatus.Normal, at.Unix())
+	case monitor.CERTIFICATE:
+		return buildCertificateAlert(rule, id, value, status, at)
 	}
 	return buildAlertToSend(host, rule, alertStatus(rule, host, id, status, value, at))
+}
+
+// certificateRule is the alert on an HTTPS endpoint rule's certificate, or
+// nil when the rule has none. Days left only fall, so it alerts on the
+// first check below a level.
+func certificateRule(rule *alerts.AlertConfig) *alerts.AlertConfig {
+	warn, critical := rule.CertDays()
+	if warn == 0 && critical == 0 {
+		return nil
+	}
+	certificate := *rule
+	certificate.MetricName = monitor.CERTIFICATE
+	certificate.Op = "<"
+	certificate.WarnThreshold = warn
+	certificate.CriticalThreshold = critical
+	certificate.TriggerIntveral = 0
+	return &certificate
 }
 
 func triggerInterval(rule *alerts.AlertConfig) time.Duration {

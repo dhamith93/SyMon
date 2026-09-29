@@ -15,14 +15,16 @@ func TestEndpointChecks(t *testing.T) {
 		t.Errorf("expected ErrNotFound before the first check, got %v", err)
 	}
 
-	// api: a check every 2 minutes for an hour, down for the last 3
+	// api: a check every 2 minutes for an hour, down for the last 3, with a
+	// certificate until the failures
 	start := time.Now().Add(-time.Hour).Truncate(time.Minute)
+	certExpires := start.Add(30 * 24 * time.Hour)
 	for i := 0; i < 30; i++ {
 		check := EndpointCheck{Time: start.Add(time.Duration(i) * 2 * time.Minute), Name: "api", URL: "https://api.example.com/health", Method: "GET",
-			StatusCode: 200, OK: true, Latency: 100 * time.Millisecond}
+			StatusCode: 200, OK: true, Latency: 100 * time.Millisecond, CertExpires: certExpires}
 		switch {
 		case i >= 28:
-			check.StatusCode, check.OK, check.Latency, check.Error = 0, false, 0, "connection refused"
+			check.StatusCode, check.OK, check.Latency, check.Error, check.CertExpires = 0, false, 0, "connection refused", time.Time{}
 		case i == 27:
 			check.StatusCode, check.OK, check.Latency = 503, false, 400*time.Millisecond
 		}
@@ -37,6 +39,15 @@ func TestEndpointChecks(t *testing.T) {
 		t.Errorf("unexpected latest check %+v %v", latest, err)
 	}
 
+	// the failed checks saw no certificate, so the one before them counts
+	expires, checked, err := st.LatestCertificate(ctx, "api")
+	if err != nil || !expires.Equal(certExpires) || !checked.Equal(start.Add(54*time.Minute)) {
+		t.Errorf("expected the certificate from the last good check, got %v %v %v", expires, checked, err)
+	}
+	if _, _, err := st.LatestCertificate(ctx, "nothing"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound without a certificate, got %v", err)
+	}
+
 	summaries, err := st.Endpoints(ctx, start, end)
 	if err != nil {
 		t.Fatal(err)
@@ -46,7 +57,7 @@ func TestEndpointChecks(t *testing.T) {
 	}
 	summary := summaries[0]
 	// 27 of 30 OK, and 28 responses averaging (27*100 + 400) / 28 ms
-	if summary.Checks != 30 || summary.UptimePct != 90 || summary.Latest.URL != "https://api.example.com/health" {
+	if summary.Checks != 30 || summary.UptimePct != 90 || summary.Latest.URL != "https://api.example.com/health" || !summary.CertExpires.Equal(certExpires) {
 		t.Errorf("unexpected summary %+v", summary)
 	}
 	wantMs := (27.0*100 + 400) / 28

@@ -145,7 +145,7 @@ func (f *fakeCollector) ProcessUsage(ctx context.Context, in *api.ProcessUsageRe
 
 func (f *fakeCollector) Endpoints(ctx context.Context, in *api.EndpointsRequest) (*api.EndpointList, error) {
 	return &api.EndpointList{Endpoints: []*api.EndpointStatus{
-		{Name: "api", Url: "https://api.example.com", Method: "GET", Time: in.To, StatusCode: 0, Error: "connection refused", Checks: 30, UptimePct: 90, AvgLatencyMs: 110.5},
+		{Name: "api", Url: "https://api.example.com", Method: "GET", Time: in.To, StatusCode: 0, Error: "connection refused", Checks: 30, UptimePct: 90, AvgLatencyMs: 110.5, CertExpires: 1702592000},
 	}}, nil
 }
 
@@ -255,7 +255,7 @@ func TestEndpoints(t *testing.T) {
 	s, _ := newTestServer(t, nil)
 	code, body, _ := get(t, s, "/api/v1/endpoints?from=1700000000&to=1700003600")
 	want := `{"endpoints":[{"name":"api","url":"https://api.example.com","method":"GET","time":1700003600,"ok":false,` +
-		`"statusCode":0,"latencyMs":0,"error":"connection refused","checks":30,"uptimePct":90,"avgLatencyMs":110.5}]}`
+		`"statusCode":0,"latencyMs":0,"error":"connection refused","checks":30,"uptimePct":90,"avgLatencyMs":110.5,"certExpires":1702592000}]}`
 	if code != 200 || strings.TrimSpace(body) != want {
 		t.Errorf("unexpected response %d: %s", code, body)
 	}

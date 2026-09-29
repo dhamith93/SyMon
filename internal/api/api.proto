@@ -229,6 +229,8 @@ message EndpointStatus {
     double uptimePct = 10;
     // over the checks that got a response
     double avgLatencyMs = 11;
+    // when the newest certificate seen expires, 0 without one
+    int64 certExpires = 12;
 }
 
 message EndpointList {

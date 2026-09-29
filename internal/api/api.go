@@ -310,6 +310,7 @@ func (s *Server) Endpoints(ctx context.Context, in *EndpointsRequest) (*Endpoint
 			Checks:       int32(summary.Checks),
 			UptimePct:    summary.UptimePct,
 			AvgLatencyMs: milliseconds(summary.AvgLatency),
+			CertExpires:  unix(summary.CertExpires),
 		})
 	}
 	return list, nil

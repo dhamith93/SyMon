@@ -30,6 +30,8 @@ func TestParseRules(t *testing.T) {
 		{"service op", `[{"Name": "x", "MetricName": "services", "Service": "nginx", "Servers": ["web1"], "Op": ">"}]`, `Op "inactive"`},
 		{"endpoint url", `[{"Name": "x", "MetricName": "endpoint", "Endpoint": "shop.example.com"}]`, "http:// or https:// URL"},
 		{"custom without name", `[{"Name": "x", "IsCustom": true, "Servers": ["web1"], "Op": ">"}]`, "custom metric"},
+		{"negative cert days", `[{"Name": "x", "MetricName": "endpoint", "Endpoint": "https://example.com", "CertWarnDays": -1}]`, "cannot be negative"},
+		{"critical above warning", `[{"Name": "x", "MetricName": "endpoint", "Endpoint": "https://example.com", "CertWarnDays": 5, "CertCriticalDays": 10}]`, "at most CertWarnDays"},
 		{"duplicate names", `[{"Name": "x", "MetricName": "ping", "Servers": ["*"]}, {"Name": "x", "MetricName": "ping", "Servers": ["*"]}]`, "already a rule named"},
 	}
 	for _, tt := range tests {
@@ -43,5 +45,23 @@ func TestParseRules(t *testing.T) {
 func TestSampleRulesAreValid(t *testing.T) {
 	if _, err := LoadRules("../../collector/alerts.json"); err != nil {
 		t.Errorf("the sample alerts.json does not load: %v", err)
+	}
+}
+
+func TestCertDays(t *testing.T) {
+	seven, zero := 7, 0
+	tests := []struct {
+		rule          AlertConfig
+		warn, critial int
+	}{
+		{AlertConfig{MetricName: "endpoint", Endpoint: "https://example.com"}, 14, 3},
+		{AlertConfig{MetricName: "endpoint", Endpoint: "HTTPS://example.com", CertWarnDays: &seven, CertCriticalDays: &zero}, 7, 0},
+		{AlertConfig{MetricName: "endpoint", Endpoint: "http://example.com"}, 0, 0},
+		{AlertConfig{MetricName: "memory"}, 0, 0},
+	}
+	for _, tt := range tests {
+		if warn, critical := tt.rule.CertDays(); warn != tt.warn || critical != tt.critial {
+			t.Errorf("%s: got %d %d, want %d %d", tt.rule.Endpoint, warn, critical, tt.warn, tt.critial)
+		}
 	}
 }

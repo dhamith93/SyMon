@@ -76,6 +76,13 @@ func handleAlerts(config *config.Collector, st *store.Store) {
 				}
 				cancel()
 			}
+			if certificate := certificateRule(rule); certificate != nil {
+				ctx, cancel := transport.Context()
+				if err := evaluator.evaluate(ctx, certificate, ""); err != nil {
+					logger.Log("error", "certificate alert "+rule.Name+": "+err.Error())
+				}
+				cancel()
+			}
 		}
 	}
 }
@@ -136,6 +143,40 @@ func buildEndpointAlert(alert *alerts.AlertConfig, id int64, actualHTTPCode int,
 		Email:        alert.Email,
 		Slack:        alert.Slack,
 		SlackChannel: alert.SlackChannel,
+	}
+}
+
+// buildCertificateAlert says how many days an endpoint's certificate has
+// left. id is the alert's row id.
+func buildCertificateAlert(rule *alerts.AlertConfig, id int64, days float64, status alertstatus.StatusType, at time.Time) *alertapi.Alert {
+	subject := "[Resolved] certificate renewed for " + rule.Endpoint
+	content := rule.Endpoint + " has a certificate valid for " + strconv.Itoa(int(days)) + " more days"
+	switch status {
+	case alertstatus.Critical:
+		subject = "[Critical] certificate expiring for " + rule.Endpoint
+	case alertstatus.Warning:
+		subject = "[Warning] certificate expiring for " + rule.Endpoint
+	}
+	if status != alertstatus.Normal {
+		expires := at.Add(time.Duration(days * 24 * float64(time.Hour)))
+		content = rule.Endpoint + " has a certificate that expires on " + expires.UTC().Format("Jan 2 2006 15:04 MST")
+		if days < 0 {
+			content = rule.Endpoint + " has a certificate that expired on " + expires.UTC().Format("Jan 2 2006 15:04 MST")
+		}
+	}
+	return &alertapi.Alert{
+		ServerName:   rule.Endpoint,
+		MetricName:   monitor.CERTIFICATE,
+		LogId:        id,
+		Status:       int32(status),
+		Subject:      subject,
+		Content:      subject + "\n" + content,
+		Timestamp:    at.UTC().String(),
+		Resolved:     status == alertstatus.Normal,
+		Pagerduty:    rule.Pagerduty,
+		Email:        rule.Email,
+		Slack:        rule.Slack,
+		SlackChannel: rule.SlackChannel,
 	}
 }
 

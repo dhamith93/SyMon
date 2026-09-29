@@ -1854,7 +1854,9 @@ type EndpointStatus struct {
 	Checks     int32   `protobuf:"varint,9,opt,name=checks,proto3" json:"checks,omitempty"`
 	UptimePct  float64 `protobuf:"fixed64,10,opt,name=uptimePct,proto3" json:"uptimePct,omitempty"`
 	// over the checks that got a response
-	AvgLatencyMs  float64 `protobuf:"fixed64,11,opt,name=avgLatencyMs,proto3" json:"avgLatencyMs,omitempty"`
+	AvgLatencyMs float64 `protobuf:"fixed64,11,opt,name=avgLatencyMs,proto3" json:"avgLatencyMs,omitempty"`
+	// when the newest certificate seen expires, 0 without one
+	CertExpires   int64 `protobuf:"varint,12,opt,name=certExpires,proto3" json:"certExpires,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1962,6 +1964,13 @@ func (x *EndpointStatus) GetUptimePct() float64 {
 func (x *EndpointStatus) GetAvgLatencyMs() float64 {
 	if x != nil {
 		return x.AvgLatencyMs
+	}
+	return 0
+}
+
+func (x *EndpointStatus) GetCertExpires() int64 {
+	if x != nil {
+		return x.CertExpires
 	}
 	return 0
 }
@@ -2504,7 +2513,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\rcustomMetrics\x18\x02 \x03(\v2\x10.api.CustomValueR\rcustomMetrics\"6\n" +
 	"\x10EndpointsRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\x03R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x03R\x02to\"\xa0\x02\n" +
+	"\x02to\x18\x02 \x01(\x03R\x02to\"\xc2\x02\n" +
 	"\x0eEndpointStatus\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12\x16\n" +
@@ -2519,7 +2528,8 @@ const file_api_api_proto_rawDesc = "" +
 	"\x06checks\x18\t \x01(\x05R\x06checks\x12\x1c\n" +
 	"\tuptimePct\x18\n" +
 	" \x01(\x01R\tuptimePct\x12\"\n" +
-	"\favgLatencyMs\x18\v \x01(\x01R\favgLatencyMs\"A\n" +
+	"\favgLatencyMs\x18\v \x01(\x01R\favgLatencyMs\x12 \n" +
+	"\vcertExpires\x18\f \x01(\x03R\vcertExpires\"A\n" +
 	"\fEndpointList\x121\n" +
 	"\tendpoints\x18\x01 \x03(\v2\x13.api.EndpointStatusR\tendpoints\"\x85\x01\n" +
 	"\x15EndpointSeriesRequest\x12\x12\n" +
