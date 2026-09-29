@@ -637,3 +637,42 @@ func TestLatestSnapshots(t *testing.T) {
 		t.Errorf("expected web1's snapshot, got %+v", hosts[1])
 	}
 }
+
+func TestLatestCustomValues(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	if err := st.AddHost(ctx, "web1", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().Truncate(time.Second)
+	send := func(name string, value string, at time.Time) {
+		t.Helper()
+		metric := &monitor.CustomMetric{Name: name, Unit: "jobs", Value: value, ServerId: "web1", Time: strconv.FormatInt(at.Unix(), 10)}
+		if err := st.SaveCustomMetric(ctx, metric); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// stale was last sent 3 days ago, so it is left out
+	send("stale", "1", now.Add(-72*time.Hour))
+	send("queue", "10", now.Add(-2*time.Hour))
+	send("queue", "12", now.Add(-time.Minute))
+	send("workers", "4", now.Add(-26*time.Hour))
+	refreshRollups(t, st, "custom_metrics_1m", "custom_metrics_1h")
+
+	values, err := st.LatestCustomValues(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []CustomValue{
+		{Host: "web1", Name: "queue", Unit: "jobs", Value: 12, Time: now.Add(-time.Minute)},
+		{Host: "web1", Name: "workers", Unit: "jobs", Value: 4, Time: now.Add(-26 * time.Hour)},
+	}
+	if len(values) != len(want) {
+		t.Fatalf("got %+v, want %+v", values, want)
+	}
+	for i := range want {
+		if values[i].Host != want[i].Host || values[i].Name != want[i].Name || values[i].Value != want[i].Value || !values[i].Time.Equal(want[i].Time) {
+			t.Errorf("got %+v, want %+v", values[i], want[i])
+		}
+	}
+}

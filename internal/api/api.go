@@ -226,6 +226,10 @@ func (s *Server) Snapshots(ctx context.Context, in *Void) (*SnapshotList, error)
 	if err != nil {
 		return nil, toStatus(err)
 	}
+	customValues, err := s.Store.LatestCustomValues(ctx)
+	if err != nil {
+		return nil, toStatus(err)
+	}
 	now := time.Now()
 	list := &SnapshotList{}
 	for _, latest := range hosts {
@@ -235,6 +239,15 @@ func (s *Server) Snapshots(ctx context.Context, in *Void) (*SnapshotList, error)
 			SnapshotJson: string(latest.Snapshot),
 			LastSeen:     unix(latest.LastSeen),
 			Up:           isUp(latest.LastSeen, now),
+		})
+	}
+	for _, custom := range customValues {
+		list.CustomMetrics = append(list.CustomMetrics, &CustomValue{
+			Host:  custom.Host,
+			Name:  custom.Name,
+			Unit:  custom.Unit,
+			Value: custom.Value,
+			Time:  custom.Time.Unix(),
 		})
 	}
 	return list, nil

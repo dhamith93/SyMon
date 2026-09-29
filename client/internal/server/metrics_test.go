@@ -31,11 +31,17 @@ func (f *fakeCollector) Snapshots(ctx context.Context, in *api.Void) (*api.Snaps
 	if err != nil {
 		return nil, err
 	}
-	return &api.SnapshotList{Hosts: []*api.HostSnapshot{
-		{Host: "web1", Up: true, LastSeen: 1700000000, Time: 1700000000, SnapshotJson: string(snapshot)},
-		{Host: "db1", LastSeen: 1690000000, Time: 1690000000, SnapshotJson: string(snapshot)},
-		{Host: "new1", Up: true, LastSeen: 1700000000},
-	}}, nil
+	return &api.SnapshotList{
+		Hosts: []*api.HostSnapshot{
+			{Host: "web1", Up: true, LastSeen: 1700000000, Time: 1700000000, SnapshotJson: string(snapshot)},
+			{Host: "db1", LastSeen: 1690000000, Time: 1690000000, SnapshotJson: string(snapshot)},
+			{Host: "new1", Up: true, LastSeen: 1700000000},
+		},
+		CustomMetrics: []*api.CustomValue{
+			{Host: "web1", Name: "queue-length", Unit: "jobs", Value: 42, Time: 1699999000},
+			{Host: "db1", Name: "backup-age", Unit: "hours", Value: 30, Time: 1689999000},
+		},
+	}, nil
 }
 
 func TestMetrics(t *testing.T) {
@@ -56,13 +62,15 @@ func TestMetrics(t *testing.T) {
 		"# TYPE symon_network_receive_bytes_total counter\n" + `symon_network_receive_bytes_total{host="web1",iface="eth0"} 1000`,
 		`symon_service_up{host="web1",service="nginx"} 1`,
 		`symon_container_receive_bytes_per_second{host="web1",container="web",project="shop"} 2048`,
+		`symon_custom_metric{host="web1",name="queue-length",unit="jobs"} 42`,
+		`symon_custom_metric_timestamp_seconds{host="web1",name="queue-length"} 1.699999e+09`,
 	} {
 		if !strings.Contains(body, line+"\n") {
 			t.Errorf("expected %q in:\n%s", line, body)
 		}
 	}
 	// db1 stopped reporting, so its old values are left out
-	if strings.Contains(body, `{host="db1",`) || strings.Contains(body, `symon_cpu_usage_percent{host="db1"}`) {
+	if strings.Contains(body, `{host="db1",`) || strings.Contains(body, `symon_cpu_usage_percent{host="db1"}`) || strings.Contains(body, "backup-age") {
 		t.Errorf("expected only up and last seen for db1:\n%s", body)
 	}
 	// web1 has no transmit rate, as if it were on the host network
