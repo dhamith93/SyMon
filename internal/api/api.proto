@@ -52,6 +52,8 @@ message HostSummary {
     int32 worstSeverity = 14;
     // running containers at the latest snapshot
     int32 containers = 15;
+    // days until the first disk fills up, unset when none is filling up
+    optional double diskFullDays = 16;
 }
 
 message FleetSummary {
@@ -144,6 +146,50 @@ message AlertList {
     repeated AlertRecord alerts = 1;
 }
 
+// A disk's growth over the last week and when it fills up at that rate
+message DiskForecast {
+    string device = 1;
+    string mount = 2;
+    double usedPct = 3;
+    double pctPerDay = 4;
+    double bytesPerDay = 5;
+    // unset when the disk is not filling up
+    optional double daysToFull = 6;
+}
+
+message DiskForecastList {
+    repeated DiskForecast disks = 1;
+}
+
+message ProcessUsageRequest {
+    string host = 1;
+    int64 from = 2;
+    int64 to = 3;
+}
+
+// One program's share of the range. Processes with the same name are
+// added up per snapshot.
+message ProcessUsage {
+    string name = 1;
+    double cpuAvg = 2;
+    double cpuPeak = 3;
+    double memAvg = 4;
+    double memPeak = 5;
+    // share of the snapshots the program was in the top lists
+    double seenPct = 6;
+}
+
+message ProcessUsageList {
+    int32 snapshots = 1;
+    // time of the first snapshot in the range
+    int64 firstTime = 2;
+    repeated ProcessUsage processes = 3;
+}
+
+message SnapshotList {
+    repeated HostSnapshot hosts = 1;
+}
+
 service MonitorDataService {
     // agent
     rpc Enroll(EnrollRequest) returns (EnrollResponse) {}
@@ -159,4 +205,8 @@ service MonitorDataService {
     rpc Processes(ProcessesRequest) returns (ProcessesResponse) {}
     rpc CustomMetricNames(HostRequest) returns (NameList) {}
     rpc Alerts(AlertsRequest) returns (AlertList) {}
+    rpc DiskForecasts(HostRequest) returns (DiskForecastList) {}
+    rpc ProcessUsage(ProcessUsageRequest) returns (ProcessUsageList) {}
+    // every host's latest snapshot, for the metrics endpoint
+    rpc Snapshots(Void) returns (SnapshotList) {}
 }
