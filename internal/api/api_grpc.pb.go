@@ -46,6 +46,12 @@ const (
 	MonitorDataService_SaveRule_FullMethodName                = "/api.MonitorDataService/SaveRule"
 	MonitorDataService_DeleteRule_FullMethodName              = "/api.MonitorDataService/DeleteRule"
 	MonitorDataService_RequestAgentUpdate_FullMethodName      = "/api.MonitorDataService/RequestAgentUpdate"
+	MonitorDataService_NextTask_FullMethodName                = "/api.MonitorDataService/NextTask"
+	MonitorDataService_ReportTask_FullMethodName              = "/api.MonitorDataService/ReportTask"
+	MonitorDataService_HostTasks_FullMethodName               = "/api.MonitorDataService/HostTasks"
+	MonitorDataService_RequestTaskRun_FullMethodName          = "/api.MonitorDataService/RequestTaskRun"
+	MonitorDataService_TaskRuns_FullMethodName                = "/api.MonitorDataService/TaskRuns"
+	MonitorDataService_TaskRun_FullMethodName                 = "/api.MonitorDataService/TaskRun"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -89,6 +95,15 @@ type MonitorDataServiceClient interface {
 	DeleteRule(ctx context.Context, in *RuleRequest, opts ...grpc.CallOption) (*Message, error)
 	// ask agents to update themselves, from the dashboard
 	RequestAgentUpdate(ctx context.Context, in *AgentUpdateRequest, opts ...grpc.CallOption) (*AgentUpdateResult, error)
+	// host tasks. The agent waits in NextTask and reports how the run goes.
+	NextTask(ctx context.Context, in *TaskWait, opts ...grpc.CallOption) (*TaskAssignment, error)
+	ReportTask(ctx context.Context, in *TaskProgress, opts ...grpc.CallOption) (*Message, error)
+	// for the dashboard
+	HostTasks(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*TaskList, error)
+	RequestTaskRun(ctx context.Context, in *TaskRunRequest, opts ...grpc.CallOption) (*TaskRunInfo, error)
+	// a host's runs, newest first, without output
+	TaskRuns(ctx context.Context, in *TaskRunsRequest, opts ...grpc.CallOption) (*TaskRunList, error)
+	TaskRun(ctx context.Context, in *TaskRunQuery, opts ...grpc.CallOption) (*TaskRunInfo, error)
 }
 
 type monitorDataServiceClient struct {
@@ -369,6 +384,66 @@ func (c *monitorDataServiceClient) RequestAgentUpdate(ctx context.Context, in *A
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) NextTask(ctx context.Context, in *TaskWait, opts ...grpc.CallOption) (*TaskAssignment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskAssignment)
+	err := c.cc.Invoke(ctx, MonitorDataService_NextTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) ReportTask(ctx context.Context, in *TaskProgress, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_ReportTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) HostTasks(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*TaskList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskList)
+	err := c.cc.Invoke(ctx, MonitorDataService_HostTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) RequestTaskRun(ctx context.Context, in *TaskRunRequest, opts ...grpc.CallOption) (*TaskRunInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskRunInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_RequestTaskRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) TaskRuns(ctx context.Context, in *TaskRunsRequest, opts ...grpc.CallOption) (*TaskRunList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskRunList)
+	err := c.cc.Invoke(ctx, MonitorDataService_TaskRuns_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) TaskRun(ctx context.Context, in *TaskRunQuery, opts ...grpc.CallOption) (*TaskRunInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskRunInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_TaskRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -410,6 +485,15 @@ type MonitorDataServiceServer interface {
 	DeleteRule(context.Context, *RuleRequest) (*Message, error)
 	// ask agents to update themselves, from the dashboard
 	RequestAgentUpdate(context.Context, *AgentUpdateRequest) (*AgentUpdateResult, error)
+	// host tasks. The agent waits in NextTask and reports how the run goes.
+	NextTask(context.Context, *TaskWait) (*TaskAssignment, error)
+	ReportTask(context.Context, *TaskProgress) (*Message, error)
+	// for the dashboard
+	HostTasks(context.Context, *HostRequest) (*TaskList, error)
+	RequestTaskRun(context.Context, *TaskRunRequest) (*TaskRunInfo, error)
+	// a host's runs, newest first, without output
+	TaskRuns(context.Context, *TaskRunsRequest) (*TaskRunList, error)
+	TaskRun(context.Context, *TaskRunQuery) (*TaskRunInfo, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -500,6 +584,24 @@ func (UnimplementedMonitorDataServiceServer) DeleteRule(context.Context, *RuleRe
 }
 func (UnimplementedMonitorDataServiceServer) RequestAgentUpdate(context.Context, *AgentUpdateRequest) (*AgentUpdateResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestAgentUpdate not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) NextTask(context.Context, *TaskWait) (*TaskAssignment, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NextTask not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) ReportTask(context.Context, *TaskProgress) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportTask not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) HostTasks(context.Context, *HostRequest) (*TaskList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HostTasks not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) RequestTaskRun(context.Context, *TaskRunRequest) (*TaskRunInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestTaskRun not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) TaskRuns(context.Context, *TaskRunsRequest) (*TaskRunList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TaskRuns not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) TaskRun(context.Context, *TaskRunQuery) (*TaskRunInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TaskRun not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -1008,6 +1110,114 @@ func _MonitorDataService_RequestAgentUpdate_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_NextTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskWait)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).NextTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_NextTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).NextTask(ctx, req.(*TaskWait))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_ReportTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskProgress)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).ReportTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_ReportTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).ReportTask(ctx, req.(*TaskProgress))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_HostTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).HostTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_HostTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).HostTasks(ctx, req.(*HostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_RequestTaskRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).RequestTaskRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_RequestTaskRun_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).RequestTaskRun(ctx, req.(*TaskRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_TaskRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskRunsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).TaskRuns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_TaskRuns_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).TaskRuns(ctx, req.(*TaskRunsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_TaskRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskRunQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).TaskRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_TaskRun_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).TaskRun(ctx, req.(*TaskRunQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1122,6 +1332,30 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestAgentUpdate",
 			Handler:    _MonitorDataService_RequestAgentUpdate_Handler,
+		},
+		{
+			MethodName: "NextTask",
+			Handler:    _MonitorDataService_NextTask_Handler,
+		},
+		{
+			MethodName: "ReportTask",
+			Handler:    _MonitorDataService_ReportTask_Handler,
+		},
+		{
+			MethodName: "HostTasks",
+			Handler:    _MonitorDataService_HostTasks_Handler,
+		},
+		{
+			MethodName: "RequestTaskRun",
+			Handler:    _MonitorDataService_RequestTaskRun_Handler,
+		},
+		{
+			MethodName: "TaskRuns",
+			Handler:    _MonitorDataService_TaskRuns_Handler,
+		},
+		{
+			MethodName: "TaskRun",
+			Handler:    _MonitorDataService_TaskRun_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -12,13 +12,15 @@ message Message {
 }
 
 // agentVersion and arch are sent by agents that can update themselves,
-// updateError when their last try failed
+// updateError when their last try failed. tasks is what the host's tasks
+// file lists.
 message ServerInfo {
     string serverName = 1;
     string timezone = 2;
     string agentVersion = 3;
     string arch = 4;
     string updateError = 5;
+    repeated TaskInfo tasks = 6;
 }
 
 // An update an admin asked for. The agent downloads the build from
@@ -44,6 +46,89 @@ message AgentUpdateRequest {
 
 message AgentUpdateResult {
     int32 requested = 1;
+}
+
+// Host tasks. A host lists the commands it is willing to run in its own
+// tasks file. An admin starts one on the dashboard, and the agent runs it
+// only when its file still has that name and command.
+
+message TaskInfo {
+    string name = 1;
+    string description = 2;
+    string command = 3;
+    int32 timeoutSeconds = 4;
+}
+
+message TaskList {
+    repeated TaskInfo tasks = 1;
+}
+
+// The agent waits in NextTask for a run an admin asked for
+message TaskWait {
+    string serverName = 1;
+}
+
+// id is 0 when nothing was asked for before the wait ran out. command is
+// what the admin saw, for the agent to compare with its file.
+message TaskAssignment {
+    int64 id = 1;
+    string task = 2;
+    string command = 3;
+}
+
+// output is what the run printed since the last report. done ends the run.
+message TaskProgress {
+    int64 id = 1;
+    string serverName = 2;
+    string output = 3;
+    bool done = 4;
+    int32 exitCode = 5;
+    bool timedOut = 6;
+    // why the run could not start or finish, empty otherwise
+    string error = 7;
+    // the run printed more than the agent keeps, and the rest was dropped
+    bool truncated = 8;
+}
+
+message TaskRunRequest {
+    string host = 1;
+    string task = 2;
+    // the user asking
+    string by = 3;
+}
+
+// status is queued, running, succeeded, failed, timed_out, expired (not
+// picked up in time) or lost (the agent went away). Times are 0 until
+// they happen.
+message TaskRunInfo {
+    int64 id = 1;
+    string host = 2;
+    string task = 3;
+    string command = 4;
+    string status = 5;
+    string requestedBy = 6;
+    int64 requestedAt = 7;
+    int64 startedAt = 8;
+    int64 finishedAt = 9;
+    int32 exitCode = 10;
+    string error = 11;
+    // only set by TaskRun
+    string output = 12;
+    // the output went over the limit and the rest was dropped
+    bool truncated = 13;
+}
+
+message TaskRunsRequest {
+    string host = 1;
+    int32 limit = 2;
+}
+
+message TaskRunList {
+    repeated TaskRunInfo runs = 1;
+}
+
+message TaskRunQuery {
+    int64 id = 1;
 }
 
 message MonitorData {
@@ -380,4 +465,14 @@ service MonitorDataService {
 
     // ask agents to update themselves, from the dashboard
     rpc RequestAgentUpdate(AgentUpdateRequest) returns (AgentUpdateResult) {}
+
+    // host tasks. The agent waits in NextTask and reports how the run goes.
+    rpc NextTask(TaskWait) returns (TaskAssignment) {}
+    rpc ReportTask(TaskProgress) returns (Message) {}
+    // for the dashboard
+    rpc HostTasks(HostRequest) returns (TaskList) {}
+    rpc RequestTaskRun(TaskRunRequest) returns (TaskRunInfo) {}
+    // a host's runs, newest first, without output
+    rpc TaskRuns(TaskRunsRequest) returns (TaskRunList) {}
+    rpc TaskRun(TaskRunQuery) returns (TaskRunInfo) {}
 }
