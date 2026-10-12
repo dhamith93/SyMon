@@ -110,7 +110,8 @@ func main() {
 	setupRules(ctx, st, &config)
 
 	go handleAlerts(&config, st)
-	go purgeOldRecords(st)
+	go purgeOldRecords(st, taskHistory(&config))
+	go sweepTaskRuns(st)
 
 	lis, err := net.Listen("tcp", ":"+config.Port)
 	if err != nil {

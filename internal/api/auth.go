@@ -17,6 +17,8 @@ var agentMethods = map[string]bool{
 	MonitorDataService_HandlePing_FullMethodName:              true,
 	MonitorDataService_HandleMonitorData_FullMethodName:       true,
 	MonitorDataService_HandleCustomMonitorData_FullMethodName: true,
+	MonitorDataService_NextTask_FullMethodName:                true,
+	MonitorDataService_ReportTask_FullMethodName:              true,
 }
 
 type credentialLookup interface {
@@ -25,8 +27,9 @@ type credentialLookup interface {
 
 // AuthInterceptor checks every call to the collector. Enroll needs no
 // credential, its token is the credential. A call with an agent key may
-// only send data, and is treated as coming from that agent's host. All
-// other calls need the shared key jwt, which older agents also use.
+// only send data and pick up the host's own task runs, and is treated as
+// coming from that agent's host. All other calls need the shared key jwt,
+// which older agents also use.
 func AuthInterceptor(lookup credentialLookup) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if info.FullMethod == MonitorDataService_Enroll_FullMethodName {

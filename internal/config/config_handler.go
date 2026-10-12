@@ -12,6 +12,7 @@ const DEFAULT_INTERVAL_SECS int = 30
 const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
 const DEFAULT_REFRESH_SECS int = 15
 const DEFAULT_AGENT_KEY_PATH string = "/etc/symon/agent.key"
+const DEFAULT_TASKS_PATH string = "/etc/symon/tasks.json"
 
 type Collector struct {
 	TLSEnabled                bool
@@ -24,9 +25,11 @@ type Collector struct {
 	DashboardURL string
 	// days to keep raw data, 1 minute rollups and 1 hour rollups.
 	// 0 means the store's default.
-	RetentionRawDays        int
-	RetentionMinuteDays     int
-	RetentionHourDays       int
+	RetentionRawDays    int
+	RetentionMinuteDays int
+	RetentionHourDays   int
+	// TaskHistoryDays is how long finished task runs are kept, 0 for the default
+	TaskHistoryDays         int
 	Port                    string
 	AlertEndpoint           string
 	AlertEndpointCACertPath string
@@ -84,6 +87,9 @@ type Agent struct {
 	// ContainerLayerSize measures how much each container wrote to its own
 	// layer, which walks every file in it
 	ContainerLayerSize bool
+	// TasksPath is the file listing the commands admins may start from the
+	// dashboard. Without the file the host offers none.
+	TasksPath string
 }
 
 type ServiceToMonitor struct {
@@ -108,9 +114,14 @@ func GetAgent() Agent {
 	if agentKeyPath == "" {
 		agentKeyPath = DEFAULT_AGENT_KEY_PATH
 	}
+	tasksPath := os.Getenv("SYMON_TASKS_PATH")
+	if tasksPath == "" {
+		tasksPath = DEFAULT_TASKS_PATH
+	}
 	return Agent{
 		ServerId:                    serverID,
 		AgentKeyPath:                agentKeyPath,
+		TasksPath:                   tasksPath,
 		ContainerSocket:             os.Getenv("SYMON_CONTAINER_SOCKET"),
 		ContainerLayerSize:          strings.ToUpper(os.Getenv("SYMON_CONTAINER_LAYER_SIZE")) == "TRUE",
 		CollectorEndpoint:           os.Getenv("SYMON_COLLECTOR_ENDPOINT"),
@@ -189,6 +200,7 @@ func GetCollector() Collector {
 		RetentionRawDays:        positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
 		RetentionMinuteDays:     positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
 		RetentionHourDays:       positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),
+		TaskHistoryDays:         positiveInt(os.Getenv("SYMON_TASK_HISTORY_DAYS")),
 		AlertsFilePath:          os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
 		// on unless false, so endpoint rules added on the dashboard work
 		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) != "FALSE",

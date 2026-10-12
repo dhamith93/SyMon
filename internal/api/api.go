@@ -39,6 +39,7 @@ type Server struct {
 	diskFull   map[string]float64
 
 	logins loginFailures
+	tasks  taskWaiters
 }
 
 // toStatus turns a store error into a grpc status. Unexpected errors are
@@ -49,7 +50,7 @@ func toStatus(err error) error {
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return errNoData
-	case errors.Is(err, store.ErrHostExists), errors.Is(err, store.ErrRuleExists):
+	case errors.Is(err, store.ErrHostExists), errors.Is(err, store.ErrRuleExists), errors.Is(err, store.ErrTaskBusy):
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, store.ErrInvalid):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -103,7 +104,7 @@ func (s *Server) InitAgent(ctx context.Context, in *ServerInfo) (*Message, error
 }
 
 // HandlePing records that the host is alive and what its agent says about
-// itself, and hands the agent an update an admin asked for
+// itself and its tasks, and hands the agent an update an admin asked for
 func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*PingResponse, error) {
 	host := in.ServerName
 	if authenticated, ok := agentHost(ctx); ok {
@@ -116,6 +117,7 @@ func (s *Server) HandlePing(ctx context.Context, in *ServerInfo) (*PingResponse,
 	if in.UpdateError != "" {
 		logger.Log("error", "agent on "+host+" could not update: "+in.UpdateError)
 	}
+	s.saveTasks(ctx, host, in.Tasks)
 	response := &PingResponse{Body: "pong"}
 	if update != nil {
 		response.Update = &AgentUpdate{Version: update.Version, DownloadUrl: update.URL, RequestedAt: unix(update.RequestedAt)}
