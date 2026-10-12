@@ -196,7 +196,7 @@ Alert rules are edited on the dashboard's Rules page. The collector checks the r
 
 A new install starts with one rule, "Host not reporting", which goes critical when any host sends nothing for 5 minutes. Rules can watch every host, including ones added later, or a list of hosts.
 
-Only admins can change rules. Users are admins unless created with `-role viewer`, and `collector -set-role <name> -role viewer` changes it. Viewers see everything but cannot change rules.
+Only admins can change rules. Users are admins unless created with `-role viewer`, and `collector -set-role <name> -role viewer` changes it. Viewers see everything except the commands and output of [tasks](#tasks), and cannot change rules, update agents or run tasks.
 
 ### Rules as a file
 
@@ -272,6 +272,55 @@ sudo cp custom_scripts/symon_alertprocessor.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now symon_alertprocessor
 ```
+
+## Tasks
+
+A task is a command a host is willing to run when an admin asks for it on the dashboard, like restarting a service or clearing a cache. Each host has a Tasks page with its tasks, a Run button, and a history of who ran what and how it ended.
+
+Tasks are listed on the host itself, in `/etc/symon/tasks.json`:
+
+```json
+[
+  {
+    "Name": "Restart nginx",
+    "Description": "after a config change",
+    "Command": "systemctl restart nginx"
+  },
+  {
+    "Name": "Free disk space",
+    "Command": "apt-get clean && journalctl --vacuum-time=7d",
+    "TimeoutSeconds": 600
+  }
+]
+```
+
+```sh
+sudo chown root:root /etc/symon/tasks.json
+sudo chmod 644 /etc/symon/tasks.json
+```
+
+The tasks show up on the dashboard within a minute. The agent reads the file again for every run, so there is nothing to restart. [agent/tasks.json](../agent/tasks.json) is a sample.
+
+- `Name` and `Command` are required. A name is unique on its host and up to 64 characters. `Description` is shown on the dashboard. `TimeoutSeconds` is how long a run may take: 300 unless set, 86400 at most.
+- The command runs with `/bin/sh -c` as the user the agent runs as, which is root after the install script. It starts in `/`, gets no input, and does not see the agent's `SYMON_` settings.
+- A host runs one task at a time.
+- A run that goes over its timeout is killed, together with everything it started.
+- Output shows on the dashboard while the task runs. The first 256 KB are kept.
+- A run the agent does not pick up within 2 minutes is dropped, so nothing starts by surprise when a host comes back.
+- A mistake in the file, like a misspelled field or a missing command, switches the host's tasks off until it is fixed. The agent's log says what is wrong: `journalctl -u symon_agent`.
+- `SYMON_TASKS_PATH` in `/etc/symon/agent.env` points the agent at another file.
+- The history is kept for 90 days. `SYMON_TASK_HISTORY_DAYS` in `/etc/symon/collector.env` changes that.
+
+What keeps this safe:
+
+- The dashboard can start the commands in the host's file, and cannot change them or add to them. The agent compares the command the admin confirmed with its file and refuses the run when they differ. So someone with a stolen dashboard password, or who got into the server, cannot run anything you did not list. They can run what you did list, so only list commands that are safe to run at any time.
+- The agent ignores a tasks file that group or others can write to, or that belongs to neither root nor the agent's user. Whoever can write that file runs commands as the agent.
+- Only admins see the commands and the output, and only admins start a task. Viewers see the tasks' names and the history.
+- Every run is kept with the user who asked for it, and the collector logs it.
+
+Tasks end when the agent stops, because systemd stops everything the agent started. So a task should not restart or upgrade the agent, and a job that has to outlive it belongs to systemd: `systemd-run --unit=nightly-backup /usr/local/bin/backup.sh`. Agent updates from the dashboard wait for a running task.
+
+Tasks need an agent, collector and dashboard that know them. A host with an older agent shows no tasks.
 
 ## Prometheus and Grafana
 

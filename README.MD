@@ -27,6 +27,10 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 **Custom metrics**
 - Send any number from a script or cron job and get a chart for it
 
+**Tasks**
+- Each host lists the commands it is willing to run, like restarting a service, and admins start them from the dashboard
+- Output shows while a task runs, and every run is kept: who asked, when, and how it ended
+
 **Alerts**
 - Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts, HTTP endpoints and certificates
 - Rules are edited on the dashboard and apply right away. They can watch every host, including ones added later
@@ -90,7 +94,8 @@ Optional. The Collector sends it alerts as they open, change and resolve, and it
 - **TLS.** Traffic between components can be encrypted. See the `*_TLS_*` and `*_CERT_PATH` settings in each component's `.env-example`.
 - **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
 - **Agent updates.** Agent builds are signed with a key that stays where you build them (`~/.config/symon/agent-signing.key`). Agents only install updates signed with it, so a tampered download or a spoofed update request cannot run code on your hosts.
-- **Roles.** Admins can change alert rules, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
+- **Tasks.** A host only runs commands from its own tasks file, which the dashboard can start but not change. The agent refuses a run whose command is not the one in its file, so a stolen dashboard login cannot run anything the host's owner did not list. See [Tasks](docs/install.md#tasks).
+- **Roles.** Admins can change alert rules, update agents and run tasks, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
 - **HTTPS.** Put a reverse proxy like Caddy or nginx in front of the dashboard, so passwords and the session cookie are encrypted.
 
 ## Local development
@@ -136,6 +141,14 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint alerts have an empty `host`
 * `POST /api/v1/agents/update` with `{"hosts": ["..."]}` as JSON
     * For admins only. Asks those hosts' agents to update to the dashboard's version, and answers how many were asked. Agents from before updates are left out
+* `GET /api/v1/hosts/{host}/tasks`
+    * The tasks the host lists in its tasks file. `command` is only there for admins
+* `GET /api/v1/hosts/{host}/task-runs?limit=`
+    * The host's task runs, newest first, 50 unless `limit` asks for up to 200: who asked, when, the `status` (`queued`, `running`, `succeeded`, `failed`, `timed_out`, `expired` or `lost`) and the exit code
+* `POST /api/v1/hosts/{host}/tasks/run` with `{"task": "..."}` as JSON
+    * For admins only. Asks the host's agent to run one of its tasks and answers the new run. 404 when the host does not list the task, 409 while the host is running one
+* `GET /api/v1/task-runs/{id}`
+    * For admins only. One run with its `output` so far
 * `GET /api/v1/rules`
     * The alert rules, each with `id`, `enabled` and `rule`, the rule in the alerts.json format
 * `POST /api/v1/rules` and `PUT /api/v1/rules/{id}` with `{"enabled": true, "rule": {...}}` as JSON, `DELETE /api/v1/rules/{id}`
