@@ -13,6 +13,7 @@
   import RuleEditor from './pages/RuleEditor.svelte';
   import Rules from './pages/Rules.svelte';
   import Setup from './pages/Setup.svelte';
+  import Tasks from './pages/Tasks.svelte';
 
   const page = $derived(match(location.path));
   const onAlerts = $derived(page.name === 'alerts');
@@ -81,6 +82,8 @@
     {#key page.host}<Host host={page.host} />{/key}
   {:else if page.name === 'custom'}
     {#key page.host}<CustomMetrics host={page.host} />{/key}
+  {:else if page.name === 'tasks'}
+    {#key page.host}<Tasks host={page.host} />{/key}
   {:else if page.name === 'alerts'}
     <Alerts />
   {:else if page.name === 'endpoints'}

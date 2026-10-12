@@ -9,7 +9,7 @@ export const auth = $state<{ state: 'checking' | 'in' | 'out' | 'setup' | 'error
   error: '',
 });
 
-// admins can change alert rules, viewers can only look
+// admins can change alert rules, update agents and run tasks, viewers can only look
 export const isAdmin = () => auth.role === 'admin';
 
 export async function checkSession() {

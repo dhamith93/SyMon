@@ -176,7 +176,10 @@
         {/if}
       </p>
     </div>
-    {#if hasCustomMetrics}<a class="control link-button" href={hostPath(host, true)}>Custom metrics</a>{/if}
+    <div class="links">
+      {#if hasCustomMetrics}<a class="control link-button" href={hostPath(host, 'custom')}>Custom metrics</a>{/if}
+      <a class="control link-button" href={hostPath(host, 'tasks')}>Tasks</a>
+    </div>
   </header>
 
   {#if snapshot && agentOutdated(summary?.agentVersion ?? snapshot.AgentVersion, appConfig.version)}
@@ -429,6 +432,12 @@
     gap: 4px 14px;
     margin: 6px 0 0;
     font-size: 13px;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .link-button {

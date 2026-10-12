@@ -4,6 +4,7 @@ export type Page =
   | { name: 'fleet' }
   | { name: 'host'; host: string }
   | { name: 'custom'; host: string }
+  | { name: 'tasks'; host: string }
   | { name: 'alerts' }
   | { name: 'endpoints' }
   | { name: 'account' }
@@ -56,14 +57,17 @@ export function match(path: string): Page {
   if (path === '/rules/new') return { name: 'rule', id: 0 };
   const rule = path.match(/^\/rules\/(\d+)\/?$/);
   if (rule) return { name: 'rule', id: Number(rule[1]) };
-  const host = path.match(/^\/hosts\/([^/]+)(\/custom)?\/?$/);
+  const host = path.match(/^\/hosts\/([^/]+)(?:\/(custom|tasks))?\/?$/);
   if (host) {
     const name = decodeURIComponent(host[1]);
-    return host[2] ? { name: 'custom', host: name } : { name: 'host', host: name };
+    if (host[2] === 'custom') return { name: 'custom', host: name };
+    if (host[2] === 'tasks') return { name: 'tasks', host: name };
+    return { name: 'host', host: name };
   }
   return { name: 'notfound' };
 }
 
-export function hostPath(host: string, custom = false): string {
-  return `/hosts/${encodeURIComponent(host)}${custom ? '/custom' : ''}`;
+// a host's page, or one of the pages under it
+export function hostPath(host: string, sub?: 'custom' | 'tasks'): string {
+  return `/hosts/${encodeURIComponent(host)}${sub ? `/${sub}` : ''}`;
 }

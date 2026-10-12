@@ -90,6 +90,25 @@ test('containers show on a host that runs them', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Container CPU, share of the host' })).toBeVisible();
 });
 
+// only looks: starting a task would run a command on a real host
+test('a host has a tasks page', async ({ page }) => {
+  const errors = watchErrors(page);
+  const fleet = await (await page.request.get('/api/v1/fleet')).json();
+  const host = fleet.hosts.find((h: { up: boolean }) => h.up);
+  expect(host, 'needs a host that is reporting').toBeTruthy();
+
+  await page.goto(`/hosts/${encodeURIComponent(host.name)}`);
+  await page.getByRole('link', { name: 'Tasks', exact: true }).click();
+  await expect(page).toHaveURL(/\/tasks$/);
+  await expect(page.getByRole('heading', { name: 'Tasks', level: 1 })).toBeVisible();
+  // the host's tasks, or how to list some
+  const tasks = page.locator('table', { has: page.locator('caption', { hasText: 'Tasks of' }) });
+  await expect(tasks.or(page.getByText('This host offers no tasks.'))).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
+
+  expect(errors).toEqual([]);
+});
+
 test('logging out brings back the login page', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Log out' }).click();

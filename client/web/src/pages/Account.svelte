@@ -35,7 +35,9 @@
   <header class="page-header">
     <h1>{auth.user}</h1>
     <p class="secondary">
-      {auth.role === 'admin' ? 'Admin: you can change alert rules.' : 'Viewer: you can see everything but not change alert rules.'}
+      {auth.role === 'admin'
+        ? 'Admin: you can change alert rules, update agents and run tasks.'
+        : 'Viewer: you can see everything but not change alert rules, update agents or run tasks.'}
     </p>
   </header>
 

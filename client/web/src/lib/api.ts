@@ -227,6 +227,35 @@ export interface AlertRule {
   updatedBy: string;
 }
 
+// A command a host lists in its own tasks file. Only admins get the command.
+export interface HostTask {
+  name: string;
+  description: string;
+  command?: string;
+  timeoutSeconds: number;
+}
+
+// One time a task was run. Times are 0 until they happen. Only admins get
+// the command, and the output comes with a single run only.
+export interface TaskRun {
+  id: number;
+  host: string;
+  task: string;
+  command?: string;
+  // queued, running, succeeded, failed, timed_out, expired or lost
+  status: string;
+  requestedBy: string;
+  requestedAt: number;
+  startedAt: number;
+  finishedAt: number;
+  exitCode: number;
+  // why it could not start or finish
+  error: string;
+  output?: string;
+  // the output went over the limit and the rest was dropped
+  truncated: boolean;
+}
+
 export interface HostDetail {
   host: string;
   time: number;
@@ -275,7 +304,7 @@ async function send<T>(method: string, path: string, body?: unknown): Promise<T>
 const post = <T>(path: string, body: unknown) => send<T>('POST', path, body);
 
 // who is logged in, or without a session whether there are users at all.
-// role is admin, who can change alert rules, or viewer.
+// role is admin, who can change things, or viewer.
 export type SessionState = { user: string; role: string } | { user: null; hasUsers: boolean };
 
 async function session(): Promise<SessionState> {
@@ -324,6 +353,10 @@ export const api = {
   processUsage: (name: string, from: number, to: number) =>
     get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
+  hostTasks: (name: string) => get<{ tasks: HostTask[] }>(`${host(name)}/tasks`),
+  taskRuns: (name: string) => get<{ runs: TaskRun[] }>(`${host(name)}/task-runs`),
+  taskRun: (id: number) => get<TaskRun>(`/api/v1/task-runs/${id}`),
+  runTask: (name: string, task: string) => post<TaskRun>(`${host(name)}/tasks/run`, { task }),
   diskForecasts: (name: string) => get<{ disks: DiskForecast[] }>(`${host(name)}/disk-forecasts`),
   endpoints: (from: number, to: number) => get<{ endpoints: EndpointStatus[] }>('/api/v1/endpoints', { from, to }),
   endpointSeries: (name: string, metric: 'latency' | 'availability', from: number, to: number) =>
