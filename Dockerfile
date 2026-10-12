@@ -58,5 +58,7 @@ FROM alpine:3.22 AS agent
 RUN adduser -D -H symon
 WORKDIR /app
 COPY --from=build /out/agent ./agent
+# sample tasks, only used when SYMON_TASKS_PATH points here
+COPY agent/tasks.json ./tasks.json
 USER symon
 CMD ["./agent"]

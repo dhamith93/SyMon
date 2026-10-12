@@ -90,7 +90,9 @@ func main() {
 	// right away, so the dashboard sees this agent's version, and an update
 	// that restarted it is confirmed
 	updates := newUpdater()
-	sendPing(client, &config, updates)
+	runner := newTaskRunner(config.TasksPath, config.ServerId, client)
+	sendPing(client, &config, updates, runner)
+	go runner.loop()
 	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
 	collector := monitor.NewCollector(&config)
 	ticker := time.NewTicker(interval)
@@ -123,7 +125,7 @@ func main() {
 		for {
 			select {
 			case <-tickerForPing.C:
-				sendPing(client, &config, updates)
+				sendPing(client, &config, updates, runner)
 			case <-quitForPing:
 				ticker.Stop()
 				return
@@ -198,9 +200,9 @@ func initAgent(client api.MonitorDataServiceClient, config *config.Agent) {
 	fmt.Printf("%s \n", response.Body)
 }
 
-// sendPing tells the collector the host is alive, and which agent it runs.
-// The reply may carry an update an admin asked for.
-func sendPing(client api.MonitorDataServiceClient, config *config.Agent, updates *updater) {
+// sendPing tells the collector the host is alive, which agent it runs and
+// which tasks it offers. The reply may carry an update an admin asked for.
+func sendPing(client api.MonitorDataServiceClient, config *config.Agent, updates *updater, runner *taskRunner) {
 	ctx, cancel := transport.Context()
 	defer cancel()
 	response, err := client.HandlePing(ctx, &api.ServerInfo{
@@ -208,12 +210,15 @@ func sendPing(client api.MonitorDataServiceClient, config *config.Agent, updates
 		AgentVersion: version.String(),
 		Arch:         runtime.GOARCH,
 		UpdateError:  updates.err(),
+		Tasks:        runner.list(),
 	})
 	if err != nil {
 		logger.Log("error", "error sending ping: "+err.Error())
 		return
 	}
-	updates.handle(response.Update)
+	// an update restarts the agent, so it waits for a running task. The
+	// next ping asks again.
+	runner.whenIdle(func() { updates.handle(response.Update) })
 }
 
 func sendMonitorData(client api.MonitorDataServiceClient, monitorData string, config *config.Agent) {

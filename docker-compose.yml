@@ -72,6 +72,8 @@ services:
       SYMON_SERVER_ID: test
       SYMON_MONITOR_INTERVAL_SECONDS: "15"
       SYMON_COLLECTOR_ENDPOINT: collector:9000
+      # sample tasks to try from the dashboard
+      SYMON_TASKS_PATH: /app/tasks.json
     depends_on:
       collector:
         condition: service_healthy
