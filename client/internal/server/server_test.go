@@ -36,6 +36,7 @@ type fakeCollector struct {
 	loggedOut       atomic.Value
 	lastRuleBy      atomic.Value
 	lastAgentUpdate atomic.Value
+	lastTaskRun     atomic.Value
 }
 
 const (

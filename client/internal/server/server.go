@@ -88,6 +88,10 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("PUT /api/v1/rules/{id}", s.requireAdmin(s.putRule))
 	data.HandleFunc("DELETE /api/v1/rules/{id}", s.requireAdmin(s.deleteRule))
 	data.HandleFunc("POST /api/v1/agents/update", s.requireAdmin(s.postAgentUpdate))
+	data.HandleFunc("GET /api/v1/hosts/{host}/tasks", s.getHostTasks)
+	data.HandleFunc("GET /api/v1/hosts/{host}/task-runs", s.getTaskRuns)
+	data.HandleFunc("POST /api/v1/hosts/{host}/tasks/run", s.requireAdmin(s.postTaskRun))
+	data.HandleFunc("GET /api/v1/task-runs/{id}", s.requireAdmin(s.getTaskRun))
 	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})

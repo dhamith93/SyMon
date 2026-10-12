@@ -29,7 +29,7 @@ func (s *server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		if session.role != "admin" {
-			writeError(w, http.StatusForbidden, "only admins can change alert rules")
+			writeError(w, http.StatusForbidden, "only admins can do this")
 			return
 		}
 		next(w, r)
