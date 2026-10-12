@@ -1,8 +1,6 @@
 package alerts
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -10,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/strictjson"
 )
 
 // AllHosts in a rule's Servers means every registered host
@@ -34,11 +33,9 @@ func LoadRules(path string) ([]AlertConfig, error) {
 // ParseRules reads a JSON list of rules. Unknown fields are errors, since
 // they are almost always a misspelled one.
 func ParseRules(data []byte) ([]AlertConfig, error) {
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
 	var rules []AlertConfig
-	if err := decoder.Decode(&rules); err != nil {
-		return nil, jsonError(data, err)
+	if err := strictjson.Unmarshal(data, &rules); err != nil {
+		return nil, err
 	}
 	names := map[string]bool{}
 	for i := range rules {
@@ -52,27 +49,6 @@ func ParseRules(data []byte) ([]AlertConfig, error) {
 		names[rule.Name] = true
 	}
 	return rules, nil
-}
-
-// jsonError adds the line and column to a syntax error
-func jsonError(data []byte, err error) error {
-	var syntax *json.SyntaxError
-	var wrongType *json.UnmarshalTypeError
-	offset := int64(-1)
-	switch {
-	case errors.As(err, &syntax):
-		offset = syntax.Offset
-	case errors.As(err, &wrongType):
-		offset = wrongType.Offset
-	}
-	if offset < 0 {
-		return err
-	}
-	// the offset counts the byte that went wrong
-	before := data[:min(int(offset), len(data))]
-	line := bytes.Count(before, []byte("\n")) + 1
-	column := max(len(before)-bytes.LastIndexByte(before, '\n')-1, 1)
-	return fmt.Errorf("line %d, column %d: %w", line, column, err)
 }
 
 // Validate checks that a rule has what its metric needs

@@ -1,0 +1,17 @@
+[
+    {
+        "Name": "Disk usage",
+        "Description": "How full each filesystem is",
+        "Command": "df -h"
+    },
+    {
+        "Name": "Uptime and load",
+        "Command": "uptime"
+    },
+    {
+        "Name": "Count to five",
+        "Description": "Prints a line a second, to see output arrive while a task runs",
+        "Command": "for i in 1 2 3 4 5; do echo $i; sleep 1; done",
+        "TimeoutSeconds": 30
+    }
+]
