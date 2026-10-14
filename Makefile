@@ -1,4 +1,4 @@
-.PHONY: proto web signing-key clean build-all build-collector build-agent build-alertprocessor build-client pack-all pack-collector pack-agent pack-alertprocessor pack-client
+.PHONY: proto web signing-key clean build-all build-collector build-agent build-client pack-all pack-collector pack-agent pack-client
 
 # the version -version and the dashboard show, like v3.0.0-16-g2519821
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -13,7 +13,7 @@ LDFLAGS = -ldflags "-X github.com/dhamith93/SyMon/internal/version.Version=$(VER
 proto:
 	cd internal && protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		api/api.proto alertapi/alertapi.proto
+		api/api.proto
 
 signing-key:
 	go run ./tools/sign keygen -key $(SIGNING_KEY)
@@ -23,20 +23,17 @@ web:
 
 clean:	
 	rm -f agent/agent_linux_x86_64
-	rm -f alertprocessor/alertprocessor_linux_x86_64
 	rm -f client/client_linux_x86_64
 	rm -f collector/collector_linux_x86_64
 	rm -f agent/agent
-	rm -f alertprocessor/alerts
 	rm -f client/client
 	rm -f collector/collector
 	rm -rf release
 	rm -rf collector/release/
 	rm -rf agent/release/
-	rm -rf alertprocessor/release/
 	rm -rf client/release/
 
-build-all: build-collector build-agent build-alertprocessor build-client
+build-all: build-collector build-agent build-client
 
 build-collector:
 	cd collector && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o collector_linux_x86_64
@@ -44,13 +41,10 @@ build-collector:
 build-agent:
 	cd agent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o agent_linux_x86_64
 
-build-alertprocessor:
-	cd alertprocessor && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o alertprocessor_linux_x86_64
-
 build-client: web
 	cd client && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o client_linux_x86_64
 
-pack-all: pack-collector pack-agent pack-alertprocessor pack-client
+pack-all: pack-collector pack-agent pack-client
 
 pack-collector: build-collector
 	mkdir -p release/collector_linux_x86_64
@@ -66,13 +60,6 @@ pack-agent: signing-key build-agent
 	cp agent/.env-example release/agent_linux_x86_64
 	cd release/ && tar -cvf agent_linux_x86_64.tar.gz agent_linux_x86_64
 	rm -rf release/agent_linux_x86_64
-
-pack-alertprocessor: build-alertprocessor
-	mkdir -p release/alertprocessor_linux_x86_64
-	cp alertprocessor/alertprocessor_linux_x86_64 release/alertprocessor_linux_x86_64
-	cp alertprocessor/.env-example release/alertprocessor_linux_x86_64
-	cd release/ && tar -cvf alertprocessor_linux_x86_64.tar.gz alertprocessor_linux_x86_64
-	rm -rf release/alertprocessor_linux_x86_64
 
 # the agent builds are what new hosts download from the dashboard.
 # GOARM=6 also runs on ARMv7, so one arm build covers every Raspberry Pi.

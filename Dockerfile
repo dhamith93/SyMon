@@ -20,7 +20,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web /web/dist ./client/web/dist
-RUN for c in agent collector alertprocessor client; do \
+RUN for c in agent collector client; do \
         CGO_ENABLED=0 go build -ldflags "$LDFLAGS" -o /out/$c ./$c || exit 1; \
     done
 # agent builds that new hosts download from the dashboard
@@ -36,14 +36,6 @@ COPY collector/alerts.json ./
 USER symon
 EXPOSE 9000
 CMD ["./collector"]
-
-FROM alpine:3.22 AS alertprocessor
-RUN adduser -D -H symon
-WORKDIR /app
-COPY --from=build /out/alertprocessor ./alertprocessor
-USER symon
-EXPOSE 9001
-CMD ["./alertprocessor"]
 
 FROM alpine:3.22 AS client
 RUN adduser -D -H symon

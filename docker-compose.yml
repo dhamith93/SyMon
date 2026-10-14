@@ -27,7 +27,6 @@ services:
     environment:
       <<: *symon-key
       SYMON_PORT: "9000"
-      SYMON_ALERT_ENDPOINT: alertprocessor:9001
       SYMON_DATABASE_URL: postgres://symon:symon@db:5432/symon?sslmode=disable
       SYMON_ALERTS_CONFIG_PATH: alerts.json
     healthcheck:
@@ -37,16 +36,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      alertprocessor:
-        condition: service_started
-
-  alertprocessor:
-    build:
-      context: .
-      target: alertprocessor
-    environment:
-      <<: *symon-key
-      SYMON_ALERT_PORT: "9001"
 
   client:
     build:

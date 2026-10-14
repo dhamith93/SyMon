@@ -29,14 +29,12 @@ type Collector struct {
 	RetentionMinuteDays int
 	RetentionHourDays   int
 	// TaskHistoryDays is how long finished task runs are kept, 0 for the default
-	TaskHistoryDays         int
-	Port                    string
-	AlertEndpoint           string
-	AlertEndpointCACertPath string
-	CertPath                string
-	KeyPath                 string
-	LogFilePath             string
-	AlertsFilePath          string
+	TaskHistoryDays int
+	Port            string
+	CertPath        string
+	KeyPath         string
+	LogFilePath     string
+	AlertsFilePath  string
 }
 
 type Client struct {
@@ -57,15 +55,6 @@ type Client struct {
 	MetricsEnabled bool
 	// MetricsAuth makes /metrics need a user, by session or basic auth
 	MetricsAuth bool
-}
-
-type AlertProcessor struct {
-	LogFileEnabled bool
-	TLSEnabled     bool
-	Port           string
-	CertPath       string
-	KeyPath        string
-	LogFilePath    string
 }
 
 type Agent struct {
@@ -187,21 +176,19 @@ func GetCollector() Collector {
 		}
 	}
 	return Collector{
-		Port:                    os.Getenv("SYMON_PORT"),
-		AlertEndpoint:           os.Getenv("SYMON_ALERT_ENDPOINT"),
-		AlertEndpointCACertPath: os.Getenv("SYMON_ALERT_ENDPOINT_CERT_PATH"),
-		TLSEnabled:              strings.ToUpper(os.Getenv("SYMON_TLS_ENABLED")) == "TRUE",
-		CertPath:                os.Getenv("SYMON_TLS_CERT_PATH"),
-		KeyPath:                 os.Getenv("SYMON_TLS_KEY_PATH"),
-		LogFileEnabled:          strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
-		LogFilePath:             os.Getenv("SYMON_LOG_FILE_PATH"),
-		DatabaseURL:             os.Getenv("SYMON_DATABASE_URL"),
-		DashboardURL:            os.Getenv("SYMON_DASHBOARD_URL"),
-		RetentionRawDays:        positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
-		RetentionMinuteDays:     positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
-		RetentionHourDays:       positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),
-		TaskHistoryDays:         positiveInt(os.Getenv("SYMON_TASK_HISTORY_DAYS")),
-		AlertsFilePath:          os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
+		Port:                os.Getenv("SYMON_PORT"),
+		TLSEnabled:          strings.ToUpper(os.Getenv("SYMON_TLS_ENABLED")) == "TRUE",
+		CertPath:            os.Getenv("SYMON_TLS_CERT_PATH"),
+		KeyPath:             os.Getenv("SYMON_TLS_KEY_PATH"),
+		LogFileEnabled:      strings.ToUpper(os.Getenv("SYMON_LOG_FILE_ENABLED")) == "TRUE",
+		LogFilePath:         os.Getenv("SYMON_LOG_FILE_PATH"),
+		DatabaseURL:         os.Getenv("SYMON_DATABASE_URL"),
+		DashboardURL:        os.Getenv("SYMON_DASHBOARD_URL"),
+		RetentionRawDays:    positiveInt(os.Getenv("SYMON_RETENTION_RAW_DAYS")),
+		RetentionMinuteDays: positiveInt(os.Getenv("SYMON_RETENTION_MINUTE_DAYS")),
+		RetentionHourDays:   positiveInt(os.Getenv("SYMON_RETENTION_HOUR_DAYS")),
+		TaskHistoryDays:     positiveInt(os.Getenv("SYMON_TASK_HISTORY_DAYS")),
+		AlertsFilePath:      os.Getenv("SYMON_ALERTS_CONFIG_PATH"),
 		// on unless false, so endpoint rules added on the dashboard work
 		EndpointMonitoringEnabled: strings.ToUpper(os.Getenv("SYMON_ENABLE_ENDPOINT_MONITORING")) != "FALSE",
 		EndpointCheckInterval:     checkIntervalInt,
@@ -228,16 +215,5 @@ func GetClient() Client {
 		AgentCollectorEndpoint:      os.Getenv("SYMON_CLIENT_AGENT_COLLECTOR_ENDPOINT"),
 		MetricsEnabled:              strings.ToUpper(os.Getenv("SYMON_CLIENT_METRICS_ENABLED")) != "FALSE",
 		MetricsAuth:                 strings.ToUpper(os.Getenv("SYMON_CLIENT_METRICS_AUTH")) == "TRUE",
-	}
-}
-
-func GetAlertProcessor() AlertProcessor {
-	return AlertProcessor{
-		Port:           os.Getenv("SYMON_ALERT_PORT"),
-		TLSEnabled:     strings.ToUpper(os.Getenv("SYMON_ALERT_TLS_ENABLED")) == "TRUE",
-		CertPath:       os.Getenv("SYMON_ALERT_CERT_PATH"),
-		KeyPath:        os.Getenv("SYMON_ALERT_KEY_PATH"),
-		LogFileEnabled: strings.ToUpper(os.Getenv("SYMON_ALERT_LOG_FILE_ENABLED")) == "TRUE",
-		LogFilePath:    os.Getenv("SYMON_ALERT_LOG_FILE_PATH"),
 	}
 }
