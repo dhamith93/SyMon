@@ -62,6 +62,9 @@ func (rule *AlertConfig) Validate() error {
 	case rule.TriggerIntveral < 0:
 		return errors.New("TriggerIntveral cannot be negative")
 	}
+	if err := rule.checkChannels(); err != nil {
+		return err
+	}
 
 	if rule.IsCustom {
 		if strings.TrimSpace(rule.MetricName) == "" {
@@ -94,6 +97,23 @@ func (rule *AlertConfig) Validate() error {
 		return errors.New("a rule needs MetricName")
 	}
 	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, services, ping, endpoint, or a custom metric's name with IsCustom", rule.MetricName)
+}
+
+// checkChannels only checks the names. Whether those channels exist is
+// for the collector to say.
+func (rule *AlertConfig) checkChannels() error {
+	seen := map[string]bool{}
+	for i, name := range rule.Channels {
+		rule.Channels[i] = strings.TrimSpace(name)
+		switch {
+		case rule.Channels[i] == "":
+			return errors.New("a channel name in Channels is empty")
+		case seen[rule.Channels[i]]:
+			return fmt.Errorf("the channel %q is in Channels twice", rule.Channels[i])
+		}
+		seen[rule.Channels[i]] = true
+	}
+	return nil
 }
 
 func (rule *AlertConfig) checkServers() error {

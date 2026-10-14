@@ -44,6 +44,10 @@ func (s *Server) SaveRule(ctx context.Context, in *SaveRuleRequest) (*AlertRuleI
 		return nil, status.Error(codes.InvalidArgument, "cannot read the rule: "+err.Error())
 	}
 
+	if err := s.checkRuleChannels(ctx, rule.Channels); err != nil {
+		return nil, err
+	}
+
 	id := in.Id
 	var err error
 	if id == 0 {

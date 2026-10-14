@@ -25,10 +25,16 @@ type AlertConfig struct {
 	POSTBody          string
 	Disk              string
 	Service           string
-	Email             bool
-	Pagerduty         bool
-	Slack             bool
-	SlackChannel      string
+	// Channels are the notification channels this rule's alerts go to, by
+	// name. A rule with none goes to the default channels.
+	Channels []string `json:",omitempty"`
+	// Email, Pagerduty and Slack are from before channels, and send to
+	// every channel of that kind. SlackChannel is not used any more, a
+	// Slack channel now says where it posts.
+	Email        bool   `json:",omitempty"`
+	Pagerduty    bool   `json:",omitempty"`
+	Slack        bool   `json:",omitempty"`
+	SlackChannel string `json:",omitempty"`
 	// CertWarnDays and CertCriticalDays alert on an HTTPS endpoint's
 	// certificate that expires in fewer days. Left out they are 14 and 3,
 	// and 0 switches a level off.
@@ -57,17 +63,4 @@ func (rule *AlertConfig) CertDays() (warn int, critical int) {
 		critical = *rule.CertCriticalDays
 	}
 	return warn, critical
-}
-
-type Alert struct {
-	ServerName        string
-	Name              string
-	Template          string
-	MetricName        string
-	Op                string
-	Timestamp         string
-	Value             float32
-	WarnThreshold     int
-	CriticalThreshold int
-	TriggerIntveral   int
 }

@@ -131,6 +131,85 @@ message TaskRunQuery {
     int64 id = 1;
 }
 
+// Notifications. Admins set up channels on the dashboard, and the collector
+// sends alerts to them.
+
+// settingsJson has the secrets blanked, and secretsSet names the ones
+// that are stored
+message ChannelInfo {
+    int64 id = 1;
+    string name = 2;
+    // email, slack, pagerduty or webhook
+    string kind = 3;
+    string settingsJson = 4;
+    repeated string secretsSet = 5;
+    bool isDefault = 6;
+    bool skipWarnings = 7;
+    bool enabled = 8;
+    int64 updatedAt = 9;
+    string updatedBy = 10;
+    // how its newest notification went, empty without one
+    string lastStatus = 11;
+    int64 lastAt = 12;
+    string lastError = 13;
+}
+
+message ChannelList {
+    repeated ChannelInfo channels = 1;
+}
+
+// id 0 creates a channel. A secret left empty keeps the stored one. The
+// name and kind of a channel do not change once it exists.
+message SaveChannelRequest {
+    int64 id = 1;
+    string name = 2;
+    string kind = 3;
+    string settingsJson = 4;
+    bool isDefault = 5;
+    bool skipWarnings = 6;
+    bool enabled = 7;
+    string by = 8;
+}
+
+message ChannelRequest {
+    int64 id = 1;
+    string by = 2;
+}
+
+// error is empty when the test message went out
+message TestResult {
+    bool ok = 1;
+    string error = 2;
+}
+
+message NotificationInfo {
+    int64 id = 1;
+    int64 alertId = 2;
+    string channel = 3;
+    string kind = 4;
+    // opened, changed or resolved
+    string event = 5;
+    int32 severity = 6;
+    string subject = 7;
+    // pending, sent or failed
+    string status = 8;
+    int32 attempts = 9;
+    string lastError = 10;
+    int64 createdAt = 11;
+    // 0 until it went out
+    int64 sentAt = 12;
+    string host = 13;
+    string rule = 14;
+}
+
+message NotificationsRequest {
+    int32 limit = 1;
+}
+
+message NotificationList {
+    repeated NotificationInfo notifications = 1;
+}
+
 message MonitorData {
     string monitorData = 1;
 }
@@ -475,4 +554,13 @@ service MonitorDataService {
     // a host's runs, newest first, without output
     rpc TaskRuns(TaskRunsRequest) returns (TaskRunList) {}
     rpc TaskRun(TaskRunQuery) returns (TaskRunInfo) {}
+
+    // notification channels. The dashboard only lets admins change them.
+    rpc NotificationChannels(Void) returns (ChannelList) {}
+    rpc SaveChannel(SaveChannelRequest) returns (ChannelInfo) {}
+    rpc DeleteChannel(ChannelRequest) returns (Message) {}
+    // sends a test message to a saved channel
+    rpc TestChannel(ChannelRequest) returns (TestResult) {}
+    // the newest notifications, for the dashboard
+    rpc RecentNotifications(NotificationsRequest) returns (NotificationList) {}
 }

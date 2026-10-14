@@ -52,6 +52,11 @@ const (
 	MonitorDataService_RequestTaskRun_FullMethodName          = "/api.MonitorDataService/RequestTaskRun"
 	MonitorDataService_TaskRuns_FullMethodName                = "/api.MonitorDataService/TaskRuns"
 	MonitorDataService_TaskRun_FullMethodName                 = "/api.MonitorDataService/TaskRun"
+	MonitorDataService_NotificationChannels_FullMethodName    = "/api.MonitorDataService/NotificationChannels"
+	MonitorDataService_SaveChannel_FullMethodName             = "/api.MonitorDataService/SaveChannel"
+	MonitorDataService_DeleteChannel_FullMethodName           = "/api.MonitorDataService/DeleteChannel"
+	MonitorDataService_TestChannel_FullMethodName             = "/api.MonitorDataService/TestChannel"
+	MonitorDataService_RecentNotifications_FullMethodName     = "/api.MonitorDataService/RecentNotifications"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -104,6 +109,14 @@ type MonitorDataServiceClient interface {
 	// a host's runs, newest first, without output
 	TaskRuns(ctx context.Context, in *TaskRunsRequest, opts ...grpc.CallOption) (*TaskRunList, error)
 	TaskRun(ctx context.Context, in *TaskRunQuery, opts ...grpc.CallOption) (*TaskRunInfo, error)
+	// notification channels. The dashboard only lets admins change them.
+	NotificationChannels(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ChannelList, error)
+	SaveChannel(ctx context.Context, in *SaveChannelRequest, opts ...grpc.CallOption) (*ChannelInfo, error)
+	DeleteChannel(ctx context.Context, in *ChannelRequest, opts ...grpc.CallOption) (*Message, error)
+	// sends a test message to a saved channel
+	TestChannel(ctx context.Context, in *ChannelRequest, opts ...grpc.CallOption) (*TestResult, error)
+	// the newest notifications, for the dashboard
+	RecentNotifications(ctx context.Context, in *NotificationsRequest, opts ...grpc.CallOption) (*NotificationList, error)
 }
 
 type monitorDataServiceClient struct {
@@ -444,6 +457,56 @@ func (c *monitorDataServiceClient) TaskRun(ctx context.Context, in *TaskRunQuery
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) NotificationChannels(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ChannelList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChannelList)
+	err := c.cc.Invoke(ctx, MonitorDataService_NotificationChannels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) SaveChannel(ctx context.Context, in *SaveChannelRequest, opts ...grpc.CallOption) (*ChannelInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChannelInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_SaveChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) DeleteChannel(ctx context.Context, in *ChannelRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_DeleteChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) TestChannel(ctx context.Context, in *ChannelRequest, opts ...grpc.CallOption) (*TestResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TestResult)
+	err := c.cc.Invoke(ctx, MonitorDataService_TestChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) RecentNotifications(ctx context.Context, in *NotificationsRequest, opts ...grpc.CallOption) (*NotificationList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotificationList)
+	err := c.cc.Invoke(ctx, MonitorDataService_RecentNotifications_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -494,6 +557,14 @@ type MonitorDataServiceServer interface {
 	// a host's runs, newest first, without output
 	TaskRuns(context.Context, *TaskRunsRequest) (*TaskRunList, error)
 	TaskRun(context.Context, *TaskRunQuery) (*TaskRunInfo, error)
+	// notification channels. The dashboard only lets admins change them.
+	NotificationChannels(context.Context, *Void) (*ChannelList, error)
+	SaveChannel(context.Context, *SaveChannelRequest) (*ChannelInfo, error)
+	DeleteChannel(context.Context, *ChannelRequest) (*Message, error)
+	// sends a test message to a saved channel
+	TestChannel(context.Context, *ChannelRequest) (*TestResult, error)
+	// the newest notifications, for the dashboard
+	RecentNotifications(context.Context, *NotificationsRequest) (*NotificationList, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -602,6 +673,21 @@ func (UnimplementedMonitorDataServiceServer) TaskRuns(context.Context, *TaskRuns
 }
 func (UnimplementedMonitorDataServiceServer) TaskRun(context.Context, *TaskRunQuery) (*TaskRunInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TaskRun not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) NotificationChannels(context.Context, *Void) (*ChannelList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotificationChannels not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) SaveChannel(context.Context, *SaveChannelRequest) (*ChannelInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveChannel not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) DeleteChannel(context.Context, *ChannelRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteChannel not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) TestChannel(context.Context, *ChannelRequest) (*TestResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TestChannel not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) RecentNotifications(context.Context, *NotificationsRequest) (*NotificationList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecentNotifications not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -1218,6 +1304,96 @@ func _MonitorDataService_TaskRun_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_NotificationChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).NotificationChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_NotificationChannels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).NotificationChannels(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_SaveChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).SaveChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_SaveChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).SaveChannel(ctx, req.(*SaveChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_DeleteChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).DeleteChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_DeleteChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).DeleteChannel(ctx, req.(*ChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_TestChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).TestChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_TestChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).TestChannel(ctx, req.(*ChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_RecentNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotificationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).RecentNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_RecentNotifications_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).RecentNotifications(ctx, req.(*NotificationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1356,6 +1532,26 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TaskRun",
 			Handler:    _MonitorDataService_TaskRun_Handler,
+		},
+		{
+			MethodName: "NotificationChannels",
+			Handler:    _MonitorDataService_NotificationChannels_Handler,
+		},
+		{
+			MethodName: "SaveChannel",
+			Handler:    _MonitorDataService_SaveChannel_Handler,
+		},
+		{
+			MethodName: "DeleteChannel",
+			Handler:    _MonitorDataService_DeleteChannel_Handler,
+		},
+		{
+			MethodName: "TestChannel",
+			Handler:    _MonitorDataService_TestChannel_Handler,
+		},
+		{
+			MethodName: "RecentNotifications",
+			Handler:    _MonitorDataService_RecentNotifications_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

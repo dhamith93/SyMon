@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dhamith93/SyMon/internal/alertapi"
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/notify"
 	"github.com/dhamith93/SyMon/internal/store"
 )
 
@@ -106,8 +106,8 @@ type step struct {
 func runSteps(t *testing.T, rule alerts.AlertConfig, steps []step) *fakeStore {
 	t.Helper()
 	fake := &fakeStore{}
-	var sent []*alertapi.Alert
-	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	var sent []notice
+	e := newEvaluator(fake, func(_ context.Context, n notice) { sent = append(sent, n) })
 	start := time.Unix(1700000000, 0)
 
 	for i, s := range steps {
@@ -118,14 +118,27 @@ func runSteps(t *testing.T, rule alerts.AlertConfig, steps []step) *fakeStore {
 		}
 		switch {
 		case s.sent < 0 && len(sent) != before:
-			t.Fatalf("step %d: expected nothing sent, got %q", i, sent[len(sent)-1].Subject)
+			t.Fatalf("step %d: expected nothing sent, got %q", i, sent[len(sent)-1].subject)
 		case s.sent >= 0 && len(sent) != before+1:
 			t.Fatalf("step %d: expected an alert with status %d, got none", i, s.sent)
-		case s.sent >= 0 && sent[len(sent)-1].Status != int32(s.sent):
-			t.Fatalf("step %d: expected status %d, got %d", i, s.sent, sent[len(sent)-1].Status)
+		case s.sent >= 0 && sent[len(sent)-1].severity != s.sent:
+			t.Fatalf("step %d: expected status %d, got %d", i, s.sent, sent[len(sent)-1].severity)
+		case s.sent >= 0 && sent[len(sent)-1].event != expectedEvent(len(sent), s.sent):
+			t.Fatalf("step %d: expected a %s notice, got %s", i, expectedEvent(len(sent), s.sent), sent[len(sent)-1].event)
 		}
 	}
 	return fake
+}
+
+// expectedEvent is what the nth notice about one alert is
+func expectedEvent(nth int, status int) string {
+	switch {
+	case status == int(alertstatus.Normal):
+		return notify.Resolved
+	case nth == 1:
+		return notify.Opened
+	}
+	return notify.Changed
 }
 
 func TestAlertOpensAfterTriggerInterval(t *testing.T) {
@@ -183,10 +196,10 @@ func TestSameSampleIsOnlyUsedOnce(t *testing.T) {
 	}
 }
 
-func TestAlertIDIsSentAsLogID(t *testing.T) {
+func TestNoticesCarryTheAlertID(t *testing.T) {
 	fake := &fakeStore{}
-	var sent []*alertapi.Alert
-	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	var sent []notice
+	e := newEvaluator(fake, func(_ context.Context, n notice) { sent = append(sent, n) })
 	rule := cpuRule
 	rule.TriggerIntveral = 0
 
@@ -197,15 +210,18 @@ func TestAlertIDIsSentAsLogID(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if len(sent) != 2 || sent[0].LogId != 1 || sent[1].LogId != 1 {
+	if len(sent) != 2 || sent[0].alertID != 1 || sent[1].alertID != 1 || sent[0].event != notify.Opened || sent[1].event != notify.Resolved {
 		t.Errorf("expected open and resolve to carry alert id 1, got %+v", sent)
+	}
+	if sent[0].subject != "[Critical] CPU Usage triggered on web1" || !strings.HasPrefix(sent[1].body, "CPU Usage on web1 is back to normal at ") {
+		t.Errorf("unexpected text %q %q", sent[0].subject, sent[1].body)
 	}
 }
 
 func TestPingAlert(t *testing.T) {
 	fake := &fakeStore{}
-	var sent []*alertapi.Alert
-	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	var sent []notice
+	e := newEvaluator(fake, func(_ context.Context, n notice) { sent = append(sent, n) })
 	now := time.Unix(1700000000, 0)
 	e.now = func() time.Time { return now }
 	rule := alerts.AlertConfig{Name: "Ping status", MetricName: monitor.PING, TriggerIntveral: 60, Template: "{subject}"}
@@ -230,15 +246,21 @@ func TestPingAlert(t *testing.T) {
 	}
 	now = now.Add(15 * time.Second)
 	check()
-	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Critical) {
+	if len(sent) != 1 || sent[0].severity != int(alertstatus.Critical) {
 		t.Fatalf("expected a critical ping alert, got %+v", sent)
+	}
+	if sent[0].event != notify.Opened || !strings.Contains(sent[0].subject, "Ping status triggered on web1") {
+		t.Errorf("unexpected ping notice %+v", sent[0])
+	}
+	if subject, body := alertText(&rule, "web1", alertstatus.Normal, 12, time.Unix(1700000000, 0)); subject != "[Resolved] Ping status on web1" || !strings.HasPrefix(body, "web1 is reporting again at ") {
+		t.Errorf("unexpected resolved ping text %q %q", subject, body)
 	}
 }
 
 func TestDiskForecastAlert(t *testing.T) {
 	fake := &fakeStore{daysUntilFull: map[string]float64{}}
-	var sent []*alertapi.Alert
-	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	var sent []notice
+	e := newEvaluator(fake, func(_ context.Context, n notice) { sent = append(sent, n) })
 	now := time.Unix(1700000000, 0)
 	e.now = func() time.Time { return now }
 	rule := alerts.AlertConfig{
@@ -269,7 +291,7 @@ func TestDiskForecastAlert(t *testing.T) {
 	check(10, true)
 	check(10, true)
 	check(9.9, true)
-	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Warning) || sent[0].Disk != "/dev/sdb1" {
+	if len(sent) != 1 || sent[0].severity != int(alertstatus.Warning) || sent[0].target != "/dev/sdb1" {
 		t.Fatalf("expected one warning for /dev/sdb1, got %+v", sent)
 	}
 	if len(fake.alerts) != 1 || fake.alerts[0].Target != "/dev/sdb1" {
@@ -280,15 +302,15 @@ func TestDiskForecastAlert(t *testing.T) {
 	check(365, true)
 	check(365, true)
 	check(365, true)
-	if len(sent) != 2 || sent[1].Status != int32(alertstatus.Normal) || fake.alerts[0].ResolvedAt == nil {
+	if len(sent) != 2 || sent[1].severity != int(alertstatus.Normal) || fake.alerts[0].ResolvedAt == nil {
 		t.Errorf("expected the alert to resolve, got %+v", sent)
 	}
 }
 
 func TestEndpointAlert(t *testing.T) {
 	fake := &fakeStore{}
-	var sent []*alertapi.Alert
-	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	var sent []notice
+	e := newEvaluator(fake, func(_ context.Context, n notice) { sent = append(sent, n) })
 	rule := alerts.AlertConfig{
 		Name:            "API up",
 		MetricName:      monitor.ENDPOINT,
@@ -319,11 +341,11 @@ func TestEndpointAlert(t *testing.T) {
 		t.Fatalf("expected no alert after one failed check, got %+v", sent)
 	}
 	check(4, 0, "connection refused")
-	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Critical) || sent[0].LogId != 1 || sent[0].ServerName != rule.Endpoint {
+	if len(sent) != 1 || sent[0].severity != int(alertstatus.Critical) || sent[0].alertID != 1 || sent[0].target != rule.Endpoint {
 		t.Fatalf("expected a critical alert for the endpoint, got %+v", sent)
 	}
-	if sent[0].Content != "[Critical] endpoint check failed on https://api.example.com/health expected 200 got 0: connection refused" {
-		t.Errorf("unexpected message %q", sent[0].Content)
+	if sent[0].body != "[Critical] endpoint check failed on https://api.example.com/health expected 200 got 0: connection refused" {
+		t.Errorf("unexpected message %q", sent[0].body)
 	}
 	if len(fake.alerts) != 1 || fake.alerts[0].Host != "" || fake.alerts[0].Target != rule.Endpoint {
 		t.Errorf("expected an alert without a host on the URL, got %+v", fake.alerts)
@@ -331,15 +353,15 @@ func TestEndpointAlert(t *testing.T) {
 
 	check(6, 200, "")
 	check(8, 200, "")
-	if len(sent) != 2 || !sent[1].Resolved || sent[1].LogId != 1 || fake.alerts[0].ResolvedAt == nil {
+	if len(sent) != 2 || sent[1].event != notify.Resolved || sent[1].alertID != 1 || fake.alerts[0].ResolvedAt == nil {
 		t.Errorf("expected the alert to resolve, got %+v", sent)
 	}
 }
 
 func TestCertificateAlert(t *testing.T) {
 	fake := &fakeStore{}
-	var sent []*alertapi.Alert
-	e := newEvaluator(fake, func(a *alertapi.Alert) { sent = append(sent, a) })
+	var sent []notice
+	e := newEvaluator(fake, func(_ context.Context, n notice) { sent = append(sent, n) })
 	rule := certificateRule(&alerts.AlertConfig{Name: "Shop", MetricName: monitor.ENDPOINT, Endpoint: "https://shop.example.com", Slack: true})
 	if rule == nil || rule.WarnThreshold != 14 || rule.CriticalThreshold != 3 {
 		t.Fatalf("expected a certificate rule at 14 and 3 days, got %+v", rule)
@@ -358,20 +380,20 @@ func TestCertificateAlert(t *testing.T) {
 	check(0, 40)
 	check(1, 13)
 	check(2, 13)
-	if len(sent) != 1 || sent[0].Status != int32(alertstatus.Warning) || sent[0].MetricName != monitor.CERTIFICATE || !sent[0].Slack {
+	if len(sent) != 1 || sent[0].severity != int(alertstatus.Warning) || sent[0].rule.MetricName != monitor.CERTIFICATE || !sent[0].rule.Slack {
 		t.Fatalf("expected one warning, got %+v", sent)
 	}
-	if !strings.Contains(sent[0].Subject, "certificate expiring for https://shop.example.com") || !strings.Contains(sent[0].Content, "expires on") {
-		t.Errorf("unexpected message %q %q", sent[0].Subject, sent[0].Content)
+	if !strings.Contains(sent[0].subject, "certificate expiring for https://shop.example.com") || !strings.Contains(sent[0].body, "expires on") {
+		t.Errorf("unexpected message %q %q", sent[0].subject, sent[0].body)
 	}
 	check(3, 2)
-	if len(sent) != 2 || sent[1].Status != int32(alertstatus.Critical) {
+	if len(sent) != 2 || sent[1].severity != int(alertstatus.Critical) {
 		t.Fatalf("expected it to turn critical, got %+v", sent)
 	}
 	// renewed
 	check(4, 90)
 	check(5, 90)
-	if len(sent) != 3 || !sent[2].Resolved || !strings.Contains(sent[2].Subject, "renewed") {
+	if len(sent) != 3 || sent[2].event != notify.Resolved || !strings.Contains(sent[2].subject, "renewed") {
 		t.Errorf("expected the alert to resolve, got %+v", sent)
 	}
 }

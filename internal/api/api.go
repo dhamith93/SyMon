@@ -50,7 +50,7 @@ func toStatus(err error) error {
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return errNoData
-	case errors.Is(err, store.ErrHostExists), errors.Is(err, store.ErrRuleExists), errors.Is(err, store.ErrTaskBusy):
+	case errors.Is(err, store.ErrHostExists), errors.Is(err, store.ErrRuleExists), errors.Is(err, store.ErrTaskBusy), errors.Is(err, store.ErrChannelExists):
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, store.ErrInvalid):
 		return status.Error(codes.InvalidArgument, err.Error())

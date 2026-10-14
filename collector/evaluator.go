@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"strconv"
 	"time"
 
-	"github.com/dhamith93/SyMon/internal/alertapi"
 	"github.com/dhamith93/SyMon/internal/alerts"
 	"github.com/dhamith93/SyMon/internal/alertstatus"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/notify"
 	"github.com/dhamith93/SyMon/internal/store"
 )
 
@@ -32,8 +31,10 @@ type alertStore interface {
 // the store, so they survive a restart.
 type evaluator struct {
 	store alertStore
-	send  func(*alertapi.Alert)
-	now   func() time.Time
+	// notify passes an alert's opening, change or resolution on to the
+	// notification channels
+	notify func(context.Context, notice)
+	now    func() time.Time
 	// pending is a status change that has not lasted the trigger interval yet
 	pending map[string]pendingStatus
 	// checked is the newest sample time seen, so each sample counts once
@@ -48,10 +49,10 @@ type pendingStatus struct {
 	since  time.Time
 }
 
-func newEvaluator(st alertStore, send func(*alertapi.Alert)) *evaluator {
+func newEvaluator(st alertStore, notify func(context.Context, notice)) *evaluator {
 	return &evaluator{
 		store:       st,
-		send:        send,
+		notify:      notify,
 		now:         time.Now,
 		pending:     map[string]pendingStatus{},
 		checked:     map[string]time.Time{},
@@ -169,7 +170,7 @@ func (e *evaluator) updateOpen(ctx context.Context, rule *alerts.AlertConfig, ho
 			return err
 		}
 		delete(e.pending, key)
-		e.send(e.message(rule, host, open.ID, status, value, at))
+		e.notify(ctx, e.message(rule, host, open.ID, notify.Resolved, status, value, at))
 		return nil
 	}
 
@@ -181,7 +182,7 @@ func (e *evaluator) updateOpen(ctx context.Context, rule *alerts.AlertConfig, ho
 	if err := e.store.UpdateAlert(ctx, open.ID, int(status), value, at); err != nil {
 		return err
 	}
-	e.send(e.message(rule, host, open.ID, status, value, at))
+	e.notify(ctx, e.message(rule, host, open.ID, notify.Changed, status, value, at))
 	return nil
 }
 
@@ -212,20 +213,23 @@ func (e *evaluator) openIfBreached(ctx context.Context, rule *alerts.AlertConfig
 		return err
 	}
 	delete(e.pending, key)
-	e.send(e.message(rule, host, id, status, value, at))
+	e.notify(ctx, e.message(rule, host, id, notify.Opened, status, value, at))
 	return nil
 }
 
-// message builds what is sent to the alert processor. Endpoint rules have
-// their own template fields, like the status code and the error.
-func (e *evaluator) message(rule *alerts.AlertConfig, host string, id int64, status alertstatus.StatusType, value float64, at time.Time) *alertapi.Alert {
+// message writes what the channels are told. Endpoint rules have their own
+// template fields, like the status code and the error.
+func (e *evaluator) message(rule *alerts.AlertConfig, host string, id int64, event string, status alertstatus.StatusType, value float64, at time.Time) notice {
+	n := notice{alertID: id, rule: rule, host: host, target: ruleTarget(rule), event: event, severity: int(status), value: value, at: at}
 	switch rule.MetricName {
 	case monitor.ENDPOINT:
-		return buildEndpointAlert(rule, id, int(value), e.checkErrors[rule.Name], status == alertstatus.Normal, at.Unix())
+		n.subject, n.body = endpointText(rule, int(value), e.checkErrors[rule.Name], status == alertstatus.Normal, at)
 	case monitor.CERTIFICATE:
-		return buildCertificateAlert(rule, id, value, status, at)
+		n.subject, n.body = certificateText(rule, value, status, at)
+	default:
+		n.subject, n.body = alertText(rule, host, status, value, at)
 	}
-	return buildAlertToSend(host, rule, alertStatus(rule, host, id, status, value, at))
+	return n
 }
 
 // certificateRule is the alert on an HTTPS endpoint rule's certificate, or
@@ -247,17 +251,4 @@ func certificateRule(rule *alerts.AlertConfig) *alerts.AlertConfig {
 
 func triggerInterval(rule *alerts.AlertConfig) time.Duration {
 	return time.Duration(rule.TriggerIntveral) * time.Second
-}
-
-// alertStatus fills the struct the alert message builders take. StartEvent
-// carries the alert id, which stays the same from open to resolved.
-func alertStatus(rule *alerts.AlertConfig, host string, id int64, status alertstatus.StatusType, value float64, at time.Time) alertstatus.AlertStatus {
-	return alertstatus.AlertStatus{
-		Alert:      *rule,
-		Server:     host,
-		UnixTime:   strconv.FormatInt(at.Unix(), 10),
-		Type:       status,
-		StartEvent: id,
-		Value:      float32(value),
-	}
 }
