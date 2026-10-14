@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '../lib/api';
+  import { api, type Channel } from '../lib/api';
   import { isAdmin } from '../lib/auth.svelte';
   import { navigate } from '../lib/router.svelte';
   import { applyKindDefaults, formFromRule, kinds, newForm, ops, ruleFromForm, thresholdKinds, type Kind, type RuleForm } from '../lib/rules';
@@ -9,6 +9,7 @@
 
   let form = $state<RuleForm>(newForm());
   let fleetHosts = $state<string[]>([]);
+  let channels = $state<Channel[]>([]);
   let loaded = $state(false);
   let error = $state('');
   let busy = $state(false);
@@ -19,23 +20,31 @@
   const https = $derived(form.endpoint.trim().toLowerCase().startsWith('https://'));
   // hosts the rule names that are not registered any more still show
   const hostChoices = $derived([...new Set([...fleetHosts, ...form.hosts])].sort());
+  // and so do channels it picks that are gone, so they can be unticked
+  const missingChannels = $derived(form.channels.filter((name) => !channels.some((c) => c.name === name)));
+  const defaultChannels = $derived(channels.filter((c) => c.isDefault && c.enabled).map((c) => c.name));
 
   async function load() {
     try {
       fleetHosts = (await api.fleet()).hosts.map((h) => h.name);
+      channels = (await api.channels()).channels;
       if (id) {
         const found = (await api.rules()).rules.find((r) => r.id === id);
         if (!found) {
           error = 'There is no such rule.';
           return;
         }
-        form = formFromRule(found.rule, found.enabled);
+        form = formFromRule(found.rule, found.enabled, channels);
       }
     } catch (e) {
       error = (e as Error).message;
     } finally {
       loaded = true;
     }
+  }
+
+  function toggleChannel(name: string) {
+    form.channels = form.channels.includes(name) ? form.channels.filter((c) => c !== name) : [...form.channels, name];
   }
 
   function toggleHost(host: string) {
@@ -226,17 +235,34 @@
         </label>
 
         <div class="notify">
-          <span>Also send to, through the alert processor</span>
-          <div class="row">
-            <label class="check"><input type="checkbox" bind:checked={form.email} /><span>Email</span></label>
-            <label class="check"><input type="checkbox" bind:checked={form.slack} /><span>Slack</span></label>
-            <label class="check"><input type="checkbox" bind:checked={form.pagerduty} /><span>PagerDuty</span></label>
-          </div>
-          {#if form.slack}
-            <label>
-              <span>Slack channel</span>
-              <input class="control" bind:value={form.slackChannel} placeholder="#ops" />
-            </label>
+          <span>Send alerts to</span>
+          {#if channels.length === 0 && missingChannels.length === 0}
+            <p class="muted">
+              There are no notification channels yet, so this rule's alerts only show on the dashboard.
+              {#if editable}<a href="/notifications">Add a channel</a>{/if}
+            </p>
+          {:else}
+            <div class="row">
+              {#each channels as channel (channel.id)}
+                <label class="check">
+                  <input type="checkbox" checked={form.channels.includes(channel.name)} onchange={() => toggleChannel(channel.name)} />
+                  <span>{channel.name}{channel.enabled ? '' : ' (off)'}</span>
+                </label>
+              {/each}
+              {#each missingChannels as name (name)}
+                <label class="check">
+                  <input type="checkbox" checked onchange={() => toggleChannel(name)} />
+                  <span>{name} (deleted)</span>
+                </label>
+              {/each}
+            </div>
+            {#if form.channels.length === 0}
+              <p class="muted">
+                {defaultChannels.length > 0
+                  ? `None picked, so alerts go to the default ${defaultChannels.length === 1 ? 'channel' : 'channels'}: ${defaultChannels.join(', ')}.`
+                  : 'None picked and no channel is a default, so alerts only show on the dashboard.'}
+              </p>
+            {/if}
           {/if}
         </div>
 
@@ -304,6 +330,10 @@
     gap: 6px;
     font-size: 13px;
     color: var(--ink-secondary);
+  }
+
+  .notify p {
+    margin: 0;
   }
 
   .row {

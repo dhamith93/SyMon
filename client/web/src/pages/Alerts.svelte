@@ -4,6 +4,7 @@
   import { formatDateTime, formatDays, formatDuration, formatNumber, formatPercent } from '../lib/format';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
+  import NoChannelsNotice from '../components/NoChannelsNotice.svelte';
   import StatTile from '../components/StatTile.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
 
@@ -121,6 +122,8 @@
   <header class="page-header">
     <h1>Alerts</h1>
   </header>
+
+  <NoChannelsNotice />
 
   <section class="tiles" aria-label="Open alerts">
     <StatTile label="Open critical" value={openCritical}>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RuleConfig } from './api';
-import { applyKindDefaults, describeHosts, describeLevels, describeWatch, formFromRule, newForm, notifies, ruleFromForm } from './rules';
+import type { Channel } from './api';
+import { applyKindDefaults, describeHosts, describeLevels, describeWatch, formFromRule, newForm, notifies, pickedChannels, ruleFromForm } from './rules';
 
 // alerts.json entries as the collector sends them back
 const cpu: RuleConfig = {
@@ -12,9 +13,7 @@ const cpu: RuleConfig = {
   TriggerIntveral: 120,
   Servers: ['*'],
   Template: '{subject}',
-  Email: false,
-  Slack: true,
-  Pagerduty: false,
+  Channels: ['team slack'],
 };
 const shop: RuleConfig = {
   Name: 'Shop',
@@ -28,16 +27,20 @@ const shop: RuleConfig = {
   CertWarnDays: 30,
 };
 
+const channel = (name: string, kind: Channel['kind'], isDefault = false, enabled = true) => ({ name, kind, isDefault, enabled });
+const channels = [channel('ops email', 'email', true), channel('team slack', 'slack'), channel('old mail', 'email', false, false), channel('on call', 'pagerduty')];
+
 describe('describing rules', () => {
   it('says what a rule watches and when it alerts', () => {
     expect(describeWatch(cpu)).toBe('CPU usage');
     expect(describeHosts(cpu)).toBe('All hosts');
     expect(describeLevels(cpu)).toBe('warning > 80%, critical > 95%');
-    expect(notifies(cpu)).toBe('Slack');
+    expect(notifies(cpu, channels)).toBe('team slack');
     expect(describeWatch(shop)).toBe('GET https://shop.example.com');
     expect(describeHosts(shop)).toBe('Checked from the collector');
     expect(describeLevels(shop)).toBe('critical when not HTTP 200, certificate warning under 30 days, critical under 3');
-    expect(notifies(shop)).toBe('dashboard only');
+    expect(notifies(shop, channels)).toBe('ops email (default)');
+    expect(notifies(shop, [])).toBe('dashboard only');
     expect(describeLevels({ Name: 'x', MetricName: 'disk_forecast', Op: '<', WarnThreshold: 14, CriticalThreshold: 3, Disk: '/dev/sda1' })).toBe(
       'warning < 14 days, critical < 3 days',
     );
@@ -45,10 +48,28 @@ describe('describing rules', () => {
   });
 });
 
+describe('channels', () => {
+  it('reads the ticks from before channels as every channel of that kind', () => {
+    const old: RuleConfig = { Name: 'x', MetricName: 'ping', Email: true, Pagerduty: true, Channels: ['team slack'] };
+    expect(pickedChannels(old, channels)).toEqual(['team slack', 'ops email', 'old mail', 'on call']);
+    // the channel that is off gets nothing
+    expect(notifies(old, channels)).toBe('team slack, ops email, on call');
+    expect(notifies({ Name: 'x', MetricName: 'ping', Channels: ['old mail'] }, channels)).toBe('dashboard only');
+  });
+
+  it('saves old ticks as channel names', () => {
+    const form = formFromRule({ ...cpu, Channels: undefined, Email: true }, true, channels);
+    expect(form.channels).toEqual(['ops email', 'old mail']);
+    const saved = ruleFromForm(form);
+    expect(saved.Channels).toEqual(['ops email', 'old mail']);
+    expect('Email' in saved || 'Slack' in saved || 'Pagerduty' in saved).toBe(false);
+  });
+});
+
 describe('the rule form', () => {
   it('gives a rule back unchanged', () => {
     expect(ruleFromForm(formFromRule(cpu, true))).toEqual(cpu);
-    expect(ruleFromForm(formFromRule(shop, true))).toEqual({ ...shop, Servers: undefined, Email: false, Slack: false, Pagerduty: false });
+    expect(ruleFromForm(formFromRule(shop, true))).toEqual({ ...shop, Servers: undefined });
   });
 
   it('keeps only the fields a kind uses', () => {
@@ -58,7 +79,6 @@ describe('the rule form', () => {
     form.disk = ' /dev/sdb1 ';
     form.allHosts = false;
     form.hosts = ['web1'];
-    form.slackChannel = '#ops';
     expect(ruleFromForm(form)).toEqual({
       Name: 'Data disk',
       MetricName: 'disks',
@@ -69,9 +89,6 @@ describe('the rule form', () => {
       Servers: ['web1'],
       Disk: '/dev/sdb1',
       Template: '{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}',
-      Email: false,
-      Slack: false,
-      Pagerduty: false,
     });
   });
 

@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { api, type AlertRule } from '../lib/api';
+  import { api, type AlertRule, type Channel } from '../lib/api';
   import { isAdmin } from '../lib/auth.svelte';
   import { formatAgo } from '../lib/format';
   import { describeHosts, describeLevels, describeWatch, notifies } from '../lib/rules';
+  import NoChannelsNotice from '../components/NoChannelsNotice.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
 
   let rules = $state<AlertRule[]>([]);
+  let channels = $state<Channel[]>([]);
   let loaded = $state(false);
   let error = $state('');
   // the rule being switched on or off
@@ -13,7 +15,7 @@
 
   async function load() {
     try {
-      rules = (await api.rules()).rules;
+      [rules, channels] = await Promise.all([api.rules().then((r) => r.rules), api.channels().then((c) => c.channels)]);
       error = '';
     } catch (e) {
       error = (e as Error).message;
@@ -43,8 +45,13 @@
       <h1>Alert rules</h1>
       <p class="secondary">The collector checks the rules that are on every 15 seconds, so changes apply right away.</p>
     </div>
-    {#if isAdmin()}<a class="control new" href="/rules/new">New rule</a>{/if}
+    <div class="actions">
+      <a class="control link" href="/notifications">Notification channels</a>
+      {#if isAdmin()}<a class="control new" href="/rules/new">New rule</a>{/if}
+    </div>
   </header>
+
+  <NoChannelsNotice />
 
   {#if !isAdmin()}<p class="muted">You can see the rules. Only admins can change them.</p>{/if}
 
@@ -77,7 +84,7 @@
                 <td class="wrap">{describeWatch(rule.rule)}</td>
                 <td class="secondary wrap">{describeHosts(rule.rule)}</td>
                 <td class="secondary wrap">{describeLevels(rule.rule)}</td>
-                <td class="secondary">{notifies(rule.rule)}</td>
+                <td class="secondary wrap">{notifies(rule.rule, channels)}</td>
                 <td class="secondary">{formatAgo(rule.updatedAt)}{rule.updatedBy ? ` by ${rule.updatedBy}` : ''}</td>
                 <td class="right">
                   {#if isAdmin()}
@@ -114,6 +121,23 @@
 
   .top p {
     margin: 4px 0 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .link:hover {
+    text-decoration: none;
   }
 
   .new {

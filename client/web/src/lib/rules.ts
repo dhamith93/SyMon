@@ -1,4 +1,4 @@
-import type { RuleConfig } from './api';
+import type { Channel, RuleConfig } from './api';
 import { formatDuration } from './format';
 
 // What a rule watches. Custom metrics have their own name as MetricName.
@@ -85,9 +85,34 @@ export function describeLevels(rule: RuleConfig): string {
   return '';
 }
 
-export function notifies(rule: RuleConfig): string {
-  const channels = [rule.Email && 'email', rule.Slack && 'Slack', rule.Pagerduty && 'PagerDuty'].filter(Boolean);
-  return channels.length > 0 ? channels.join(', ') : 'dashboard only';
+type ChannelChoice = Pick<Channel, 'name' | 'kind' | 'isDefault' | 'enabled'>;
+
+// a rule picks no channel when it names none and has none of the ticks
+// from before channels, and then goes to the default channels
+export function picksNone(rule: RuleConfig): boolean {
+  return !rule.Channels?.length && !rule.Email && !rule.Slack && !rule.Pagerduty;
+}
+
+// pickedChannels are the channels a rule names, plus every channel of a
+// kind it has the old Email, Slack or Pagerduty tick for
+export function pickedChannels(rule: RuleConfig, channels: ChannelChoice[]): string[] {
+  const picked = [...(rule.Channels ?? [])];
+  for (const channel of channels) {
+    const ticked = (rule.Email && channel.kind === 'email') || (rule.Slack && channel.kind === 'slack') || (rule.Pagerduty && channel.kind === 'pagerduty');
+    if (ticked && !picked.includes(channel.name)) picked.push(channel.name);
+  }
+  return picked;
+}
+
+// where a rule's alerts go, as the collector would send them
+export function notifies(rule: RuleConfig, channels: ChannelChoice[]): string {
+  const on = channels.filter((c) => c.enabled);
+  if (picksNone(rule)) {
+    const defaults = on.filter((c) => c.isDefault).map((c) => c.name);
+    return defaults.length > 0 ? `${defaults.join(', ')} (default)` : 'dashboard only';
+  }
+  const names = pickedChannels(rule, channels).filter((name) => on.some((c) => c.name === name));
+  return names.length > 0 ? names.join(', ') : 'dashboard only';
 }
 
 // The editor's fields. Numbers are null while their input is empty.
@@ -113,10 +138,8 @@ export interface RuleForm {
   customCACert: string;
   certWarn: number | null;
   certCritical: number | null;
-  email: boolean;
-  slack: boolean;
-  slackChannel: string;
-  pagerduty: boolean;
+  // the notification channels picked by name, none for the default ones
+  channels: string[];
   template: string;
 }
 
@@ -176,17 +199,16 @@ export function newForm(): RuleForm {
     customCACert: '',
     certWarn: null,
     certCritical: null,
-    email: false,
-    slack: false,
-    slackChannel: '',
-    pagerduty: false,
+    channels: [],
     template: '',
   };
   applyKindDefaults(form, 'procUsage');
   return form;
 }
 
-export function formFromRule(rule: RuleConfig, enabled: boolean): RuleForm {
+// formFromRule turns the old Email, Slack and Pagerduty ticks into the
+// channels they stand for, so saving the form writes Channels instead
+export function formFromRule(rule: RuleConfig, enabled: boolean, channels: ChannelChoice[] = []): RuleForm {
   const servers = rule.Servers ?? [];
   return {
     name: rule.Name,
@@ -210,10 +232,7 @@ export function formFromRule(rule: RuleConfig, enabled: boolean): RuleForm {
     customCACert: rule.CustomCACert ?? '',
     certWarn: rule.CertWarnDays ?? null,
     certCritical: rule.CertCriticalDays ?? null,
-    email: !!rule.Email,
-    slack: !!rule.Slack,
-    slackChannel: rule.SlackChannel ?? '',
-    pagerduty: !!rule.Pagerduty,
+    channels: pickedChannels(rule, channels),
     template: rule.Template ?? '',
   };
 }
@@ -227,12 +246,9 @@ export function ruleFromForm(form: RuleForm): RuleConfig {
     MetricName: kind === 'custom' ? form.customName.trim() : kind,
     TriggerIntveral: Math.round(form.trigger ?? 0),
     Template: form.template || defaultTemplate(kind),
-    Email: form.email,
-    Slack: form.slack,
-    Pagerduty: form.pagerduty,
   };
   if (form.description.trim()) rule.Description = form.description.trim();
-  if (form.slack && form.slackChannel.trim()) rule.SlackChannel = form.slackChannel.trim();
+  if (form.channels.length > 0) rule.Channels = [...form.channels];
   if (kind === 'custom') rule.IsCustom = true;
   if (kind !== 'endpoint') rule.Servers = form.allHosts ? ['*'] : form.hosts;
   if (thresholdKinds.includes(kind)) {

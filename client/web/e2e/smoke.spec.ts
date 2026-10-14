@@ -109,6 +109,18 @@ test('a host has a tasks page', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+// only looks: a test message would go out to a real channel
+test('notification channels can be found from the rules', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/rules');
+  await page.getByRole('link', { name: 'Notification channels' }).click();
+  await expect(page).toHaveURL(/\/notifications$/);
+  await expect(page.getByRole('heading', { name: 'Notifications', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Channels' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recent notifications' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('logging out brings back the login page', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Log out' }).click();

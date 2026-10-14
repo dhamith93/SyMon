@@ -209,6 +209,9 @@ export interface RuleConfig {
   POSTBody?: string;
   Disk?: string;
   Service?: string;
+  // notification channels by name. Rules with none go to the default channels.
+  Channels?: string[];
+  // from before channels: every channel of that kind
   Email?: boolean;
   Pagerduty?: boolean;
   Slack?: boolean;
@@ -225,6 +228,57 @@ export interface AlertRule {
   updatedAt: number;
   // empty for rules SyMon set up
   updatedBy: string;
+}
+
+export type ChannelKind = 'email' | 'slack' | 'pagerduty' | 'webhook';
+
+// A place alerts are sent. Only admins get settings, secretsSet and
+// lastError. Secrets are never sent: secretsSet names the ones saved.
+export interface Channel {
+  id: number;
+  name: string;
+  kind: ChannelKind;
+  settings?: Record<string, unknown>;
+  secretsSet?: string[];
+  isDefault: boolean;
+  skipWarnings: boolean;
+  enabled: boolean;
+  updatedAt: number;
+  updatedBy: string;
+  // how its newest notification went: pending, sent or failed, empty without one
+  lastStatus: string;
+  lastAt: number;
+  lastError?: string;
+}
+
+export interface ChannelInput {
+  name: string;
+  kind: ChannelKind;
+  settings: Record<string, unknown>;
+  isDefault: boolean;
+  skipWarnings: boolean;
+  enabled: boolean;
+}
+
+// One message about an alert, for one channel. sentAt is 0 until it went
+// out, and only admins get lastError.
+export interface Notification {
+  id: number;
+  alertId: number;
+  channel: string;
+  kind: ChannelKind;
+  // opened, changed or resolved
+  event: string;
+  severity: number;
+  subject: string;
+  // pending, sent or failed
+  status: string;
+  attempts: number;
+  lastError?: string;
+  createdAt: number;
+  sentAt: number;
+  host: string;
+  rule: string;
 }
 
 // A command a host lists in its own tasks file. Only admins get the command.
@@ -353,6 +407,12 @@ export const api = {
   processUsage: (name: string, from: number, to: number) =>
     get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
+  channels: () => get<{ channels: Channel[] }>('/api/v1/notifications/channels'),
+  createChannel: (channel: ChannelInput) => post<Channel>('/api/v1/notifications/channels', channel),
+  updateChannel: (id: number, channel: ChannelInput) => send<Channel>('PUT', `/api/v1/notifications/channels/${id}`, channel),
+  deleteChannel: (id: number) => send<{ id: number }>('DELETE', `/api/v1/notifications/channels/${id}`),
+  testChannel: (id: number) => post<{ ok: boolean; error: string }>(`/api/v1/notifications/channels/${id}/test`, {}),
+  notifications: (limit?: number) => get<{ notifications: Notification[] }>('/api/v1/notifications', { limit }),
   hostTasks: (name: string) => get<{ tasks: HostTask[] }>(`${host(name)}/tasks`),
   taskRuns: (name: string) => get<{ runs: TaskRun[] }>(`${host(name)}/task-runs`),
   taskRun: (id: number) => get<TaskRun>(`/api/v1/task-runs/${id}`),

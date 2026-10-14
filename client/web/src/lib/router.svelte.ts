@@ -9,6 +9,7 @@ export type Page =
   | { name: 'endpoints' }
   | { name: 'account' }
   | { name: 'rules' }
+  | { name: 'notifications' }
   // id is 0 for a new rule
   | { name: 'rule'; id: number }
   | { name: 'notfound' };
@@ -54,6 +55,7 @@ export function match(path: string): Page {
   if (path === '/endpoints') return { name: 'endpoints' };
   if (path === '/account') return { name: 'account' };
   if (path === '/rules') return { name: 'rules' };
+  if (path === '/notifications') return { name: 'notifications' };
   if (path === '/rules/new') return { name: 'rule', id: 0 };
   const rule = path.match(/^\/rules\/(\d+)\/?$/);
   if (rule) return { name: 'rule', id: Number(rule[1]) };

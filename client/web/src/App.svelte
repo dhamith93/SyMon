@@ -10,6 +10,7 @@
   import Fleet from './pages/Fleet.svelte';
   import Host from './pages/Host.svelte';
   import Login from './pages/Login.svelte';
+  import Notifications from './pages/Notifications.svelte';
   import RuleEditor from './pages/RuleEditor.svelte';
   import Rules from './pages/Rules.svelte';
   import Setup from './pages/Setup.svelte';
@@ -18,7 +19,7 @@
   const page = $derived(match(location.path));
   const onAlerts = $derived(page.name === 'alerts');
   const onEndpoints = $derived(page.name === 'endpoints');
-  const onRules = $derived(page.name === 'rules' || page.name === 'rule');
+  const onRules = $derived(page.name === 'rules' || page.name === 'rule' || page.name === 'notifications');
   const onHosts = $derived(!onAlerts && !onEndpoints && !onRules && page.name !== 'account');
   // one version when the dashboard and collector match, both when they do not
   const sameVersion = $derived(!appConfig.collectorVersion || appConfig.collectorVersion === appConfig.version);
@@ -94,6 +95,8 @@
     <Rules />
   {:else if page.name === 'rule'}
     {#key page.id}<RuleEditor id={page.id} />{/key}
+  {:else if page.name === 'notifications'}
+    <Notifications />
   {:else}
     <div class="page">
       <h1>Page not found</h1>
