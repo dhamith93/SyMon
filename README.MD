@@ -35,7 +35,8 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 - Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts, HTTP endpoints and certificates
 - Rules are edited on the dashboard and apply right away. They can watch every host, including ones added later
 - Every host is watched for going silent from the start
-- Warning and critical levels, shown on the dashboard and sent by email, Slack or PagerDuty
+- Warning and critical levels, shown on the dashboard and sent by email, to Slack, to PagerDuty or to a webhook
+- Notification channels are set up on the dashboard, with a test button. Messages that fail are tried again, and survive a restart
 
 **Dashboard**
 - Every host at a glance, and a page per host with charts from 15 minutes to 30 days, or any custom range
@@ -79,28 +80,26 @@ Runs on every monitored host as root and sends a snapshot to the Collector every
 `sudo /opt/symon/agent/agent -custom -name=queue-length -unit=jobs -value=42`
 
 ### Collector
-Receives data from agents, stores it in TimescaleDB, and checks the alert rules. It updates the database schema by itself when it starts. It listens on port 9000.
+Receives data from agents, stores it in TimescaleDB, checks the alert rules and sends the alerts to the notification channels. It updates the database schema by itself when it starts. It listens on port 9000.
 
 ### Client
 The web dashboard and its JSON API, on port 8080. It reads everything from the Collector. It also serves the install script and agent builds that new hosts download. It needs a login, see [Security](#security).
 
-### Alert processor
-Optional. The Collector sends it alerts as they open, change and resolve, and it passes them on to email, Slack and PagerDuty. Alerts show on the dashboard without it.
-
 ## Security
 
 - **Agent keys.** Each enrolled host gets its own key, stored hashed on the server. It can only send data, and only as that host. `collector -remove-agent <name>` revokes it.
-- **Shared key.** The Collector, Client and Alert processor use a shared key from `collector -init`. Each call carries a short-lived token signed with it.
+- **Shared key.** The Collector and Client use a shared key from `collector -init`. Each call carries a short-lived token signed with it.
 - **TLS.** Traffic between components can be encrypted. See the `*_TLS_*` and `*_CERT_PATH` settings in each component's `.env-example`.
 - **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
 - **Agent updates.** Agent builds are signed with a key that stays where you build them (`~/.config/symon/agent-signing.key`). Agents only install updates signed with it, so a tampered download or a spoofed update request cannot run code on your hosts.
 - **Tasks.** A host only runs commands from its own tasks file, which the dashboard can start but not change. The agent refuses a run whose command is not the one in its file, so a stolen dashboard login cannot run anything the host's owner did not list. See [Tasks](docs/install.md#tasks).
-- **Roles.** Admins can change alert rules, update agents and run tasks, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
+- **Notification secrets.** Passwords, tokens, keys and webhook URLs of notification channels are kept in the collector's database and never shown on the dashboard again after saving. Database backups contain them.
+- **Roles.** Admins can change alert rules and notification channels, update agents and run tasks, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
 - **HTTPS.** Put a reverse proxy like Caddy or nginx in front of the dashboard, so passwords and the session cookie are encrypted.
 
 ## Local development
 
-`docker compose up --build` starts TimescaleDB, the Collector, the Alert processor, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. Create a user to log in with `docker compose exec collector ./collector -add-user dev`. The stack is for development only.
+`docker compose up --build` starts TimescaleDB, the Collector, the Client on http://localhost:8080 and one Agent. The Agent reports on its own container, not the host. Create a user to log in with `docker compose exec collector ./collector -add-user dev`. The stack is for development only.
 
 Building needs Go 1.26 and Node.js 22 or newer.
 
@@ -149,6 +148,14 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * For admins only. Asks the host's agent to run one of its tasks and answers the new run. 404 when the host does not list the task, 409 while the host is running one
 * `GET /api/v1/task-runs/{id}`
     * For admins only. One run with its `output` so far
+* `GET /api/v1/notifications/channels`
+    * The notification channels, with the newest message's status. Admins also get the settings, with secrets left empty and `secretsSet` naming the saved ones, and the last error
+* `POST /api/v1/notifications/channels` and `PUT /api/v1/notifications/channels/{id}` with `{"name": "...", "kind": "email", "settings": {...}, "isDefault": true, "skipWarnings": false, "enabled": true}` as JSON, `DELETE /api/v1/notifications/channels/{id}`
+    * For admins only. `kind` is `email`, `slack`, `pagerduty` or `webhook`. A secret left empty keeps the saved one, and the name and kind do not change. 409 for a name that is taken, and for deleting a channel that rules pick
+* `POST /api/v1/notifications/channels/{id}/test` with `{}` as JSON
+    * For admins only. Sends a test message and answers `{"ok": true}`, or `ok` false with the `error`
+* `GET /api/v1/notifications?limit=`
+    * The newest messages to channels, 50 unless `limit` asks for up to 200, with their status and tries
 * `GET /api/v1/rules`
     * The alert rules, each with `id`, `enabled` and `rule`, the rule in the alerts.json format
 * `POST /api/v1/rules` and `PUT /api/v1/rules/{id}` with `{"enabled": true, "rule": {...}}` as JSON, `DELETE /api/v1/rules/{id}`

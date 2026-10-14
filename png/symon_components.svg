@@ -44,7 +44,7 @@
   <!-- collector -->
   <rect class="box main" x="330" y="118" width="190" height="80" rx="8"/>
   <text class="name" x="346" y="148">Collector</text>
-  <text class="sub" x="346" y="168">stores data, checks alerts</text>
+  <text class="sub" x="346" y="168">stores data, sends alerts</text>
   <text class="sub" x="346" y="186">port 9000</text>
 
   <!-- agents to collector -->
@@ -59,13 +59,13 @@
   <text class="sub" x="346" y="348">PostgreSQL</text>
   <path class="line" d="M425,198 L425,298" marker-end="url(#arrow)"/>
 
-  <!-- alert processor -->
+  <!-- notification channels, outside services the collector sends to -->
   <rect class="box opt" x="640" y="300" width="210" height="64" rx="8"/>
-  <text class="name" x="656" y="328">Alert processor</text>
-  <text class="sub" x="656" y="348">email, Slack, PagerDuty</text>
+  <text class="name" x="656" y="328">Notification channels</text>
+  <text class="sub" x="656" y="348">email, Slack, PagerDuty, webhook</text>
   <path class="line" d="M520,180 C590,180 590,320 638,320" marker-end="url(#arrow)"/>
   <text class="lbl" x="560" y="250">alerts</text>
-  <text class="sub" x="656" y="386">optional</text>
+  <text class="sub" x="656" y="386">set up on the dashboard</text>
 
   <!-- client -->
   <rect class="box main" x="640" y="118" width="210" height="80" rx="8"/>

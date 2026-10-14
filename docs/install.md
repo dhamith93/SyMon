@@ -20,10 +20,9 @@ This guide sets up SyMon on one Linux server and adds hosts to it. It covers upg
 | Collector | the server | 9000, from every host | yes |
 | Client (dashboard) | the server | 8080, from browsers and new hosts | yes |
 | TimescaleDB | the server, or any PostgreSQL host | 5432, from the collector only | yes |
-| Alert processor | the server | 5999, from the collector only | only for email, Slack or PagerDuty |
 | Agent | every monitored host | none | yes |
 
-Agents send data to the collector on port 9000. The dashboard only talks to the collector. New hosts download the agent from the dashboard on port 8080, so a new host has to reach both ports.
+Agents send data to the collector on port 9000. The dashboard only talks to the collector. The collector sends alerts out itself, by email, to Slack, to PagerDuty or to a webhook, so it needs to reach those services. New hosts download the agent from the dashboard on port 8080, so a new host has to reach both ports.
 
 ## Install the server
 
@@ -49,7 +48,6 @@ Copy the bundles to the server and extract them:
 sudo mkdir -p /opt/symon /etc/symon
 sudo tar -xf collector_linux_x86_64.tar.gz -C /opt/symon
 sudo tar -xf client_linux_x86_64.tar.gz -C /opt/symon
-sudo tar -xf alertprocessor_linux_x86_64.tar.gz -C /opt/symon   # only for alerts
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin symon
 ```
 
@@ -90,10 +88,9 @@ Settings live in `/etc/symon/<component>.env`, one `KEY=value` per line, without
 ```sh
 SYMON_PORT=9000
 SYMON_DATABASE_URL=postgres://symon:change-me@localhost:5432/symon?sslmode=disable
-# where new hosts download the agent, as they reach it
+# where new hosts download the agent, as they reach it, and where links
+# in alert messages point
 SYMON_DASHBOARD_URL=http://symon.example.lan:8080
-# only with the alert processor
-SYMON_ALERT_ENDPOINT=localhost:5999
 ```
 
 Alert rules are edited on the dashboard, see [Alerts](#alerts).
@@ -192,7 +189,7 @@ Where the install script cannot be used, for example on a host that cannot reach
 
 ## Alerts
 
-Alert rules are edited on the dashboard's Rules page. The collector checks the rules that are on every 15 seconds, so a change applies right away, and shows open alerts on the dashboard. To also send them by email, Slack or PagerDuty, run the alert processor.
+Alert rules are edited on the dashboard's Rules page. The collector checks the rules that are on every 15 seconds, so a change applies right away, shows open alerts on the dashboard, and sends them to the [notification channels](#notifications) set up there.
 
 A new install starts with one rule, "Host not reporting", which goes critical when any host sends nothing for 5 minutes. Rules can watch every host, including ones added later, or a list of hosts.
 
@@ -223,10 +220,7 @@ A rule looks like this:
     "CriticalThreshold": 90,
     "TriggerIntveral": 120,
     "Template": "{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}\n{desc}",
-    "Email": false,
-    "Slack": true,
-    "SlackChannel": "#ops",
-    "Pagerduty": false
+    "Channels": ["ops email", "team slack"]
   }
 ]
 ```
@@ -243,7 +237,7 @@ A rule looks like this:
 | `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert`, `CertWarnDays`, `CertCriticalDays` |
 | any name, with `"IsCustom": true` | a custom metric | |
 
-`Servers` lists host names, or `"*"` for every host. `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
+`Servers` lists host names, or `"*"` for every host. `Channels` names the [notification channels](#notifications) the rule's alerts go to; left out, they go to the default channels. `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
 
 The collector requests each `endpoint` rule's URL every `SYMON_ENDPOINT_CHECK_INTERVAL` seconds (60 by default) and waits up to 30 seconds for an answer. `SYMON_ENABLE_ENDPOINT_MONITORING=false` stops that. A check passes when the status code is `ExpectedHTTPCode`, 200 if left out. The alert opens once checks have failed for `TriggerIntveral` seconds and resolves once they have passed for as long. Endpoint alerts belong to no host, and every check is kept as long as the 1 hour averages, for the response time and uptime charts on the dashboard's Endpoints page.
 
@@ -251,27 +245,53 @@ HTTPS endpoints also alert on their certificate: a warning when it expires in un
 
 `disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table and on a chart of where each filling disk is headed, and on the hosts page when a disk fills up within 30 days.
 
-### The alert processor
+### Notifications
 
-`/etc/symon/alertprocessor.env` holds the port, the shared key, and the credentials for each channel you use (see [alertprocessor/.env-example](../alertprocessor/.env-example)):
+The collector sends every alert to notification channels when it opens, changes between warning and critical, and resolves. Admins set channels up on the dashboard: Alert rules, then Notification channels. Send test sends a message right away and shows what the service answered.
 
-```sh
-SYMON_ALERT_PORT=5999
-SYMON_KEY=...
-SLACK_TOKEN=xoxb-...
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_USER=...
-EMAIL_PASSWORD=...
-EMAIL_FROM=symon@example.com
-ALERT_EMAIL_LIST=ops@example.com
+| Kind | Needs |
+|---|---|
+| Email | An SMTP server, its port (587 by default), a user and password if it asks for them, a from address and the addresses to send to. Port 465 uses TLS from the start, other ports switch to TLS when the server offers it, and a password is only sent over TLS. |
+| Slack | A Slack app's bot token with the `chat:write` scope, and the channel, like `#ops`. Invite the app to the channel. Each alert is one message, updated when it changes and resolves. |
+| PagerDuty | The integration key of an Events API v2 integration on a PagerDuty service. Each alert is one incident, resolved with the alert. |
+| Webhook | A URL that gets every alert as JSON in a POST, and an optional header, like `Authorization: Bearer ...`. Any 2xx answer counts as delivered. |
+
+Which channels hear about an alert:
+
+- A rule picks channels in its editor. A rule that picks none goes to the channels marked **default**, which is how the built-in "Host not reporting" rule reaches someone.
+- A channel can take **only critical alerts** and skip warnings.
+- A resolved alert goes to the channels that heard about it.
+- A channel that is off gets nothing.
+
+Messages wait in the collector's database, so nothing is lost when a service is down or the collector restarts. A failed message is tried again after 30 seconds, 2, 10 and 30 minutes and an hour, then given up on. Messages about one alert go out in order. The Notifications page lists the newest messages, what became of them and the last error of each channel.
+
+Set `SYMON_DASHBOARD_URL` on the collector to have messages link to the host's page.
+
+The webhook body:
+
+```json
+{
+  "event": "opened",
+  "severity": "critical",
+  "subject": "[Critical] CPU usage triggered on web1",
+  "message": "web1 procUsage 97.20 > 95 at 2026-10-14 08:01:00 +0000 UTC",
+  "host": "web1",
+  "rule": "CPU usage",
+  "metric": "procUsage",
+  "target": "",
+  "value": 97.2,
+  "alertId": 42,
+  "startedAt": "2026-10-14T08:01:00Z",
+  "at": "2026-10-14T08:01:05Z",
+  "link": "https://symon.example.com/hosts/web1"
+}
 ```
 
-```sh
-sudo cp custom_scripts/symon_alertprocessor.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now symon_alertprocessor
-```
+`event` is `opened`, `changed`, `resolved` or `test`, and `severity` is `warning`, `critical`, `resolved` or `test`. `host` is empty for endpoint alerts, whose URL is in `target`.
+
+Channel settings, including passwords, tokens, keys and webhook URLs, are kept in the collector's database. The dashboard never shows them again after saving: leave a secret empty when editing to keep it. Database backups contain them, so keep backups safe.
+
+**Upgrading from the alert processor.** The collector now sends alerts itself, and the alert processor is gone. Add a channel on the dashboard for each service you used, with the credentials from `/etc/symon/alertprocessor.env`, then stop the alert processor and remove it: `sudo systemctl disable --now symon_alertprocessor`, `sudo rm /etc/systemd/system/symon_alertprocessor.service`. `SYMON_ALERT_ENDPOINT` can go from `collector.env`. Rules with the old `Email`, `Slack` or `Pagerduty` ticks keep working: they send to every channel of that kind. Saving such a rule on the dashboard turns the ticks into channel names. PagerDuty now uses an Events API v2 integration key instead of the REST API key.
 
 ## Tasks
 
@@ -411,7 +431,7 @@ Its history stays until retention drops it.
 **The server.**
 
 ```sh
-sudo systemctl disable --now symon_client symon_collector symon_alertprocessor
+sudo systemctl disable --now symon_client symon_collector
 sudo rm /etc/systemd/system/symon_*.service
 sudo rm -rf /opt/symon /etc/symon
 sudo -u postgres dropdb symon
@@ -449,6 +469,5 @@ Every setting, with a comment on what it does, is in the component's `.env-examp
 - [collector/.env-example](../collector/.env-example)
 - [client/.env-example](../client/.env-example)
 - [agent/.env-example](../agent/.env-example)
-- [alertprocessor/.env-example](../alertprocessor/.env-example)
 
-TLS between the components is set up with the `*_TLS_*` and `*_CERT_PATH` settings. The collector and alert processor need a certificate and key. Agents, the dashboard and the collector (for the alert processor) need the CA file.
+TLS between the components is set up with the `*_TLS_*` and `*_CERT_PATH` settings. The collector needs a certificate and key, and agents and the dashboard need the CA file.
