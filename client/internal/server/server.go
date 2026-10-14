@@ -92,6 +92,12 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("GET /api/v1/hosts/{host}/task-runs", s.getTaskRuns)
 	data.HandleFunc("POST /api/v1/hosts/{host}/tasks/run", s.requireAdmin(s.postTaskRun))
 	data.HandleFunc("GET /api/v1/task-runs/{id}", s.requireAdmin(s.getTaskRun))
+	data.HandleFunc("GET /api/v1/notifications/channels", s.getChannels)
+	data.HandleFunc("POST /api/v1/notifications/channels", s.requireAdmin(s.postChannel))
+	data.HandleFunc("PUT /api/v1/notifications/channels/{id}", s.requireAdmin(s.putChannel))
+	data.HandleFunc("DELETE /api/v1/notifications/channels/{id}", s.requireAdmin(s.deleteChannel))
+	data.HandleFunc("POST /api/v1/notifications/channels/{id}/test", s.requireAdmin(s.testChannel))
+	data.HandleFunc("GET /api/v1/notifications", s.getNotifications)
 	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
@@ -550,7 +556,7 @@ func writeGRPCError(w http.ResponseWriter, what string, err error) {
 		writeError(w, http.StatusNotFound, st.Message())
 	case codes.Unauthenticated:
 		writeError(w, http.StatusUnauthorized, st.Message())
-	case codes.AlreadyExists:
+	case codes.AlreadyExists, codes.FailedPrecondition:
 		writeError(w, http.StatusConflict, st.Message())
 	case codes.ResourceExhausted:
 		writeError(w, http.StatusTooManyRequests, st.Message())

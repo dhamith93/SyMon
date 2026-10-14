@@ -37,6 +37,7 @@ type fakeCollector struct {
 	lastRuleBy      atomic.Value
 	lastAgentUpdate atomic.Value
 	lastTaskRun     atomic.Value
+	lastChannel     atomic.Value
 }
 
 const (
