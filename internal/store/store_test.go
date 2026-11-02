@@ -477,9 +477,11 @@ func TestPolicies(t *testing.T) {
 		counts[name] = count
 	}
 
+	// every table with a retention policy is compressed, except kube_restarts,
+	// which only gets a row per container restart
 	want := map[string]int{
 		"policy_retention":                    len(rawTables) + len(minuteTables) + len(hourTables) + len(longTables),
-		"policy_compression":                  len(rawTables) + len(longTables),
+		"policy_compression":                  len(rawTables) + len(longTables) - 1,
 		"policy_refresh_continuous_aggregate": len(minuteTables) + len(hourTables),
 	}
 	for name, count := range want {
