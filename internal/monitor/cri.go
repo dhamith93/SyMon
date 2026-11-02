@@ -29,6 +29,8 @@ type podContainer struct {
 	image     string
 	// state is running, exited, created or unknown
 	state string
+	// sandbox is a pod's pause container, which holds its namespaces
+	sandbox bool
 }
 
 // criClient asks the container runtime's CRI socket (containerd or CRI-O)
@@ -47,8 +49,8 @@ func newCRIClient(socket string) (*criClient, error) {
 	return &criClient{client: runtimeapi.NewRuntimeServiceClient(conn)}, nil
 }
 
-// podContainers returns the pod containers by ID. CRI does not list pod
-// sandboxes here, so a pause container is never in it.
+// podContainers returns the pod containers by ID, and the pod sandboxes,
+// whose ID is their pause container's
 func (c *criClient) podContainers(ctx context.Context) (map[string]podContainer, error) {
 	ctx, cancel := context.WithTimeout(ctx, criTimeout)
 	defer cancel()
@@ -80,18 +82,31 @@ func (c *criClient) podContainers(ctx context.Context) (map[string]podContainer,
 			state:     strings.ToLower(strings.TrimPrefix(container.GetState().String(), "CONTAINER_")),
 		}
 	}
+	sandboxes, err := c.client.ListPodSandbox(ctx, &runtimeapi.ListPodSandboxRequest{})
+	if err != nil {
+		return nil, err
+	}
+	for _, sandbox := range sandboxes.Items {
+		containers[sandbox.GetId()] = podContainer{sandbox: true}
+	}
 	return containers, nil
 }
 
 // namePodContainer names a pod's container from what CRI said, and reports
-// false for a pause container, which CRI does not list. Without an answer
-// from CRI every container is kept as it is.
+// false for a pause container. Static pods, like the control plane's, have a
+// UID systats does not find in the cgroup path, so CRI is asked about every
+// container. A pod's container CRI does not know yet started after the list
+// and waits for the next round. Without an answer from CRI every container
+// is kept as it is.
 func namePodContainer(container *Container, pods map[string]podContainer) bool {
-	if container.PodUID == "" || pods == nil {
+	if pods == nil {
 		return true
 	}
 	pod, ok := pods[container.ID]
 	if !ok {
+		return container.PodUID == ""
+	}
+	if pod.sandbox {
 		return false
 	}
 	pod.apply(container)

@@ -16,14 +16,19 @@ import (
 type fakeRuntime struct {
 	runtimeapi.UnimplementedRuntimeServiceServer
 	containers []*runtimeapi.Container
+	sandboxes  []*runtimeapi.PodSandbox
 }
 
 func (f *fakeRuntime) ListContainers(context.Context, *runtimeapi.ListContainersRequest) (*runtimeapi.ListContainersResponse, error) {
 	return &runtimeapi.ListContainersResponse{Containers: f.containers}, nil
 }
 
-// fakeCRISocket serves containers on a unix socket and returns its path
-func fakeCRISocket(t *testing.T, containers ...*runtimeapi.Container) string {
+func (f *fakeRuntime) ListPodSandbox(context.Context, *runtimeapi.ListPodSandboxRequest) (*runtimeapi.ListPodSandboxResponse, error) {
+	return &runtimeapi.ListPodSandboxResponse{Items: f.sandboxes}, nil
+}
+
+// fakeCRISocket serves a runtime on a unix socket and returns its path
+func fakeCRISocket(t *testing.T, runtime *fakeRuntime) string {
 	t.Helper()
 	// t.TempDir is too long for a unix socket path on macOS
 	dir, err := os.MkdirTemp("", "cri")
@@ -37,7 +42,7 @@ func fakeCRISocket(t *testing.T, containers ...*runtimeapi.Container) string {
 		t.Fatal(err)
 	}
 	server := grpc.NewServer()
-	runtimeapi.RegisterRuntimeServiceServer(server, &fakeRuntime{containers: containers})
+	runtimeapi.RegisterRuntimeServiceServer(server, runtime)
 	go server.Serve(listener)
 	t.Cleanup(server.Stop)
 	return socket
@@ -48,23 +53,26 @@ func podLabels(namespace, pod, container string) map[string]string {
 }
 
 func TestPodContainersFromCRI(t *testing.T) {
-	socket := fakeCRISocket(t,
-		&runtimeapi.Container{
-			Id:     "aaa",
-			Labels: podLabels("media", "jellyfin-7d9f8b6c5-x2k4p", "jellyfin"),
-			Image:  &runtimeapi.ImageSpec{Image: "sha256:1234", UserSpecifiedImage: "jellyfin/jellyfin:10.10"},
-			State:  runtimeapi.ContainerState_CONTAINER_RUNNING,
+	socket := fakeCRISocket(t, &fakeRuntime{
+		containers: []*runtimeapi.Container{
+			{
+				Id:     "aaa",
+				Labels: podLabels("media", "jellyfin-7d9f8b6c5-x2k4p", "jellyfin"),
+				Image:  &runtimeapi.ImageSpec{Image: "sha256:1234", UserSpecifiedImage: "jellyfin/jellyfin:10.10"},
+				State:  runtimeapi.ContainerState_CONTAINER_RUNNING,
+			},
+			{
+				Id:       "bbb",
+				Metadata: &runtimeapi.ContainerMetadata{Name: "sidecar"},
+				Labels:   map[string]string{podNamespaceLabel: "kube-system", podNameLabel: "coredns-1"},
+				Image:    &runtimeapi.ImageSpec{Image: "registry.k8s.io/coredns:1.11"},
+				State:    runtimeapi.ContainerState_CONTAINER_EXITED,
+			},
+			// started outside the kubelet, so not a pod's
+			{Id: "ccc", Labels: map[string]string{}},
 		},
-		&runtimeapi.Container{
-			Id:       "bbb",
-			Metadata: &runtimeapi.ContainerMetadata{Name: "sidecar"},
-			Labels:   map[string]string{podNamespaceLabel: "kube-system", podNameLabel: "coredns-1"},
-			Image:    &runtimeapi.ImageSpec{Image: "registry.k8s.io/coredns:1.11"},
-			State:    runtimeapi.ContainerState_CONTAINER_EXITED,
-		},
-		// started outside the kubelet, so not a pod's
-		&runtimeapi.Container{Id: "ccc", Labels: map[string]string{}},
-	)
+		sandboxes: []*runtimeapi.PodSandbox{{Id: "ppp"}},
+	})
 	cri, err := newCRIClient(socket)
 	if err != nil {
 		t.Fatal(err)
@@ -76,6 +84,7 @@ func TestPodContainersFromCRI(t *testing.T) {
 	want := map[string]podContainer{
 		"aaa": {namespace: "media", pod: "jellyfin-7d9f8b6c5-x2k4p", name: "jellyfin", image: "jellyfin/jellyfin:10.10", state: "running"},
 		"bbb": {namespace: "kube-system", pod: "coredns-1", name: "sidecar", image: "registry.k8s.io/coredns:1.11", state: "exited"},
+		"ppp": {sandbox: true},
 	}
 	if len(pods) != len(want) {
 		t.Fatalf("got %v, want %v", pods, want)
@@ -88,7 +97,11 @@ func TestPodContainersFromCRI(t *testing.T) {
 }
 
 func TestNamePodContainer(t *testing.T) {
-	pods := map[string]podContainer{"aaa": {namespace: "media", pod: "web-1", name: "nginx", image: "nginx:1.27", state: "running"}}
+	pods := map[string]podContainer{
+		"aaa": {namespace: "media", pod: "web-1", name: "nginx", image: "nginx:1.27", state: "running"},
+		"etc": {namespace: "kube-system", pod: "etcd-cp1", name: "etcd", image: "registry.k8s.io/etcd:3.6", state: "running"},
+		"ppp": {sandbox: true},
+	}
 
 	named := Container{ID: "aaa", ShortID: "aaa", PodUID: "uid-1"}
 	if !namePodContainer(&named, pods) {
@@ -98,8 +111,18 @@ func TestNamePodContainer(t *testing.T) {
 		t.Errorf("not named from CRI: %+v", named)
 	}
 
-	if pause := (Container{ID: "bbb", PodUID: "uid-1"}); namePodContainer(&pause, pods) {
+	if pause := (Container{ID: "ppp", PodUID: "uid-1"}); namePodContainer(&pause, pods) {
 		t.Error("a pause container was kept")
+	}
+	// a static pod's UID is a hash systats does not read from the cgroup path
+	if static := (Container{ID: "etc"}); !namePodContainer(&static, pods) || static.Name != "kube-system/etcd-cp1/etcd" {
+		t.Errorf("a static pod's container was not named: %+v", static)
+	}
+	if staticPause := (Container{ID: "ppp"}); namePodContainer(&staticPause, pods) {
+		t.Error("a static pod's pause container was kept")
+	}
+	if late := (Container{ID: "bbb", PodUID: "uid-2"}); namePodContainer(&late, pods) {
+		t.Error("kept a pod's container CRI did not list, it would be stored under its ID")
 	}
 	if docker := (Container{ID: "ccc", Name: "db"}); !namePodContainer(&docker, pods) || docker.Name != "db" {
 		t.Errorf("a container outside kubernetes changed: %+v", docker)
