@@ -2,7 +2,7 @@
 
 [![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) 
 
-SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberry Pis. A small agent on each host sends its metrics to one server, which keeps the history in TimescaleDB, raises alerts, and shows everything on a web dashboard.
+SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry Pis and small Kubernetes clusters. A small agent on each host sends its metrics to one server, which keeps the history in TimescaleDB, raises alerts, and shows everything on a web dashboard.
 
 [![The hosts page](png/hosts.png)](png/hosts.png)
 
@@ -20,6 +20,11 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 - Every running container on a host: Docker, Podman, containerd, LXC and systemd-nspawn
 - CPU, memory, network and disk IO per container, grouped by Compose project
 
+**Kubernetes**
+- Pod containers on every node, named `namespace/pod/container` from the container runtime
+- A cluster page with nodes, workloads, pods that fail or restart and why, their CPU and memory, restarts and warning events
+- Read by the agent on one node with a read-only service account, nothing to run inside the cluster
+
 **Endpoints**
 - HTTP checks of any URL from the server, with response time and uptime history
 - Alerts on HTTPS certificates that are about to expire
@@ -33,6 +38,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 
 **Alerts**
 - Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts, HTTP endpoints and certificates
+- Rules for Kubernetes nodes that are not ready, workloads missing replicas, pods stuck pending and containers that keep restarting
 - Rules are edited on the dashboard and apply right away. They can watch every host, including ones added later
 - Every host is watched for going silent from the start
 - Warning and critical levels, shown on the dashboard and sent by email, to Slack, to PagerDuty or to a webhook
@@ -61,7 +67,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs and Raspberr
 
 ## Getting started
 
-The **[install guide](docs/install.md)** covers setting up the server, adding hosts, alerts, upgrades, backups and troubleshooting.
+The **[install guide](docs/install.md)** covers setting up the server, adding hosts, Kubernetes, alerts, upgrades, backups and troubleshooting.
 
 In short:
 
@@ -93,6 +99,7 @@ The web dashboard and its JSON API, on port 8080. It reads everything from the C
 - **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
 - **Agent updates.** Agent builds are signed with a key that stays where you build them (`~/.config/symon/agent-signing.key`). Agents only install updates signed with it, so a tampered download or a spoofed update request cannot run code on your hosts.
 - **Tasks.** A host only runs commands from its own tasks file, which the dashboard can start but not change. The agent refuses a run whose command is not the one in its file, so a stolen dashboard login cannot run anything the host's owner did not list. See [Tasks](docs/install.md#tasks).
+- **Kubernetes.** The agent that reads a cluster uses a service account that may only list nodes, pods, events and workloads. It never reads secrets or config maps. See [symon-reader.yaml](docs/kubernetes/symon-reader.yaml).
 - **Notification secrets.** Passwords, tokens, keys and webhook URLs of notification channels are kept in the collector's database and never shown on the dashboard again after saving. Database backups contain them.
 - **Roles.** Admins can change alert rules and notification channels, update agents and run tasks, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
 - **HTTPS.** Put a reverse proxy like Caddy or nginx in front of the dashboard, so passwords and the session cookie are encrypted.
@@ -137,7 +144,7 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
 * `GET /api/v1/hosts/{host}/custom-metrics`
     * Names of the host's custom metrics
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
-    * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint alerts have an empty `host`
+    * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint and Kubernetes alerts have an empty `host`
 * `POST /api/v1/agents/update` with `{"hosts": ["..."]}` as JSON
     * For admins only. Asks those hosts' agents to update to the dashboard's version, and answers how many were asked. Agents from before updates are left out
 * `GET /api/v1/hosts/{host}/tasks`
@@ -164,5 +171,14 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * Every endpoint checked within the range: its newest check, the number of checks, the share that passed and the average response time
 * `GET /api/v1/endpoints/series?name=&metric=latency&from=&to=`
     * An endpoint's response time in milliseconds (`latency`) or share of passing checks (`availability`) over time, in the same shape as a host's series
+
+* `GET /api/v1/clusters`
+    * Every Kubernetes cluster an agent reports: nodes, pods and workloads by state, `restartsLastHour`, the reporting `host`, the `error` of its last read and `stale` when its state is over 90 seconds old
+* `GET /api/v1/clusters/{name}`
+    * The cluster's `summary`, its newest `state` as the agent read it (nodes, workloads, pods with their containers, and warning events), `usage` with the CPU and memory of each pod container from the nodes' agents, the `restarts` of the last day, and `hosts`, the host names to link nodes to
+* `GET /api/v1/clusters/{name}/series?metric=pods&from=&to=`
+    * `nodes`, `pods`, `workloads` or `restarts` over time, in the same shape as a host's series
+* `DELETE /api/v1/clusters/{name}`
+    * For admins only. Forgets the cluster, so another host's agent may report it
 
 The Client also serves `GET /metrics`, every host's latest values in the Prometheus text format, unless `SYMON_CLIENT_METRICS_ENABLED=false`. See [Prometheus and Grafana](docs/install.md#prometheus-and-grafana).

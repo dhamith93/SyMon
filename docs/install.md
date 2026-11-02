@@ -175,7 +175,7 @@ The script downloads the agent for the host's CPU, enrolls it, and starts it as 
 Out of the box: CPU (overall and per core), load, memory and swap, disks, disk IO, network, TCP connections, pressure stall, temperatures, the top processes, and running containers.
 
 - **Services.** Point `SYMON_SERVICE_LIST_PATH` at a JSON file listing systemd services to watch, like [agent/services.json](../agent/services.json).
-- **Containers.** Docker, Podman, containerd, LXC and systemd-nspawn containers are found from the cgroup tree. Names and images come from the Docker socket. For Podman, set `SYMON_CONTAINER_SOCKET=/run/podman/podman.sock`.
+- **Containers.** Docker, Podman, containerd, LXC and systemd-nspawn containers are found from the cgroup tree. Names and images come from the Docker socket. For Podman, set `SYMON_CONTAINER_SOCKET=/run/podman/podman.sock`. Kubernetes pods are named from the container runtime, see [Kubernetes](#kubernetes).
 - **Switching collectors off.** `SYMON_DISABLED_COLLECTORS=diskio,tcp,pressure,temps,containers` turns off any of those.
 - **Custom metrics.** Send any number from a script or cron job, and it gets its own chart:
 
@@ -235,6 +235,7 @@ A rule looks like this:
 | `services` | a service from the service list. `Op` `inactive` alerts when it stops, `active` when it runs | `Service`, the name from the service list |
 | `ping` | host silent for longer than `TriggerIntveral` seconds | |
 | `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert`, `CertWarnDays`, `CertCriticalDays` |
+| `kube_node`, `kube_workload`, `kube_pending`, `kube_restarts` | a Kubernetes cluster, see [Kubernetes](#kubernetes), no `Servers` | `Cluster`, `Namespace` |
 | any name, with `"IsCustom": true` | a custom metric | |
 
 `Servers` lists host names, or `"*"` for every host. `Channels` names the [notification channels](#notifications) the rule's alerts go to; left out, they go to the default channels. `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
@@ -287,7 +288,7 @@ The webhook body:
 }
 ```
 
-`event` is `opened`, `changed`, `resolved` or `test`, and `severity` is `warning`, `critical`, `resolved` or `test`. `host` is empty for endpoint alerts, whose URL is in `target`.
+`event` is `opened`, `changed`, `resolved` or `test`, and `severity` is `warning`, `critical`, `resolved` or `test`. `host` is empty for endpoint alerts, whose URL is in `target`, and for Kubernetes alerts, whose node or workload is in `target`.
 
 Channel settings, including passwords, tokens, keys and webhook URLs, are kept in the collector's database. The dashboard never shows them again after saving: leave a secret empty when editing to keep it. Database backups contain them, so keep backups safe.
 
@@ -341,6 +342,76 @@ What keeps this safe:
 Tasks end when the agent stops, because systemd stops everything the agent started. So a task should not restart or upgrade the agent, and a job that has to outlive it belongs to systemd: `systemd-run --unit=nightly-backup /usr/local/bin/backup.sh`. Agent updates from the dashboard wait for a running task.
 
 Tasks need an agent, collector and dashboard that know them. A host with an older agent shows no tasks.
+
+## Kubernetes
+
+SyMon watches a Kubernetes cluster whose nodes are machines the agent can be installed on, like kubeadm on VMs. Every node runs the agent like any other host, and it names the pods' containers. One node also reads the cluster's API and reports nodes, workloads, pods, restarts and warning events. The dashboard's Kubernetes page shows up once a cluster reports.
+
+**1. An agent on every node.** Create one token for all the nodes, here three, and run the install command it prints on each:
+
+```sh
+sudo /opt/symon/collector_linux_x86_64/collector_linux_x86_64 -enroll-token -uses 3
+```
+
+Keep the hosts named after the machines, so the Kubernetes page links each node to its host page. The agent asks the container runtime's CRI socket which pod each container belongs to, and lists containers as `namespace/pod/container`, without the pause containers. That needs no Kubernetes access. containerd's socket is used by default. For CRI-O, add `SYMON_CRI_SOCKET=/var/run/crio/crio.sock` to `/etc/symon/agent.env`.
+
+**2. A read-only account.** On a control-plane node, create the `symon-reader` service account from [kubernetes/symon-reader.yaml](kubernetes/symon-reader.yaml) and save its token for the agent:
+
+```sh
+sudo kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f symon-reader.yaml
+sudo kubectl --kubeconfig /etc/kubernetes/admin.conf -n symon get secret symon-reader-token -o jsonpath='{.data.token}' | base64 -d | sudo tee /etc/symon/kube.token > /dev/null
+sudo chmod 600 /etc/symon/kube.token
+```
+
+The account may list nodes, pods, events, deployments, statefulsets and daemonsets, and nothing else. Its token does not expire. Deleting the `symon-reader-token` secret revokes it, and applying the file again makes a new one. The agent reads the token file on every round, so a new token works without a restart.
+
+**3. Turn the reader on** on that node only, in `/etc/symon/agent.env`:
+
+```sh
+SYMON_KUBE_CLUSTER=homelab
+SYMON_KUBE_API_URL=https://192.168.1.20:6443
+```
+
+`SYMON_KUBE_CLUSTER` is the cluster's name in SyMon. `SYMON_KUBE_API_URL` is the `server:` line of `/etc/kubernetes/admin.conf`. The agent checks the API's certificate against `/etc/kubernetes/pki/ca.crt` and reads the token from `/etc/symon/kube.token`. `SYMON_KUBE_CA_PATH` and `SYMON_KUBE_TOKEN_PATH` change those. Restart the agent with `sudo systemctl restart symon_agent`, and the cluster shows on the dashboard within a minute.
+
+The reader lists the cluster every 30 seconds. The Kubernetes page shows:
+
+- nodes, ready or not, with memory, disk or PID pressure, their version, CPU and memory
+- deployments, statefulsets and daemonsets, with how many replicas are ready
+- pods that are not running and ready, or restarted within the hour, with the reason, like CrashLoopBackOff or Unschedulable, and their CPU and memory from the node's agent
+- charts of the pods by state and of container restarts over time
+- every container restart of the last day, with why the run before ended, like OOMKilled
+- warning events of the last hour
+
+When the reader cannot list the cluster, for example with a wrong token, the page shows what the API said. When the reader stops reporting, the page says how old the state is.
+
+**Alerts.** Four rule metrics watch a cluster. Each needs `Cluster`, the name from `SYMON_KUBE_CLUSTER`, and `Namespace` limits a rule to one namespace:
+
+| `MetricName` | Checks each | Alerts when |
+|---|---|---|
+| `kube_node` | node | it is not Ready. `Namespace` does not apply |
+| `kube_workload` | deployment, statefulset and daemonset | it has fewer replicas available than it wants |
+| `kube_pending` | workload, and pod that belongs to none | its pods are stuck in Pending |
+| `kube_restarts` | workload, and pod that belongs to none | its containers restarted more often in the last hour than the thresholds |
+
+The first three take no thresholds and go critical once the problem has lasted `TriggerIntveral` seconds. Restart rules take `Op` and thresholds, like a warning above 3 and critical above 10. A message names the cluster and the node or workload, and what its pods report, like CrashLoopBackOff, Unschedulable or OOMKilled. An alert resolves when the problem is gone, and when its node or workload is deleted. A state older than 90 seconds is not checked, so alerts neither open nor resolve while the reader is down. The reader's host has its own "Host not reporting" alert.
+
+```json
+{
+  "Name": "Crash loops",
+  "MetricName": "kube_restarts",
+  "Cluster": "homelab",
+  "Namespace": "media",
+  "Op": ">",
+  "WarnThreshold": 3,
+  "CriticalThreshold": 10,
+  "TriggerIntveral": 60
+}
+```
+
+**Moving the reader.** Only the host that first reported a cluster may report it. To read it from another node, take the `SYMON_KUBE_*` settings off the old node and restart its agent, press Remove cluster at the bottom of the Kubernetes page, then set up the new node as in steps 2 and 3. The cluster's charts and restart list start afresh.
+
+**Upgrading.** Upgrade the collector and dashboard before the agents, as for any upgrade. An agent with `SYMON_KUBE_CLUSTER` that reports to an older collector logs that the collector is too old for clusters, and tries again every 10 minutes.
 
 ## Prometheus and Grafana
 
@@ -449,6 +520,14 @@ sudo -u postgres dropuser symon
 **The collector fails on start with an error about a missing TimescaleDB function or extension.** The TimescaleDB extension is missing from the database, or the database URL sets a `search_path` without `public`. Run `CREATE EXTENSION timescaledb;` as a superuser, and keep `public` in any `search_path`.
 
 **No containers on a host that runs them.** Check `journalctl -u symon_agent` for the reason, which is logged once. Containers show without names when the Docker socket cannot be read. Point `SYMON_CONTAINER_SOCKET` at the right socket for Podman or a rootless Docker.
+
+**Kubernetes containers show as long IDs.** The agent cannot reach the CRI socket. `journalctl -u symon_agent` says why, once. Set `SYMON_CRI_SOCKET` for a runtime other than containerd.
+
+**The Kubernetes page says it cannot read the cluster.** It shows what the API answered. A 401 means the token in `/etc/symon/kube.token` is wrong or its secret was deleted. A 403 means `symon-reader.yaml` was not applied. A certificate error means `SYMON_KUBE_CA_PATH` is not the cluster's CA, or `SYMON_KUBE_API_URL` uses a name the certificate does not cover.
+
+**The cluster never shows up.** The reader logs why when the agent starts: `journalctl -u symon_agent | grep kubernetes`. Usually `SYMON_KUBE_API_URL` is not an `https://` URL, or there is no CA at `SYMON_KUBE_CA_PATH`.
+
+**"another host reports this cluster".** Two nodes have `SYMON_KUBE_CLUSTER` set, or the reader moved. See [Moving the reader](#kubernetes).
 
 **A container shows "host network".** It shares the host's network, so its traffic is already counted in the host's own network charts.
 
