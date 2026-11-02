@@ -2,7 +2,20 @@ import type { Channel, RuleConfig } from './api';
 import { formatDuration } from './format';
 
 // What a rule watches. Custom metrics have their own name as MetricName.
-export type Kind = 'procUsage' | 'memory' | 'swap' | 'disks' | 'disk_forecast' | 'services' | 'ping' | 'endpoint' | 'custom';
+export type Kind =
+  | 'procUsage'
+  | 'memory'
+  | 'swap'
+  | 'disks'
+  | 'disk_forecast'
+  | 'services'
+  | 'ping'
+  | 'endpoint'
+  | 'kube_node'
+  | 'kube_workload'
+  | 'kube_pending'
+  | 'kube_restarts'
+  | 'custom';
 
 export const kinds: { value: Kind; label: string }[] = [
   { value: 'procUsage', label: 'CPU usage, %' },
@@ -13,11 +26,19 @@ export const kinds: { value: Kind; label: string }[] = [
   { value: 'services', label: 'A service stops or runs' },
   { value: 'ping', label: 'Host not reporting' },
   { value: 'endpoint', label: 'HTTP endpoint' },
+  { value: 'kube_node', label: 'Kubernetes node not ready' },
+  { value: 'kube_workload', label: 'Kubernetes workload missing replicas' },
+  { value: 'kube_pending', label: 'Kubernetes pods stuck pending' },
+  { value: 'kube_restarts', label: 'Kubernetes restarts in the last hour' },
   { value: 'custom', label: 'Custom metric' },
 ];
 
 // kinds compared with a warning and a critical level
-export const thresholdKinds: Kind[] = ['procUsage', 'memory', 'swap', 'disks', 'disk_forecast', 'custom'];
+export const thresholdKinds: Kind[] = ['procUsage', 'memory', 'swap', 'disks', 'disk_forecast', 'kube_restarts', 'custom'];
+
+// kinds that check a Kubernetes cluster instead of hosts
+export const kubeKinds: Kind[] = ['kube_node', 'kube_workload', 'kube_pending', 'kube_restarts'];
+export const isKube = (kind: Kind) => kubeKinds.includes(kind);
 
 export const ops = ['>', '<', '>=', '<=', '==', '!='];
 
@@ -27,6 +48,7 @@ export function kindOf(rule: RuleConfig): Kind {
 
 function unit(kind: Kind): string {
   if (kind === 'disk_forecast') return ' days';
+  if (kind === 'kube_restarts') return ' restarts';
   return kind === 'custom' ? '' : '%';
 }
 
@@ -49,14 +71,25 @@ export function describeWatch(rule: RuleConfig): string {
       return 'Host not reporting';
     case 'endpoint':
       return `${rule.Method || 'GET'} ${rule.Endpoint}`;
+    case 'kube_node':
+      return 'Kubernetes nodes';
+    case 'kube_workload':
+      return `Kubernetes workloads${inNamespace(rule)}`;
+    case 'kube_pending':
+      return `Pending pods${inNamespace(rule)}`;
+    case 'kube_restarts':
+      return `Container restarts${inNamespace(rule)}`;
     case 'custom':
       return `Custom metric ${rule.MetricName}`;
   }
   return rule.MetricName;
 }
 
+const inNamespace = (rule: RuleConfig) => (rule.Namespace ? ` in ${rule.Namespace}` : '');
+
 export function describeHosts(rule: RuleConfig): string {
   if (kindOf(rule) === 'endpoint') return 'Checked from the collector';
+  if (isKube(kindOf(rule))) return `Cluster ${rule.Cluster ?? ''}`;
   const servers = rule.Servers ?? [];
   return servers.includes('*') ? 'All hosts' : servers.join(', ');
 }
@@ -73,6 +106,12 @@ export function describeLevels(rule: RuleConfig): string {
       return rule.Op === 'active' ? 'critical when it runs' : 'critical when it stops';
     case 'ping':
       return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} of silence`;
+    case 'kube_node':
+      return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} not ready`;
+    case 'kube_workload':
+      return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} missing replicas`;
+    case 'kube_pending':
+      return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} pending`;
     case 'endpoint': {
       const text = `critical when not HTTP ${rule.ExpectedHTTPCode || 200}`;
       if (!rule.Endpoint?.toLowerCase().startsWith('https://')) return text;
@@ -138,6 +177,9 @@ export interface RuleForm {
   customCACert: string;
   certWarn: number | null;
   certCritical: number | null;
+  // the Kubernetes cluster, and a namespace or empty for all
+  cluster: string;
+  namespace: string;
   // the notification channels picked by name, none for the default ones
   channels: string[];
   template: string;
@@ -150,10 +192,13 @@ const defaults: Partial<Record<Kind, { op: string; warn: number; critical: numbe
   swap: { op: '>', warn: 50, critical: 80 },
   disks: { op: '>', warn: 80, critical: 90 },
   disk_forecast: { op: '<', warn: 14, critical: 3 },
+  kube_restarts: { op: '>', warn: 3, critical: 10 },
   custom: { op: '>', warn: 0, critical: 0 },
 };
 
 export function defaultTemplate(kind: Kind): string {
+  // the collector writes what is wrong and what the pods say
+  if (isKube(kind)) return '';
   if (kind === 'endpoint') return '{subject}\n{endpoint} expected {expected}, got {actual}: {error}';
   if (kind === 'ping') return '{subject}\n{serverName} has sent nothing for over {triggerInterval} seconds';
   return '{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}';
@@ -199,6 +244,8 @@ export function newForm(): RuleForm {
     customCACert: '',
     certWarn: null,
     certCritical: null,
+    cluster: '',
+    namespace: '',
     channels: [],
     template: '',
   };
@@ -232,6 +279,8 @@ export function formFromRule(rule: RuleConfig, enabled: boolean, channels: Chann
     customCACert: rule.CustomCACert ?? '',
     certWarn: rule.CertWarnDays ?? null,
     certCritical: rule.CertCriticalDays ?? null,
+    cluster: rule.Cluster ?? '',
+    namespace: rule.Namespace ?? '',
     channels: pickedChannels(rule, channels),
     template: rule.Template ?? '',
   };
@@ -250,7 +299,11 @@ export function ruleFromForm(form: RuleForm): RuleConfig {
   if (form.description.trim()) rule.Description = form.description.trim();
   if (form.channels.length > 0) rule.Channels = [...form.channels];
   if (kind === 'custom') rule.IsCustom = true;
-  if (kind !== 'endpoint') rule.Servers = form.allHosts ? ['*'] : form.hosts;
+  if (kind !== 'endpoint' && !isKube(kind)) rule.Servers = form.allHosts ? ['*'] : form.hosts;
+  if (isKube(kind)) {
+    rule.Cluster = form.cluster.trim();
+    if (kind !== 'kube_node' && form.namespace.trim()) rule.Namespace = form.namespace.trim();
+  }
   if (thresholdKinds.includes(kind)) {
     rule.Op = form.op;
     rule.WarnThreshold = Math.round(form.warn ?? 0);

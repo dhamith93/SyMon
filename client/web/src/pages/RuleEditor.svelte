@@ -2,13 +2,14 @@
   import { api, type Channel } from '../lib/api';
   import { isAdmin } from '../lib/auth.svelte';
   import { navigate } from '../lib/router.svelte';
-  import { applyKindDefaults, formFromRule, kinds, newForm, ops, ruleFromForm, thresholdKinds, type Kind, type RuleForm } from '../lib/rules';
+  import { applyKindDefaults, formFromRule, isKube, kinds, newForm, ops, ruleFromForm, thresholdKinds, type Kind, type RuleForm } from '../lib/rules';
 
   // id 0 is a new rule
   let { id }: { id: number } = $props();
 
   let form = $state<RuleForm>(newForm());
   let fleetHosts = $state<string[]>([]);
+  let clusters = $state<string[]>([]);
   let channels = $state<Channel[]>([]);
   let loaded = $state(false);
   let error = $state('');
@@ -23,11 +24,15 @@
   // and so do channels it picks that are gone, so they can be unticked
   const missingChannels = $derived(form.channels.filter((name) => !channels.some((c) => c.name === name)));
   const defaultChannels = $derived(channels.filter((c) => c.isDefault && c.enabled).map((c) => c.name));
+  const kube = $derived(isKube(form.kind));
+  // a cluster the rule names that does not report any more still shows
+  const clusterChoices = $derived([...new Set([...clusters, ...(form.cluster ? [form.cluster] : [])])].sort());
 
   async function load() {
     try {
       fleetHosts = (await api.fleet()).hosts.map((h) => h.name);
       channels = (await api.channels()).channels;
+      clusters = (await api.clusters().catch(() => ({ clusters: [] }))).clusters.map((c) => c.name);
       if (id) {
         const found = (await api.rules()).rules.find((r) => r.id === id);
         if (!found) {
@@ -186,6 +191,29 @@
             </div>
             <p class="hint muted">Empty uses 14 and 3 days. 0 switches a level off.</p>
           {/if}
+        {:else if kube}
+          <div class="row">
+            <label class="grow">
+              <span>Cluster</span>
+              {#if clusterChoices.length > 0}
+                <select class="control" required bind:value={form.cluster}>
+                  <option value="" disabled>Pick a cluster</option>
+                  {#each clusterChoices as name (name)}<option>{name}</option>{/each}
+                </select>
+              {:else}
+                <input class="control" required bind:value={form.cluster} placeholder="homelab" />
+              {/if}
+            </label>
+            {#if form.kind !== 'kube_node'}
+              <label class="grow">
+                <span>Namespace, empty for all</span>
+                <input class="control" bind:value={form.namespace} placeholder="media" />
+              </label>
+            {/if}
+          </div>
+          {#if clusterChoices.length === 0}
+            <p class="hint muted">No cluster reports yet. The name is the agent's SYMON_KUBE_CLUSTER.</p>
+          {/if}
         {:else}
           <div class="hosts">
             <span>Hosts</span>
@@ -231,6 +259,7 @@
 
         <label>
           <span>{form.kind === 'ping' ? 'Alert when a host sends nothing for, seconds' : 'Alert once it lasts, seconds'}</span>
+          {#if form.kind === 'kube_restarts'}<span class="hint muted">Counts the restarts of each workload's pods in the last hour.</span>{/if}
           <input class="control" type="number" min="0" step="1" bind:value={form.trigger} />
         </label>
 

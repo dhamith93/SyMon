@@ -222,6 +222,128 @@ export interface RuleConfig {
   // left out they are 14 and 3, 0 switches one off
   CertWarnDays?: number;
   CertCriticalDays?: number;
+  // the Kubernetes cluster of a kube_ rule, and one namespace or all
+  Cluster?: string;
+  Namespace?: string;
+}
+
+// A Kubernetes cluster, as the agent that reads it reports it. stateTime is
+// when the state was read, error why the last report could not read the
+// API. A stale state is too old to alert on.
+export interface ClusterSummary {
+  name: string;
+  host: string;
+  stateTime: number;
+  reportedAt: number;
+  error: string;
+  stale: boolean;
+  nodes: number;
+  nodesReady: number;
+  pods: number;
+  podsRunning: number;
+  podsPending: number;
+  podsNotReady: number;
+  podsFailed: number;
+  workloads: number;
+  workloadsReady: number;
+  restartsLastHour: number;
+}
+
+// kube.ClusterState, as the agent sent it. Times are unix seconds.
+export interface KubeNode {
+  Name: string;
+  Ready: boolean;
+  ReadyChanged: number;
+  Roles?: string[];
+  KubeletVersion: string;
+  Unschedulable: boolean;
+  Pressure?: string[];
+  CPUCores: number;
+  MemoryBytes: number;
+}
+
+export interface KubeWorkload {
+  Namespace: string;
+  Kind: string;
+  Name: string;
+  Desired: number;
+  Ready: number;
+  Available: number;
+}
+
+export interface KubePodContainer {
+  Name: string;
+  ID?: string;
+  Image: string;
+  Ready: boolean;
+  Restarts: number;
+  State: string;
+  Reason?: string;
+  LastReason?: string;
+  LastFinished?: number;
+}
+
+export interface KubePod {
+  Namespace: string;
+  Name: string;
+  UID: string;
+  Node?: string;
+  // kind/name, like deployment/web
+  Workload: string;
+  Phase: string;
+  Ready: boolean;
+  Reason?: string;
+  Created: number;
+  Containers: KubePodContainer[] | null;
+}
+
+export interface KubeEvent {
+  Namespace: string;
+  Kind: string;
+  Name: string;
+  Reason: string;
+  Message: string;
+  Count: number;
+  LastSeen: number;
+}
+
+export interface ClusterState {
+  Cluster: string;
+  Time: number;
+  Nodes: KubeNode[] | null;
+  Workloads: KubeWorkload[] | null;
+  Pods: KubePod[] | null;
+  Events: KubeEvent[] | null;
+}
+
+// what the node's agent reports for a pod's container. cpuPercent is of
+// the host, memoryLimit 0 without a limit.
+export interface ContainerUsage {
+  id: string;
+  host: string;
+  cpuPercent: number;
+  cpuCores: number;
+  memoryBytes: number;
+  memoryLimit: number;
+}
+
+export interface KubeRestart {
+  time: number;
+  namespace: string;
+  workload: string;
+  pod: string;
+  container: string;
+  count: number;
+  reason: string;
+}
+
+export interface ClusterDetail {
+  summary: ClusterSummary;
+  state: ClusterState;
+  usage: ContainerUsage[];
+  restarts: KubeRestart[];
+  // registered host names, so nodes that are hosts can link to them
+  hosts: string[];
 }
 
 export interface AlertRule {
@@ -426,4 +548,9 @@ export const api = {
     get<SeriesResponse>('/api/v1/endpoints/series', { name, metric, from, to }),
   alerts: (filter: { host?: string; open?: boolean; from?: number; to?: number } = {}) =>
     get<{ alerts: AlertRecord[] }>('/api/v1/alerts', filter),
+  clusters: () => get<{ clusters: ClusterSummary[] }>('/api/v1/clusters'),
+  cluster: (name: string) => get<ClusterDetail>(`/api/v1/clusters/${encodeURIComponent(name)}`),
+  clusterSeries: (name: string, metric: 'nodes' | 'pods' | 'workloads' | 'restarts', from: number, to: number) =>
+    get<SeriesResponse>(`/api/v1/clusters/${encodeURIComponent(name)}/series`, { metric, from, to }),
+  removeCluster: (name: string) => send<{ name: string }>('DELETE', `/api/v1/clusters/${encodeURIComponent(name)}`),
 };

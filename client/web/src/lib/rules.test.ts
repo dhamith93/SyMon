@@ -46,6 +46,14 @@ describe('describing rules', () => {
     );
     expect(describeLevels({ Name: 'x', MetricName: 'ping', TriggerIntveral: 300 })).toBe('critical after 5m of silence');
   });
+
+  it('describes kubernetes rules by their cluster', () => {
+    const restarts: RuleConfig = { Name: 'x', MetricName: 'kube_restarts', Cluster: 'homelab', Namespace: 'media', Op: '>', WarnThreshold: 3, CriticalThreshold: 10 };
+    expect(describeWatch(restarts)).toBe('Container restarts in media');
+    expect(describeHosts(restarts)).toBe('Cluster homelab');
+    expect(describeLevels(restarts)).toBe('warning > 3 restarts, critical > 10 restarts');
+    expect(describeLevels({ Name: 'x', MetricName: 'kube_workload', Cluster: 'homelab', TriggerIntveral: 300 })).toBe('critical after 5m missing replicas');
+  });
 });
 
 describe('channels', () => {
@@ -90,6 +98,30 @@ describe('the rule form', () => {
       Disk: '/dev/sdb1',
       Template: '{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}',
     });
+  });
+
+  it('keeps a kubernetes rule to its cluster', () => {
+    const form = newForm();
+    form.name = 'Restarts';
+    applyKindDefaults(form, 'kube_restarts');
+    form.cluster = ' homelab ';
+    form.namespace = ' media ';
+    expect(ruleFromForm(form)).toEqual({
+      Name: 'Restarts',
+      MetricName: 'kube_restarts',
+      Cluster: 'homelab',
+      Namespace: 'media',
+      Op: '>',
+      WarnThreshold: 3,
+      CriticalThreshold: 10,
+      TriggerIntveral: 120,
+      // the collector writes the message
+      Template: '',
+    });
+    applyKindDefaults(form, 'kube_node');
+    expect(ruleFromForm(form)).toEqual({ Name: 'Restarts', MetricName: 'kube_node', Cluster: 'homelab', TriggerIntveral: 120, Template: '' });
+    const back = formFromRule({ Name: 'x', MetricName: 'kube_pending', Cluster: 'homelab', Namespace: 'batch' }, true);
+    expect([back.kind, back.cluster, back.namespace]).toEqual(['kube_pending', 'homelab', 'batch']);
   });
 
   it('brings the usual levels when the kind changes', () => {

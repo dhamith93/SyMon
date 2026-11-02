@@ -84,6 +84,12 @@
       case 'endpoint':
       case 'certificate':
         return alert.target;
+      case 'kube_node':
+        return `Node ${alert.target}`;
+      case 'kube_workload':
+      case 'kube_pending':
+      case 'kube_restarts':
+        return alert.target;
       default:
         return alert.metric;
     }
@@ -107,6 +113,14 @@
         return alert.value >= 365 ? 'not filling up' : `full in ${formatDays(alert.value)}`;
       case 'services':
         return alert.value ? 'Running' : 'Stopped';
+      case 'kube_node':
+        return alert.value ? 'not ready' : 'ready';
+      case 'kube_workload':
+        return `${alert.value} missing`;
+      case 'kube_pending':
+        return `${alert.value} pending`;
+      case 'kube_restarts':
+        return `${alert.value} restarts`;
       default:
         return formatNumber(alert.value);
     }
@@ -191,8 +205,10 @@
                   {#if alert.resolvedAt}<span class="muted severity">was {alert.severity === 2 ? 'critical' : 'warning'}</span>{/if}
                 </td>
                 <td>
-                  <!-- endpoint alerts belong to no host -->
-                  {#if alert.host}<a href={hostPath(alert.host)}>{alert.host}</a>{:else}<a href="/endpoints">Endpoint</a>{/if}
+                  <!-- endpoint and kubernetes alerts belong to no host -->
+                  {#if alert.host}<a href={hostPath(alert.host)}>{alert.host}</a>
+                  {:else if alert.metric.startsWith('kube_')}<a href="/kubernetes">Kubernetes</a>
+                  {:else}<a href="/endpoints">Endpoint</a>{/if}
                 </td>
                 <td>{alert.rule}</td>
                 <td class="secondary">{watched(alert)}</td>

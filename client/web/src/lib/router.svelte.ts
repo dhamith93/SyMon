@@ -7,6 +7,7 @@ export type Page =
   | { name: 'tasks'; host: string }
   | { name: 'alerts' }
   | { name: 'endpoints' }
+  | { name: 'kubernetes' }
   | { name: 'account' }
   | { name: 'rules' }
   | { name: 'notifications' }
@@ -53,6 +54,7 @@ export function match(path: string): Page {
   if (path === '/' || path === '') return { name: 'fleet' };
   if (path === '/alerts') return { name: 'alerts' };
   if (path === '/endpoints') return { name: 'endpoints' };
+  if (path === '/kubernetes') return { name: 'kubernetes' };
   if (path === '/account') return { name: 'account' };
   if (path === '/rules') return { name: 'rules' };
   if (path === '/notifications') return { name: 'notifications' };

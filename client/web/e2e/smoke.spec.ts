@@ -121,6 +121,23 @@ test('notification channels can be found from the rules', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+// only looks: removing the cluster would forget it until its next report
+test('a reporting cluster has a kubernetes page', async ({ page }) => {
+  const errors = watchErrors(page);
+  const { clusters } = await (await page.request.get('/api/v1/clusters')).json();
+  test.skip(clusters.length === 0, 'no cluster reports');
+
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Kubernetes', exact: true }).click();
+  await expect(page).toHaveURL(/\/kubernetes$/);
+  await expect(page.getByRole('heading', { name: 'Kubernetes', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nodes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Workloads' })).toBeVisible();
+  await page.getByLabel('Show every pod').check();
+  await expect(page.locator('table', { has: page.locator('caption', { hasText: 'Pods' }) })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('logging out brings back the login page', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Log out' }).click();
