@@ -1,0 +1,53 @@
+# Read-only access for the SyMon agent that reports a cluster. It lists
+# nodes, pods, workloads and events, and never reads secrets, configmaps or
+# pod specs beyond what the lists carry.
+#
+#   kubectl apply -f symon-reader.yaml
+#   kubectl -n symon get secret symon-reader-token -o jsonpath='{.data.token}' | base64 -d
+#
+# Put the token in /etc/symon/kube.token on the node that reads the cluster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: symon
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: symon-reader
+  namespace: symon
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: symon-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "events"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: symon-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: symon-reader
+subjects:
+  - kind: ServiceAccount
+    name: symon-reader
+    namespace: symon
+---
+# a token that does not expire, kept until this secret is deleted
+apiVersion: v1
+kind: Secret
+metadata:
+  name: symon-reader-token
+  namespace: symon
+  annotations:
+    kubernetes.io/service-account.name: symon-reader
+type: kubernetes.io/service-account-token
