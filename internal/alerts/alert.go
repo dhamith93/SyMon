@@ -25,6 +25,10 @@ type AlertConfig struct {
 	POSTBody          string
 	Disk              string
 	Service           string
+	// Cluster is the Kubernetes cluster a kube_ rule checks, as its agent
+	// names it. Namespace limits the rule to one namespace, empty is all.
+	Cluster   string `json:",omitempty"`
+	Namespace string `json:",omitempty"`
 	// Channels are the notification channels this rule's alerts go to, by
 	// name. A rule with none goes to the default channels.
 	Channels []string `json:",omitempty"`

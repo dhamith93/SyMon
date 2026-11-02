@@ -196,6 +196,7 @@ func TestAlertLink(t *testing.T) {
 		{"https://symon.example.com", "web1", monitor.PROC_USAGE, "https://symon.example.com/hosts/web1"},
 		{"https://symon.example.com", "", monitor.ENDPOINT, "https://symon.example.com/endpoints"},
 		{"https://symon.example.com", "", monitor.CERTIFICATE, "https://symon.example.com/endpoints"},
+		{"https://symon.example.com", "", monitor.KUBE_WORKLOAD, "https://symon.example.com/kubernetes"},
 		{"https://symon.example.com", "", "custom", "https://symon.example.com/alerts"},
 	}
 	for _, c := range cases {

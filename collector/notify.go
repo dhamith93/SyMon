@@ -218,6 +218,8 @@ func alertLink(dashboard string, host string, metric string) string {
 		return ""
 	case metric == monitor.ENDPOINT || metric == monitor.CERTIFICATE:
 		return dashboard + "/endpoints"
+	case monitor.IsKube(metric):
+		return dashboard + "/kubernetes"
 	case host != "":
 		return dashboard + "/hosts/" + url.PathEscape(host)
 	}

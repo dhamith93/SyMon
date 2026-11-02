@@ -8,10 +8,11 @@ import (
 func TestParseRules(t *testing.T) {
 	rules, err := ParseRules([]byte(`[
 		{"Name": "CPU", "MetricName": "procUsage", "Servers": ["*"], "Op": ">", "WarnThreshold": 80, "CriticalThreshold": 95},
-		{"Name": "Shop", "MetricName": "endpoint", "Endpoint": "https://shop.example.com", "PagerDuty": true, "Channels": [" ops email ", "phone"]}
+		{"Name": "Shop", "MetricName": "endpoint", "Endpoint": "https://shop.example.com", "PagerDuty": true, "Channels": [" ops email ", "phone"]},
+		{"Name": "Pods", "MetricName": "kube_workload", "Cluster": " homelab ", "Namespace": " media "}
 	]`))
-	if err != nil || len(rules) != 2 || rules[0].Servers[0] != AllHosts || !rules[1].Pagerduty || strings.Join(rules[1].Channels, ",") != "ops email,phone" {
-		t.Fatalf("expected two rules, got %+v %v", rules, err)
+	if err != nil || len(rules) != 3 || rules[2].Cluster != "homelab" || rules[2].Namespace != "media" || rules[0].Servers[0] != AllHosts || !rules[1].Pagerduty || strings.Join(rules[1].Channels, ",") != "ops email,phone" {
+		t.Fatalf("expected three rules, got %+v %v", rules, err)
 	}
 
 	tests := []struct {
@@ -34,6 +35,8 @@ func TestParseRules(t *testing.T) {
 		{"critical above warning", `[{"Name": "x", "MetricName": "endpoint", "Endpoint": "https://example.com", "CertWarnDays": 5, "CertCriticalDays": 10}]`, "at most CertWarnDays"},
 		{"empty channel", `[{"Name": "x", "MetricName": "ping", "Servers": ["*"], "Channels": [" "]}]`, "channel name in Channels is empty"},
 		{"channel twice", `[{"Name": "x", "MetricName": "ping", "Servers": ["*"], "Channels": ["ops", "ops "]}]`, `the channel "ops" is in Channels twice`},
+		{"kube without cluster", `[{"Name": "x", "MetricName": "kube_workload", "Cluster": " "}]`, "needs Cluster"},
+		{"kube restarts op", `[{"Name": "x", "MetricName": "kube_restarts", "Cluster": "homelab", "Op": "=>"}]`, `unknown Op "=>"`},
 		{"duplicate names", `[{"Name": "x", "MetricName": "ping", "Servers": ["*"]}, {"Name": "x", "MetricName": "ping", "Servers": ["*"]}]`, "already a rule named"},
 	}
 	for _, tt := range tests {

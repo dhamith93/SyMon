@@ -19,6 +19,9 @@ type alertStore interface {
 	DaysUntilFull(ctx context.Context, host string, device string) (float64, error)
 	LatestEndpointCheck(ctx context.Context, name string) (store.EndpointCheck, error)
 	LatestCertificate(ctx context.Context, name string) (time.Time, time.Time, error)
+	Cluster(ctx context.Context, name string) (store.Cluster, error)
+	RestartsSince(ctx context.Context, cluster string, since time.Time) (map[string]int, error)
+	Alerts(ctx context.Context, filter store.AlertFilter) ([]store.Alert, error)
 	OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error)
 	CreateAlert(ctx context.Context, alert store.Alert) (int64, error)
 	UpdateAlert(ctx context.Context, id int64, severity int, value float64, at time.Time) error
@@ -42,6 +45,9 @@ type evaluator struct {
 	// checkErrors is the error of each endpoint rule's newest check, for
 	// its alert message
 	checkErrors map[string]string
+	// reasons is what a kube rule's target says is wrong, like
+	// CrashLoopBackOff, for its alert message
+	reasons map[string]string
 }
 
 type pendingStatus struct {
@@ -57,6 +63,7 @@ func newEvaluator(st alertStore, notify func(context.Context, notice)) *evaluato
 		pending:     map[string]pendingStatus{},
 		checked:     map[string]time.Time{},
 		checkErrors: map[string]string{},
+		reasons:     map[string]string{},
 	}
 }
 
@@ -75,9 +82,10 @@ func ruleTarget(rule *alerts.AlertConfig) string {
 }
 
 func (e *evaluator) evaluate(ctx context.Context, rule *alerts.AlertConfig, host string) error {
+	if monitor.IsKube(rule.MetricName) {
+		return e.evaluateCluster(ctx, rule)
+	}
 	target := ruleTarget(rule)
-	key := host + "|" + rule.Name + "|" + rule.MetricName + "|" + target
-
 	value, at, err := e.latest(ctx, rule, host, target)
 	if errors.Is(err, store.ErrNotFound) {
 		// no data yet
@@ -86,6 +94,18 @@ func (e *evaluator) evaluate(ctx context.Context, rule *alerts.AlertConfig, host
 	if err != nil {
 		return err
 	}
+	return e.check(ctx, rule, host, target, value, at)
+}
+
+// alertKey names a rule's target on a host in the evaluator's maps
+func alertKey(host string, rule *alerts.AlertConfig, target string) string {
+	return host + "|" + rule.Name + "|" + rule.MetricName + "|" + target
+}
+
+// check compares one value of a rule's target with the rule, and opens,
+// changes or resolves its alert
+func (e *evaluator) check(ctx context.Context, rule *alerts.AlertConfig, host string, target string, value float64, at time.Time) error {
+	key := alertKey(host, rule, target)
 	if last, ok := e.checked[key]; ok && !at.After(last) {
 		return nil
 	}
@@ -139,7 +159,8 @@ func (e *evaluator) latest(ctx context.Context, rule *alerts.AlertConfig, host s
 
 // ruleStatus compares a value with a rule. Ping rules have no thresholds,
 // a host is critical once it has been silent longer than the trigger interval.
-// An endpoint is critical while it answers with another status code.
+// An endpoint is critical while it answers with another status code, and a
+// kubernetes node, workload or pending rule while its value is above 0.
 func ruleStatus(rule *alerts.AlertConfig, value float64) alertstatus.StatusType {
 	if rule.MetricName == monitor.ENDPOINT {
 		if int(value) != expectedCode(rule) {
@@ -149,6 +170,14 @@ func ruleStatus(rule *alerts.AlertConfig, value float64) alertstatus.StatusType 
 	}
 	if rule.MetricName == monitor.PING {
 		if value > float64(rule.TriggerIntveral) {
+			return alertstatus.Critical
+		}
+		return alertstatus.Normal
+	}
+	switch rule.MetricName {
+	case monitor.KUBE_NODE, monitor.KUBE_WORKLOAD, monitor.KUBE_PENDING:
+		// a node not ready, replicas missing or pods pending
+		if value > 0 {
 			return alertstatus.Critical
 		}
 		return alertstatus.Normal
@@ -170,7 +199,7 @@ func (e *evaluator) updateOpen(ctx context.Context, rule *alerts.AlertConfig, ho
 			return err
 		}
 		delete(e.pending, key)
-		e.notify(ctx, e.message(rule, host, open.ID, notify.Resolved, status, value, at))
+		e.notify(ctx, e.message(rule, host, open.Target, open.ID, notify.Resolved, status, value, at))
 		return nil
 	}
 
@@ -182,7 +211,7 @@ func (e *evaluator) updateOpen(ctx context.Context, rule *alerts.AlertConfig, ho
 	if err := e.store.UpdateAlert(ctx, open.ID, int(status), value, at); err != nil {
 		return err
 	}
-	e.notify(ctx, e.message(rule, host, open.ID, notify.Changed, status, value, at))
+	e.notify(ctx, e.message(rule, host, open.Target, open.ID, notify.Changed, status, value, at))
 	return nil
 }
 
@@ -213,15 +242,18 @@ func (e *evaluator) openIfBreached(ctx context.Context, rule *alerts.AlertConfig
 		return err
 	}
 	delete(e.pending, key)
-	e.notify(ctx, e.message(rule, host, id, notify.Opened, status, value, at))
+	e.notify(ctx, e.message(rule, host, target, id, notify.Opened, status, value, at))
 	return nil
 }
 
-// message writes what the channels are told. Endpoint rules have their own
-// template fields, like the status code and the error.
-func (e *evaluator) message(rule *alerts.AlertConfig, host string, id int64, event string, status alertstatus.StatusType, value float64, at time.Time) notice {
-	n := notice{alertID: id, rule: rule, host: host, target: ruleTarget(rule), event: event, severity: int(status), value: value, at: at}
+// message writes what the channels are told. Endpoint and kubernetes rules
+// have their own template fields, like the status code and the error, or
+// the pods' reason.
+func (e *evaluator) message(rule *alerts.AlertConfig, host string, target string, id int64, event string, status alertstatus.StatusType, value float64, at time.Time) notice {
+	n := notice{alertID: id, rule: rule, host: host, target: target, event: event, severity: int(status), value: value, at: at}
 	switch rule.MetricName {
+	case monitor.KUBE_NODE, monitor.KUBE_WORKLOAD, monitor.KUBE_PENDING, monitor.KUBE_RESTARTS:
+		n.subject, n.body = kubeText(rule, target, e.reasons[rule.Name+"|"+target], status, value, at)
 	case monitor.ENDPOINT:
 		n.subject, n.body = endpointText(rule, int(value), e.checkErrors[rule.Name], status == alertstatus.Normal, at)
 	case monitor.CERTIFICATE:

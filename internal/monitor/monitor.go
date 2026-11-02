@@ -41,6 +41,24 @@ const (
 	CERTIFICATE   string = "certificate"
 )
 
+// alert metrics of a Kubernetes cluster, from the state one agent in it
+// reports. Each checks every node or workload in the cluster.
+const (
+	KUBE_NODE     string = "kube_node"
+	KUBE_WORKLOAD string = "kube_workload"
+	KUBE_PENDING  string = "kube_pending"
+	KUBE_RESTARTS string = "kube_restarts"
+)
+
+// IsKube is true for the alert metrics of a Kubernetes cluster
+func IsKube(metric string) bool {
+	switch metric {
+	case KUBE_NODE, KUBE_WORKLOAD, KUBE_PENDING, KUBE_RESTARTS:
+		return true
+	}
+	return false
+}
+
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off
 const (
 	CollectorDiskIO     string = "diskio"

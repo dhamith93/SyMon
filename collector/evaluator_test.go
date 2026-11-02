@@ -24,7 +24,31 @@ type fakeStore struct {
 	check store.EndpointCheck
 	// certExpires is the newest check's certificate, none while zero
 	certExpires time.Time
-	alerts      []store.Alert
+	// cluster is the newest cluster state, none while its name is empty
+	cluster  store.Cluster
+	restarts map[string]int
+	alerts   []store.Alert
+}
+
+func (f *fakeStore) Cluster(ctx context.Context, name string) (store.Cluster, error) {
+	if f.cluster.Name != name {
+		return store.Cluster{}, store.ErrNotFound
+	}
+	return f.cluster, nil
+}
+
+func (f *fakeStore) RestartsSince(ctx context.Context, cluster string, since time.Time) (map[string]int, error) {
+	return f.restarts, nil
+}
+
+func (f *fakeStore) Alerts(ctx context.Context, filter store.AlertFilter) ([]store.Alert, error) {
+	var list []store.Alert
+	for _, a := range f.alerts {
+		if (filter.Rule == "" || a.Rule == filter.Rule) && (!filter.OpenOnly || a.ResolvedAt == nil) {
+			list = append(list, a)
+		}
+	}
+	return list, nil
 }
 
 func (f *fakeStore) LatestCertificate(ctx context.Context, name string) (time.Time, time.Time, error) {

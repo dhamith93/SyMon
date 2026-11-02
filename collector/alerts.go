@@ -64,7 +64,7 @@ func handleAlerts(config *config.Collector, st *store.Store) {
 			for _, host := range ruleHosts(rule, names) {
 				ctx, cancel := transport.Context()
 				if err := evaluator.evaluate(ctx, rule, host); err != nil {
-					logger.Log("error", "alert "+rule.Name+" on "+cmp.Or(host, rule.Endpoint)+": "+err.Error())
+					logger.Log("error", "alert "+rule.Name+" on "+cmp.Or(host, rule.Endpoint, rule.Cluster)+": "+err.Error())
 				}
 				cancel()
 			}
@@ -79,10 +79,11 @@ func handleAlerts(config *config.Collector, st *store.Store) {
 	}
 }
 
-// ruleHosts are the hosts a rule checks. "*" is every registered host, and
-// endpoint rules are checked from the collector, so they have none.
+// ruleHosts are the hosts a rule checks. "*" is every registered host.
+// Endpoint rules are checked from the collector and kubernetes rules check a
+// cluster, so they have none.
 func ruleHosts(rule *alerts.AlertConfig, hosts []string) []string {
-	if rule.MetricName == monitor.ENDPOINT {
+	if rule.MetricName == monitor.ENDPOINT || monitor.IsKube(rule.MetricName) {
 		return []string{""}
 	}
 	if slices.Contains(rule.Servers, alerts.AllHosts) {

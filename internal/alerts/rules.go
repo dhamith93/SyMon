@@ -93,10 +93,14 @@ func (rule *AlertConfig) Validate() error {
 		return rule.checkServers()
 	case monitor.ENDPOINT:
 		return rule.checkEndpoint()
+	case monitor.KUBE_NODE, monitor.KUBE_WORKLOAD, monitor.KUBE_PENDING:
+		return rule.checkCluster()
+	case monitor.KUBE_RESTARTS:
+		return firstError(rule.checkCluster(), rule.checkOp())
 	case "":
 		return errors.New("a rule needs MetricName")
 	}
-	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, services, ping, endpoint, or a custom metric's name with IsCustom", rule.MetricName)
+	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, services, ping, endpoint, kube_node, kube_workload, kube_pending, kube_restarts, or a custom metric's name with IsCustom", rule.MetricName)
 }
 
 // checkChannels only checks the names. Whether those channels exist is
@@ -124,6 +128,15 @@ func (rule *AlertConfig) checkServers() error {
 		if strings.TrimSpace(server) == "" {
 			return errors.New("a host name in Servers is empty")
 		}
+	}
+	return nil
+}
+
+func (rule *AlertConfig) checkCluster() error {
+	rule.Cluster = strings.TrimSpace(rule.Cluster)
+	rule.Namespace = strings.TrimSpace(rule.Namespace)
+	if rule.Cluster == "" {
+		return errors.New("a kubernetes rule needs Cluster, the name its agent reports the cluster as")
 	}
 	return nil
 }

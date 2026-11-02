@@ -135,8 +135,9 @@ func (s *Store) ResolveAlert(ctx context.Context, id int64, value float64, at ti
 }
 
 type AlertFilter struct {
-	// Host limits the list to one host, empty means all
+	// Host limits the list to one host and Rule to one rule, empty means all
 	Host     string
+	Rule     string
 	OpenOnly bool
 	// From and To limit by start time, zero means no limit
 	From time.Time
@@ -150,6 +151,10 @@ func (s *Store) Alerts(ctx context.Context, filter AlertFilter) ([]Alert, error)
 	if filter.Host != "" {
 		args = append(args, filter.Host)
 		sql += fmt.Sprintf(" AND h.name = $%d", len(args))
+	}
+	if filter.Rule != "" {
+		args = append(args, filter.Rule)
+		sql += fmt.Sprintf(" AND a.rule = $%d", len(args))
 	}
 	if filter.OpenOnly {
 		sql += " AND a.resolved_at IS NULL"
