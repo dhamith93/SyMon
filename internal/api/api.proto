@@ -563,4 +563,91 @@ service MonitorDataService {
     rpc TestChannel(ChannelRequest) returns (TestResult) {}
     // the newest notifications, for the dashboard
     rpc RecentNotifications(NotificationsRequest) returns (NotificationList) {}
+
+    // kubernetes. The agent that reads a cluster reports it every 30 seconds.
+    rpc ReportCluster(ClusterReport) returns (Message) {}
+    // for the dashboard
+    rpc Clusters(Void) returns (ClusterList) {}
+    rpc Cluster(ClusterRequest) returns (ClusterInfo) {}
+    rpc ClusterSeries(ClusterSeriesRequest) returns (SeriesResponse) {}
+    // forgets a cluster, so another host may report it
+    rpc RemoveCluster(ClusterRequest) returns (Message) {}
+}
+
+// stateJson is a kube.ClusterState. An agent key's host replaces host.
+message ClusterReport {
+    string host = 1;
+    string stateJson = 2;
+}
+
+message ClusterRequest {
+    string name = 1;
+}
+
+// host is the host whose agent reads the cluster. stateTime is when the
+// state was read, reportedAt the last report and error why that report
+// could not read the API. A stale state is too old to alert on.
+message ClusterSummary {
+    string name = 1;
+    string host = 2;
+    int64 stateTime = 3;
+    int64 reportedAt = 4;
+    string error = 5;
+    bool stale = 6;
+    int32 nodes = 7;
+    int32 nodesReady = 8;
+    int32 pods = 9;
+    int32 podsRunning = 10;
+    int32 podsPending = 11;
+    int32 podsNotReady = 12;
+    int32 podsFailed = 13;
+    int32 workloads = 14;
+    int32 workloadsReady = 15;
+    int32 restartsLastHour = 16;
+}
+
+message ClusterList {
+    repeated ClusterSummary clusters = 1;
+}
+
+// stateJson is the newest kube.ClusterState. usage is what the nodes'
+// agents report for the pods' containers, restarts are of the last day,
+// and hosts the registered host names, so nodes that are hosts can link to
+// them.
+message ClusterInfo {
+    ClusterSummary summary = 1;
+    string stateJson = 2;
+    repeated ContainerUsage usage = 3;
+    repeated KubeRestart restarts = 4;
+    repeated string hosts = 5;
+}
+
+// cpuPercent is of the host. memoryLimit is 0 without a limit.
+message ContainerUsage {
+    string id = 1;
+    string host = 2;
+    double cpuPercent = 3;
+    double cpuCores = 4;
+    double memoryBytes = 5;
+    double memoryLimit = 6;
+}
+
+// workload is kind/name, like deployment/web
+message KubeRestart {
+    int64 time = 1;
+    string namespace = 2;
+    string workload = 3;
+    string pod = 4;
+    string container = 5;
+    int32 count = 6;
+    string reason = 7;
+}
+
+message ClusterSeriesRequest {
+    string name = 1;
+    // nodes, pods, workloads or restarts
+    string metric = 2;
+    int64 from = 3;
+    int64 to = 4;
+    int32 maxPoints = 5;
 }

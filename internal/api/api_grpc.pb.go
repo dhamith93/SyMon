@@ -57,6 +57,11 @@ const (
 	MonitorDataService_DeleteChannel_FullMethodName           = "/api.MonitorDataService/DeleteChannel"
 	MonitorDataService_TestChannel_FullMethodName             = "/api.MonitorDataService/TestChannel"
 	MonitorDataService_RecentNotifications_FullMethodName     = "/api.MonitorDataService/RecentNotifications"
+	MonitorDataService_ReportCluster_FullMethodName           = "/api.MonitorDataService/ReportCluster"
+	MonitorDataService_Clusters_FullMethodName                = "/api.MonitorDataService/Clusters"
+	MonitorDataService_Cluster_FullMethodName                 = "/api.MonitorDataService/Cluster"
+	MonitorDataService_ClusterSeries_FullMethodName           = "/api.MonitorDataService/ClusterSeries"
+	MonitorDataService_RemoveCluster_FullMethodName           = "/api.MonitorDataService/RemoveCluster"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -117,6 +122,14 @@ type MonitorDataServiceClient interface {
 	TestChannel(ctx context.Context, in *ChannelRequest, opts ...grpc.CallOption) (*TestResult, error)
 	// the newest notifications, for the dashboard
 	RecentNotifications(ctx context.Context, in *NotificationsRequest, opts ...grpc.CallOption) (*NotificationList, error)
+	// kubernetes. The agent that reads a cluster reports it every 30 seconds.
+	ReportCluster(ctx context.Context, in *ClusterReport, opts ...grpc.CallOption) (*Message, error)
+	// for the dashboard
+	Clusters(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ClusterList, error)
+	Cluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*ClusterInfo, error)
+	ClusterSeries(ctx context.Context, in *ClusterSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
+	// forgets a cluster, so another host may report it
+	RemoveCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*Message, error)
 }
 
 type monitorDataServiceClient struct {
@@ -507,6 +520,56 @@ func (c *monitorDataServiceClient) RecentNotifications(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) ReportCluster(ctx context.Context, in *ClusterReport, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_ReportCluster_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Clusters(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ClusterList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClusterList)
+	err := c.cc.Invoke(ctx, MonitorDataService_Clusters_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Cluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*ClusterInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClusterInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_Cluster_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) ClusterSeries(ctx context.Context, in *ClusterSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SeriesResponse)
+	err := c.cc.Invoke(ctx, MonitorDataService_ClusterSeries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) RemoveCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_RemoveCluster_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -565,6 +628,14 @@ type MonitorDataServiceServer interface {
 	TestChannel(context.Context, *ChannelRequest) (*TestResult, error)
 	// the newest notifications, for the dashboard
 	RecentNotifications(context.Context, *NotificationsRequest) (*NotificationList, error)
+	// kubernetes. The agent that reads a cluster reports it every 30 seconds.
+	ReportCluster(context.Context, *ClusterReport) (*Message, error)
+	// for the dashboard
+	Clusters(context.Context, *Void) (*ClusterList, error)
+	Cluster(context.Context, *ClusterRequest) (*ClusterInfo, error)
+	ClusterSeries(context.Context, *ClusterSeriesRequest) (*SeriesResponse, error)
+	// forgets a cluster, so another host may report it
+	RemoveCluster(context.Context, *ClusterRequest) (*Message, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -688,6 +759,21 @@ func (UnimplementedMonitorDataServiceServer) TestChannel(context.Context, *Chann
 }
 func (UnimplementedMonitorDataServiceServer) RecentNotifications(context.Context, *NotificationsRequest) (*NotificationList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecentNotifications not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) ReportCluster(context.Context, *ClusterReport) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportCluster not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Clusters(context.Context, *Void) (*ClusterList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Clusters not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Cluster(context.Context, *ClusterRequest) (*ClusterInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Cluster not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) ClusterSeries(context.Context, *ClusterSeriesRequest) (*SeriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClusterSeries not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) RemoveCluster(context.Context, *ClusterRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveCluster not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -1394,6 +1480,96 @@ func _MonitorDataService_RecentNotifications_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_ReportCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterReport)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).ReportCluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_ReportCluster_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).ReportCluster(ctx, req.(*ClusterReport))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Clusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Clusters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Clusters_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Clusters(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Cluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Cluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Cluster_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Cluster(ctx, req.(*ClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_ClusterSeries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterSeriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).ClusterSeries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_ClusterSeries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).ClusterSeries(ctx, req.(*ClusterSeriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_RemoveCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClusterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).RemoveCluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_RemoveCluster_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).RemoveCluster(ctx, req.(*ClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1552,6 +1728,26 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecentNotifications",
 			Handler:    _MonitorDataService_RecentNotifications_Handler,
+		},
+		{
+			MethodName: "ReportCluster",
+			Handler:    _MonitorDataService_ReportCluster_Handler,
+		},
+		{
+			MethodName: "Clusters",
+			Handler:    _MonitorDataService_Clusters_Handler,
+		},
+		{
+			MethodName: "Cluster",
+			Handler:    _MonitorDataService_Cluster_Handler,
+		},
+		{
+			MethodName: "ClusterSeries",
+			Handler:    _MonitorDataService_ClusterSeries_Handler,
+		},
+		{
+			MethodName: "RemoveCluster",
+			Handler:    _MonitorDataService_RemoveCluster_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

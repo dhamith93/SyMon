@@ -19,6 +19,7 @@ var agentMethods = map[string]bool{
 	MonitorDataService_HandleCustomMonitorData_FullMethodName: true,
 	MonitorDataService_NextTask_FullMethodName:                true,
 	MonitorDataService_ReportTask_FullMethodName:              true,
+	MonitorDataService_ReportCluster_FullMethodName:           true,
 }
 
 type credentialLookup interface {

@@ -4206,6 +4206,649 @@ func (x *RuleRequest) GetBy() string {
 	return ""
 }
 
+// stateJson is a kube.ClusterState. An agent key's host replaces host.
+type ClusterReport struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	StateJson     string                 `protobuf:"bytes,2,opt,name=stateJson,proto3" json:"stateJson,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterReport) Reset() {
+	*x = ClusterReport{}
+	mi := &file_api_api_proto_msgTypes[62]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterReport) ProtoMessage() {}
+
+func (x *ClusterReport) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[62]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterReport.ProtoReflect.Descriptor instead.
+func (*ClusterReport) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{62}
+}
+
+func (x *ClusterReport) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *ClusterReport) GetStateJson() string {
+	if x != nil {
+		return x.StateJson
+	}
+	return ""
+}
+
+type ClusterRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterRequest) Reset() {
+	*x = ClusterRequest{}
+	mi := &file_api_api_proto_msgTypes[63]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterRequest) ProtoMessage() {}
+
+func (x *ClusterRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[63]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterRequest.ProtoReflect.Descriptor instead.
+func (*ClusterRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *ClusterRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// host is the host whose agent reads the cluster. stateTime is when the
+// state was read, reportedAt the last report and error why that report
+// could not read the API. A stale state is too old to alert on.
+type ClusterSummary struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Host             string                 `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	StateTime        int64                  `protobuf:"varint,3,opt,name=stateTime,proto3" json:"stateTime,omitempty"`
+	ReportedAt       int64                  `protobuf:"varint,4,opt,name=reportedAt,proto3" json:"reportedAt,omitempty"`
+	Error            string                 `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
+	Stale            bool                   `protobuf:"varint,6,opt,name=stale,proto3" json:"stale,omitempty"`
+	Nodes            int32                  `protobuf:"varint,7,opt,name=nodes,proto3" json:"nodes,omitempty"`
+	NodesReady       int32                  `protobuf:"varint,8,opt,name=nodesReady,proto3" json:"nodesReady,omitempty"`
+	Pods             int32                  `protobuf:"varint,9,opt,name=pods,proto3" json:"pods,omitempty"`
+	PodsRunning      int32                  `protobuf:"varint,10,opt,name=podsRunning,proto3" json:"podsRunning,omitempty"`
+	PodsPending      int32                  `protobuf:"varint,11,opt,name=podsPending,proto3" json:"podsPending,omitempty"`
+	PodsNotReady     int32                  `protobuf:"varint,12,opt,name=podsNotReady,proto3" json:"podsNotReady,omitempty"`
+	PodsFailed       int32                  `protobuf:"varint,13,opt,name=podsFailed,proto3" json:"podsFailed,omitempty"`
+	Workloads        int32                  `protobuf:"varint,14,opt,name=workloads,proto3" json:"workloads,omitempty"`
+	WorkloadsReady   int32                  `protobuf:"varint,15,opt,name=workloadsReady,proto3" json:"workloadsReady,omitempty"`
+	RestartsLastHour int32                  `protobuf:"varint,16,opt,name=restartsLastHour,proto3" json:"restartsLastHour,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ClusterSummary) Reset() {
+	*x = ClusterSummary{}
+	mi := &file_api_api_proto_msgTypes[64]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterSummary) ProtoMessage() {}
+
+func (x *ClusterSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[64]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterSummary.ProtoReflect.Descriptor instead.
+func (*ClusterSummary) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{64}
+}
+
+func (x *ClusterSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ClusterSummary) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *ClusterSummary) GetStateTime() int64 {
+	if x != nil {
+		return x.StateTime
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetReportedAt() int64 {
+	if x != nil {
+		return x.ReportedAt
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *ClusterSummary) GetStale() bool {
+	if x != nil {
+		return x.Stale
+	}
+	return false
+}
+
+func (x *ClusterSummary) GetNodes() int32 {
+	if x != nil {
+		return x.Nodes
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetNodesReady() int32 {
+	if x != nil {
+		return x.NodesReady
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetPods() int32 {
+	if x != nil {
+		return x.Pods
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetPodsRunning() int32 {
+	if x != nil {
+		return x.PodsRunning
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetPodsPending() int32 {
+	if x != nil {
+		return x.PodsPending
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetPodsNotReady() int32 {
+	if x != nil {
+		return x.PodsNotReady
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetPodsFailed() int32 {
+	if x != nil {
+		return x.PodsFailed
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetWorkloads() int32 {
+	if x != nil {
+		return x.Workloads
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetWorkloadsReady() int32 {
+	if x != nil {
+		return x.WorkloadsReady
+	}
+	return 0
+}
+
+func (x *ClusterSummary) GetRestartsLastHour() int32 {
+	if x != nil {
+		return x.RestartsLastHour
+	}
+	return 0
+}
+
+type ClusterList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Clusters      []*ClusterSummary      `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterList) Reset() {
+	*x = ClusterList{}
+	mi := &file_api_api_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterList) ProtoMessage() {}
+
+func (x *ClusterList) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterList.ProtoReflect.Descriptor instead.
+func (*ClusterList) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *ClusterList) GetClusters() []*ClusterSummary {
+	if x != nil {
+		return x.Clusters
+	}
+	return nil
+}
+
+// stateJson is the newest kube.ClusterState. usage is what the nodes'
+// agents report for the pods' containers, restarts are of the last day,
+// and hosts the registered host names, so nodes that are hosts can link to
+// them.
+type ClusterInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       *ClusterSummary        `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	StateJson     string                 `protobuf:"bytes,2,opt,name=stateJson,proto3" json:"stateJson,omitempty"`
+	Usage         []*ContainerUsage      `protobuf:"bytes,3,rep,name=usage,proto3" json:"usage,omitempty"`
+	Restarts      []*KubeRestart         `protobuf:"bytes,4,rep,name=restarts,proto3" json:"restarts,omitempty"`
+	Hosts         []string               `protobuf:"bytes,5,rep,name=hosts,proto3" json:"hosts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterInfo) Reset() {
+	*x = ClusterInfo{}
+	mi := &file_api_api_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterInfo) ProtoMessage() {}
+
+func (x *ClusterInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterInfo.ProtoReflect.Descriptor instead.
+func (*ClusterInfo) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *ClusterInfo) GetSummary() *ClusterSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *ClusterInfo) GetStateJson() string {
+	if x != nil {
+		return x.StateJson
+	}
+	return ""
+}
+
+func (x *ClusterInfo) GetUsage() []*ContainerUsage {
+	if x != nil {
+		return x.Usage
+	}
+	return nil
+}
+
+func (x *ClusterInfo) GetRestarts() []*KubeRestart {
+	if x != nil {
+		return x.Restarts
+	}
+	return nil
+}
+
+func (x *ClusterInfo) GetHosts() []string {
+	if x != nil {
+		return x.Hosts
+	}
+	return nil
+}
+
+// cpuPercent is of the host. memoryLimit is 0 without a limit.
+type ContainerUsage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Host          string                 `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	CpuPercent    float64                `protobuf:"fixed64,3,opt,name=cpuPercent,proto3" json:"cpuPercent,omitempty"`
+	CpuCores      float64                `protobuf:"fixed64,4,opt,name=cpuCores,proto3" json:"cpuCores,omitempty"`
+	MemoryBytes   float64                `protobuf:"fixed64,5,opt,name=memoryBytes,proto3" json:"memoryBytes,omitempty"`
+	MemoryLimit   float64                `protobuf:"fixed64,6,opt,name=memoryLimit,proto3" json:"memoryLimit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContainerUsage) Reset() {
+	*x = ContainerUsage{}
+	mi := &file_api_api_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContainerUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContainerUsage) ProtoMessage() {}
+
+func (x *ContainerUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContainerUsage.ProtoReflect.Descriptor instead.
+func (*ContainerUsage) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *ContainerUsage) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ContainerUsage) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *ContainerUsage) GetCpuPercent() float64 {
+	if x != nil {
+		return x.CpuPercent
+	}
+	return 0
+}
+
+func (x *ContainerUsage) GetCpuCores() float64 {
+	if x != nil {
+		return x.CpuCores
+	}
+	return 0
+}
+
+func (x *ContainerUsage) GetMemoryBytes() float64 {
+	if x != nil {
+		return x.MemoryBytes
+	}
+	return 0
+}
+
+func (x *ContainerUsage) GetMemoryLimit() float64 {
+	if x != nil {
+		return x.MemoryLimit
+	}
+	return 0
+}
+
+// workload is kind/name, like deployment/web
+type KubeRestart struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Time          int64                  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Workload      string                 `protobuf:"bytes,3,opt,name=workload,proto3" json:"workload,omitempty"`
+	Pod           string                 `protobuf:"bytes,4,opt,name=pod,proto3" json:"pod,omitempty"`
+	Container     string                 `protobuf:"bytes,5,opt,name=container,proto3" json:"container,omitempty"`
+	Count         int32                  `protobuf:"varint,6,opt,name=count,proto3" json:"count,omitempty"`
+	Reason        string                 `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KubeRestart) Reset() {
+	*x = KubeRestart{}
+	mi := &file_api_api_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KubeRestart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KubeRestart) ProtoMessage() {}
+
+func (x *KubeRestart) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KubeRestart.ProtoReflect.Descriptor instead.
+func (*KubeRestart) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *KubeRestart) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *KubeRestart) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *KubeRestart) GetWorkload() string {
+	if x != nil {
+		return x.Workload
+	}
+	return ""
+}
+
+func (x *KubeRestart) GetPod() string {
+	if x != nil {
+		return x.Pod
+	}
+	return ""
+}
+
+func (x *KubeRestart) GetContainer() string {
+	if x != nil {
+		return x.Container
+	}
+	return ""
+}
+
+func (x *KubeRestart) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *KubeRestart) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type ClusterSeriesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// nodes, pods, workloads or restarts
+	Metric        string `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
+	From          int64  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
+	To            int64  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
+	MaxPoints     int32  `protobuf:"varint,5,opt,name=maxPoints,proto3" json:"maxPoints,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClusterSeriesRequest) Reset() {
+	*x = ClusterSeriesRequest{}
+	mi := &file_api_api_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterSeriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterSeriesRequest) ProtoMessage() {}
+
+func (x *ClusterSeriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterSeriesRequest.ProtoReflect.Descriptor instead.
+func (*ClusterSeriesRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *ClusterSeriesRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ClusterSeriesRequest) GetMetric() string {
+	if x != nil {
+		return x.Metric
+	}
+	return ""
+}
+
+func (x *ClusterSeriesRequest) GetFrom() int64 {
+	if x != nil {
+		return x.From
+	}
+	return 0
+}
+
+func (x *ClusterSeriesRequest) GetTo() int64 {
+	if x != nil {
+		return x.To
+	}
+	return 0
+}
+
+func (x *ClusterSeriesRequest) GetMaxPoints() int32 {
+	if x != nil {
+		return x.MaxPoints
+	}
+	return 0
+}
+
 var File_api_api_proto protoreflect.FileDescriptor
 
 const file_api_api_proto_rawDesc = "" +
@@ -4544,7 +5187,67 @@ const file_api_api_proto_rawDesc = "" +
 	"\x02by\x18\x04 \x01(\tR\x02by\"-\n" +
 	"\vRuleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x0e\n" +
-	"\x02by\x18\x02 \x01(\tR\x02by2\x9e\x10\n" +
+	"\x02by\x18\x02 \x01(\tR\x02by\"A\n" +
+	"\rClusterReport\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x1c\n" +
+	"\tstateJson\x18\x02 \x01(\tR\tstateJson\"$\n" +
+	"\x0eClusterRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xe6\x03\n" +
+	"\x0eClusterSummary\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04host\x18\x02 \x01(\tR\x04host\x12\x1c\n" +
+	"\tstateTime\x18\x03 \x01(\x03R\tstateTime\x12\x1e\n" +
+	"\n" +
+	"reportedAt\x18\x04 \x01(\x03R\n" +
+	"reportedAt\x12\x14\n" +
+	"\x05error\x18\x05 \x01(\tR\x05error\x12\x14\n" +
+	"\x05stale\x18\x06 \x01(\bR\x05stale\x12\x14\n" +
+	"\x05nodes\x18\a \x01(\x05R\x05nodes\x12\x1e\n" +
+	"\n" +
+	"nodesReady\x18\b \x01(\x05R\n" +
+	"nodesReady\x12\x12\n" +
+	"\x04pods\x18\t \x01(\x05R\x04pods\x12 \n" +
+	"\vpodsRunning\x18\n" +
+	" \x01(\x05R\vpodsRunning\x12 \n" +
+	"\vpodsPending\x18\v \x01(\x05R\vpodsPending\x12\"\n" +
+	"\fpodsNotReady\x18\f \x01(\x05R\fpodsNotReady\x12\x1e\n" +
+	"\n" +
+	"podsFailed\x18\r \x01(\x05R\n" +
+	"podsFailed\x12\x1c\n" +
+	"\tworkloads\x18\x0e \x01(\x05R\tworkloads\x12&\n" +
+	"\x0eworkloadsReady\x18\x0f \x01(\x05R\x0eworkloadsReady\x12*\n" +
+	"\x10restartsLastHour\x18\x10 \x01(\x05R\x10restartsLastHour\">\n" +
+	"\vClusterList\x12/\n" +
+	"\bclusters\x18\x01 \x03(\v2\x13.api.ClusterSummaryR\bclusters\"\xc9\x01\n" +
+	"\vClusterInfo\x12-\n" +
+	"\asummary\x18\x01 \x01(\v2\x13.api.ClusterSummaryR\asummary\x12\x1c\n" +
+	"\tstateJson\x18\x02 \x01(\tR\tstateJson\x12)\n" +
+	"\x05usage\x18\x03 \x03(\v2\x13.api.ContainerUsageR\x05usage\x12,\n" +
+	"\brestarts\x18\x04 \x03(\v2\x10.api.KubeRestartR\brestarts\x12\x14\n" +
+	"\x05hosts\x18\x05 \x03(\tR\x05hosts\"\xb4\x01\n" +
+	"\x0eContainerUsage\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04host\x18\x02 \x01(\tR\x04host\x12\x1e\n" +
+	"\n" +
+	"cpuPercent\x18\x03 \x01(\x01R\n" +
+	"cpuPercent\x12\x1a\n" +
+	"\bcpuCores\x18\x04 \x01(\x01R\bcpuCores\x12 \n" +
+	"\vmemoryBytes\x18\x05 \x01(\x01R\vmemoryBytes\x12 \n" +
+	"\vmemoryLimit\x18\x06 \x01(\x01R\vmemoryLimit\"\xb9\x01\n" +
+	"\vKubeRestart\x12\x12\n" +
+	"\x04time\x18\x01 \x01(\x03R\x04time\x12\x1c\n" +
+	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1a\n" +
+	"\bworkload\x18\x03 \x01(\tR\bworkload\x12\x10\n" +
+	"\x03pod\x18\x04 \x01(\tR\x03pod\x12\x1c\n" +
+	"\tcontainer\x18\x05 \x01(\tR\tcontainer\x12\x14\n" +
+	"\x05count\x18\x06 \x01(\x05R\x05count\x12\x16\n" +
+	"\x06reason\x18\a \x01(\tR\x06reason\"\x84\x01\n" +
+	"\x14ClusterSeriesRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x12\n" +
+	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
+	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
+	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\xab\x12\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x122\n" +
 	"\n" +
@@ -4587,7 +5290,12 @@ const file_api_api_proto_rawDesc = "" +
 	"\vSaveChannel\x12\x17.api.SaveChannelRequest\x1a\x10.api.ChannelInfo\"\x00\x124\n" +
 	"\rDeleteChannel\x12\x13.api.ChannelRequest\x1a\f.api.Message\"\x00\x125\n" +
 	"\vTestChannel\x12\x13.api.ChannelRequest\x1a\x0f.api.TestResult\"\x00\x12I\n" +
-	"\x13RecentNotifications\x12\x19.api.NotificationsRequest\x1a\x15.api.NotificationList\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"\x13RecentNotifications\x12\x19.api.NotificationsRequest\x1a\x15.api.NotificationList\"\x00\x123\n" +
+	"\rReportCluster\x12\x12.api.ClusterReport\x1a\f.api.Message\"\x00\x12)\n" +
+	"\bClusters\x12\t.api.Void\x1a\x10.api.ClusterList\"\x00\x122\n" +
+	"\aCluster\x12\x13.api.ClusterRequest\x1a\x10.api.ClusterInfo\"\x00\x12A\n" +
+	"\rClusterSeries\x12\x19.api.ClusterSeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x124\n" +
+	"\rRemoveCluster\x12\x13.api.ClusterRequest\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -4601,7 +5309,7 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 70)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),                  // 0: api.Void
 	(*Message)(nil),               // 1: api.Message
@@ -4665,6 +5373,14 @@ var file_api_api_proto_goTypes = []any{
 	(*AlertRuleList)(nil),         // 59: api.AlertRuleList
 	(*SaveRuleRequest)(nil),       // 60: api.SaveRuleRequest
 	(*RuleRequest)(nil),           // 61: api.RuleRequest
+	(*ClusterReport)(nil),         // 62: api.ClusterReport
+	(*ClusterRequest)(nil),        // 63: api.ClusterRequest
+	(*ClusterSummary)(nil),        // 64: api.ClusterSummary
+	(*ClusterList)(nil),           // 65: api.ClusterList
+	(*ClusterInfo)(nil),           // 66: api.ClusterInfo
+	(*ContainerUsage)(nil),        // 67: api.ContainerUsage
+	(*KubeRestart)(nil),           // 68: api.KubeRestart
+	(*ClusterSeriesRequest)(nil),  // 69: api.ClusterSeriesRequest
 }
 var file_api_api_proto_depIdxs = []int32{
 	7,  // 0: api.ServerInfo.tasks:type_name -> api.TaskInfo
@@ -4683,87 +5399,101 @@ var file_api_api_proto_depIdxs = []int32{
 	47, // 13: api.SnapshotList.customMetrics:type_name -> api.CustomValue
 	50, // 14: api.EndpointList.endpoints:type_name -> api.EndpointStatus
 	58, // 15: api.AlertRuleList.rules:type_name -> api.AlertRuleInfo
-	26, // 16: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
-	2,  // 17: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	2,  // 18: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	25, // 19: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	25, // 20: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0,  // 21: api.MonitorDataService.Fleet:input_type -> api.Void
-	30, // 22: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	32, // 23: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	36, // 24: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	30, // 25: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	39, // 26: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	30, // 27: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
-	44, // 28: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
-	0,  // 29: api.MonitorDataService.Snapshots:input_type -> api.Void
-	49, // 30: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
-	52, // 31: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
-	0,  // 32: api.MonitorDataService.Version:input_type -> api.Void
-	53, // 33: api.MonitorDataService.Login:input_type -> api.Credentials
-	56, // 34: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
-	56, // 35: api.MonitorDataService.Logout:input_type -> api.SessionRequest
-	55, // 36: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
-	53, // 37: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
-	0,  // 38: api.MonitorDataService.HasUsers:input_type -> api.Void
-	0,  // 39: api.MonitorDataService.AlertRules:input_type -> api.Void
-	60, // 40: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
-	61, // 41: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
-	5,  // 42: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
-	9,  // 43: api.MonitorDataService.NextTask:input_type -> api.TaskWait
-	11, // 44: api.MonitorDataService.ReportTask:input_type -> api.TaskProgress
-	30, // 45: api.MonitorDataService.HostTasks:input_type -> api.HostRequest
-	12, // 46: api.MonitorDataService.RequestTaskRun:input_type -> api.TaskRunRequest
-	14, // 47: api.MonitorDataService.TaskRuns:input_type -> api.TaskRunsRequest
-	16, // 48: api.MonitorDataService.TaskRun:input_type -> api.TaskRunQuery
-	0,  // 49: api.MonitorDataService.NotificationChannels:input_type -> api.Void
-	19, // 50: api.MonitorDataService.SaveChannel:input_type -> api.SaveChannelRequest
-	20, // 51: api.MonitorDataService.DeleteChannel:input_type -> api.ChannelRequest
-	20, // 52: api.MonitorDataService.TestChannel:input_type -> api.ChannelRequest
-	23, // 53: api.MonitorDataService.RecentNotifications:input_type -> api.NotificationsRequest
-	27, // 54: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	4,  // 55: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
-	1,  // 56: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 57: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 58: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	29, // 59: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	31, // 60: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	35, // 61: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	37, // 62: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	38, // 63: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	41, // 64: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	43, // 65: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	46, // 66: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	48, // 67: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	51, // 68: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	35, // 69: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	1,  // 70: api.MonitorDataService.Version:output_type -> api.Message
-	54, // 71: api.MonitorDataService.Login:output_type -> api.SessionInfo
-	54, // 72: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
-	1,  // 73: api.MonitorDataService.Logout:output_type -> api.Message
-	1,  // 74: api.MonitorDataService.ChangePassword:output_type -> api.Message
-	1,  // 75: api.MonitorDataService.CheckPassword:output_type -> api.Message
-	57, // 76: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
-	59, // 77: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
-	58, // 78: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
-	1,  // 79: api.MonitorDataService.DeleteRule:output_type -> api.Message
-	6,  // 80: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
-	10, // 81: api.MonitorDataService.NextTask:output_type -> api.TaskAssignment
-	1,  // 82: api.MonitorDataService.ReportTask:output_type -> api.Message
-	8,  // 83: api.MonitorDataService.HostTasks:output_type -> api.TaskList
-	13, // 84: api.MonitorDataService.RequestTaskRun:output_type -> api.TaskRunInfo
-	15, // 85: api.MonitorDataService.TaskRuns:output_type -> api.TaskRunList
-	13, // 86: api.MonitorDataService.TaskRun:output_type -> api.TaskRunInfo
-	18, // 87: api.MonitorDataService.NotificationChannels:output_type -> api.ChannelList
-	17, // 88: api.MonitorDataService.SaveChannel:output_type -> api.ChannelInfo
-	1,  // 89: api.MonitorDataService.DeleteChannel:output_type -> api.Message
-	21, // 90: api.MonitorDataService.TestChannel:output_type -> api.TestResult
-	24, // 91: api.MonitorDataService.RecentNotifications:output_type -> api.NotificationList
-	54, // [54:92] is the sub-list for method output_type
-	16, // [16:54] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	64, // 16: api.ClusterList.clusters:type_name -> api.ClusterSummary
+	64, // 17: api.ClusterInfo.summary:type_name -> api.ClusterSummary
+	67, // 18: api.ClusterInfo.usage:type_name -> api.ContainerUsage
+	68, // 19: api.ClusterInfo.restarts:type_name -> api.KubeRestart
+	26, // 20: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
+	2,  // 21: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 22: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	25, // 23: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	25, // 24: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 25: api.MonitorDataService.Fleet:input_type -> api.Void
+	30, // 26: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	32, // 27: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	36, // 28: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	30, // 29: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	39, // 30: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	30, // 31: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
+	44, // 32: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
+	0,  // 33: api.MonitorDataService.Snapshots:input_type -> api.Void
+	49, // 34: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
+	52, // 35: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
+	0,  // 36: api.MonitorDataService.Version:input_type -> api.Void
+	53, // 37: api.MonitorDataService.Login:input_type -> api.Credentials
+	56, // 38: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
+	56, // 39: api.MonitorDataService.Logout:input_type -> api.SessionRequest
+	55, // 40: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
+	53, // 41: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
+	0,  // 42: api.MonitorDataService.HasUsers:input_type -> api.Void
+	0,  // 43: api.MonitorDataService.AlertRules:input_type -> api.Void
+	60, // 44: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
+	61, // 45: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
+	5,  // 46: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
+	9,  // 47: api.MonitorDataService.NextTask:input_type -> api.TaskWait
+	11, // 48: api.MonitorDataService.ReportTask:input_type -> api.TaskProgress
+	30, // 49: api.MonitorDataService.HostTasks:input_type -> api.HostRequest
+	12, // 50: api.MonitorDataService.RequestTaskRun:input_type -> api.TaskRunRequest
+	14, // 51: api.MonitorDataService.TaskRuns:input_type -> api.TaskRunsRequest
+	16, // 52: api.MonitorDataService.TaskRun:input_type -> api.TaskRunQuery
+	0,  // 53: api.MonitorDataService.NotificationChannels:input_type -> api.Void
+	19, // 54: api.MonitorDataService.SaveChannel:input_type -> api.SaveChannelRequest
+	20, // 55: api.MonitorDataService.DeleteChannel:input_type -> api.ChannelRequest
+	20, // 56: api.MonitorDataService.TestChannel:input_type -> api.ChannelRequest
+	23, // 57: api.MonitorDataService.RecentNotifications:input_type -> api.NotificationsRequest
+	62, // 58: api.MonitorDataService.ReportCluster:input_type -> api.ClusterReport
+	0,  // 59: api.MonitorDataService.Clusters:input_type -> api.Void
+	63, // 60: api.MonitorDataService.Cluster:input_type -> api.ClusterRequest
+	69, // 61: api.MonitorDataService.ClusterSeries:input_type -> api.ClusterSeriesRequest
+	63, // 62: api.MonitorDataService.RemoveCluster:input_type -> api.ClusterRequest
+	27, // 63: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	4,  // 64: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
+	1,  // 65: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 66: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 67: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	29, // 68: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	31, // 69: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	35, // 70: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	37, // 71: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	38, // 72: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	41, // 73: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	43, // 74: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	46, // 75: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	48, // 76: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	51, // 77: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	35, // 78: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 79: api.MonitorDataService.Version:output_type -> api.Message
+	54, // 80: api.MonitorDataService.Login:output_type -> api.SessionInfo
+	54, // 81: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
+	1,  // 82: api.MonitorDataService.Logout:output_type -> api.Message
+	1,  // 83: api.MonitorDataService.ChangePassword:output_type -> api.Message
+	1,  // 84: api.MonitorDataService.CheckPassword:output_type -> api.Message
+	57, // 85: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
+	59, // 86: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
+	58, // 87: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
+	1,  // 88: api.MonitorDataService.DeleteRule:output_type -> api.Message
+	6,  // 89: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
+	10, // 90: api.MonitorDataService.NextTask:output_type -> api.TaskAssignment
+	1,  // 91: api.MonitorDataService.ReportTask:output_type -> api.Message
+	8,  // 92: api.MonitorDataService.HostTasks:output_type -> api.TaskList
+	13, // 93: api.MonitorDataService.RequestTaskRun:output_type -> api.TaskRunInfo
+	15, // 94: api.MonitorDataService.TaskRuns:output_type -> api.TaskRunList
+	13, // 95: api.MonitorDataService.TaskRun:output_type -> api.TaskRunInfo
+	18, // 96: api.MonitorDataService.NotificationChannels:output_type -> api.ChannelList
+	17, // 97: api.MonitorDataService.SaveChannel:output_type -> api.ChannelInfo
+	1,  // 98: api.MonitorDataService.DeleteChannel:output_type -> api.Message
+	21, // 99: api.MonitorDataService.TestChannel:output_type -> api.TestResult
+	24, // 100: api.MonitorDataService.RecentNotifications:output_type -> api.NotificationList
+	1,  // 101: api.MonitorDataService.ReportCluster:output_type -> api.Message
+	65, // 102: api.MonitorDataService.Clusters:output_type -> api.ClusterList
+	66, // 103: api.MonitorDataService.Cluster:output_type -> api.ClusterInfo
+	35, // 104: api.MonitorDataService.ClusterSeries:output_type -> api.SeriesResponse
+	1,  // 105: api.MonitorDataService.RemoveCluster:output_type -> api.Message
+	63, // [63:106] is the sub-list for method output_type
+	20, // [20:63] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -4779,7 +5509,7 @@ func file_api_api_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   62,
+			NumMessages:   70,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

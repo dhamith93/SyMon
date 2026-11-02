@@ -85,11 +85,11 @@ func TestSharedKeyStillWorks(t *testing.T) {
 	}
 }
 
-// an agent picks up and reports its own host's runs, and cannot ask for
-// one or read any
+// an agent picks up and reports its own host's runs and its cluster, and
+// cannot ask for a run or read any, or read clusters
 func TestAgentKeyAndTasks(t *testing.T) {
 	key := map[string]string{transport.AgentKeyHeader: "web1-key"}
-	for _, method := range []string{MonitorDataService_NextTask_FullMethodName, MonitorDataService_ReportTask_FullMethodName} {
+	for _, method := range []string{MonitorDataService_NextTask_FullMethodName, MonitorDataService_ReportTask_FullMethodName, MonitorDataService_ReportCluster_FullMethodName} {
 		if host, ran, err := call(t, method, key); !ran || err != nil || host != "web1" {
 			t.Errorf("%s: expected the handler to run as web1, got %q %v", method, host, err)
 		}
@@ -99,6 +99,9 @@ func TestAgentKeyAndTasks(t *testing.T) {
 		MonitorDataService_HostTasks_FullMethodName,
 		MonitorDataService_TaskRuns_FullMethodName,
 		MonitorDataService_TaskRun_FullMethodName,
+		MonitorDataService_Clusters_FullMethodName,
+		MonitorDataService_Cluster_FullMethodName,
+		MonitorDataService_RemoveCluster_FullMethodName,
 	}
 	for _, method := range denied {
 		if _, ran, err := call(t, method, key); ran || status.Code(err) != codes.PermissionDenied {

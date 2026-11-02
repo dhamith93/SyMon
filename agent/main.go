@@ -93,6 +93,14 @@ func main() {
 	runner := newTaskRunner(config.TasksPath, config.ServerId, client)
 	sendPing(client, &config, updates, runner)
 	go runner.loop()
+	if config.KubeCluster != "" {
+		reader, err := newClusterReader(&config, client)
+		if err != nil {
+			logger.Log("error", "cannot read the kubernetes cluster "+config.KubeCluster+": "+err.Error())
+		} else {
+			go reader.loop()
+		}
+	}
 	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
 	collector := monitor.NewCollector(&config)
 	ticker := time.NewTicker(interval)

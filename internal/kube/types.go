@@ -125,3 +125,45 @@ type Event struct {
 	// LastSeen is in unix seconds
 	LastSeen int64
 }
+
+// Counts sum a state up for the cluster page and its charts
+type Counts struct {
+	Nodes          int
+	NodesReady     int
+	Pods           int
+	PodsRunning    int
+	PodsPending    int
+	PodsNotReady   int
+	PodsFailed     int
+	Workloads      int
+	WorkloadsReady int
+}
+
+// Counts leaves finished pods out of not ready, a completed job is fine
+func (s ClusterState) Counts() Counts {
+	counts := Counts{Nodes: len(s.Nodes), Pods: len(s.Pods), Workloads: len(s.Workloads)}
+	for _, n := range s.Nodes {
+		if n.Ready {
+			counts.NodesReady++
+		}
+	}
+	for _, p := range s.Pods {
+		switch p.Phase {
+		case "Running":
+			counts.PodsRunning++
+			if !p.Ready {
+				counts.PodsNotReady++
+			}
+		case "Pending":
+			counts.PodsPending++
+		case "Failed":
+			counts.PodsFailed++
+		}
+	}
+	for _, w := range s.Workloads {
+		if w.Missing() == 0 {
+			counts.WorkloadsReady++
+		}
+	}
+	return counts
+}

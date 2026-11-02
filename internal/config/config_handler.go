@@ -14,6 +14,8 @@ const DEFAULT_REFRESH_SECS int = 15
 const DEFAULT_AGENT_KEY_PATH string = "/etc/symon/agent.key"
 const DEFAULT_TASKS_PATH string = "/etc/symon/tasks.json"
 const DEFAULT_CRI_SOCKET string = "/run/containerd/containerd.sock"
+const DEFAULT_KUBE_CA_PATH string = "/etc/kubernetes/pki/ca.crt"
+const DEFAULT_KUBE_TOKEN_PATH string = "/etc/symon/kube.token"
 
 type Collector struct {
 	TLSEnabled                bool
@@ -80,6 +82,13 @@ type Agent struct {
 	// CRISocket is the container runtime's CRI socket, which names the
 	// containers of Kubernetes pods
 	CRISocket string
+	// KubeCluster turns on reading a Kubernetes cluster's API, which one
+	// agent in the cluster does. KubeAPIURL is the API server, KubeCAPath
+	// its CA and KubeTokenPath a read-only service account token.
+	KubeCluster   string
+	KubeAPIURL    string
+	KubeCAPath    string
+	KubeTokenPath string
 	// TasksPath is the file listing the commands admins may start from the
 	// dashboard. Without the file the host offers none.
 	TasksPath string
@@ -115,6 +124,14 @@ func GetAgent() Agent {
 	if criSocket == "" {
 		criSocket = DEFAULT_CRI_SOCKET
 	}
+	kubeCAPath := os.Getenv("SYMON_KUBE_CA_PATH")
+	if kubeCAPath == "" {
+		kubeCAPath = DEFAULT_KUBE_CA_PATH
+	}
+	kubeTokenPath := os.Getenv("SYMON_KUBE_TOKEN_PATH")
+	if kubeTokenPath == "" {
+		kubeTokenPath = DEFAULT_KUBE_TOKEN_PATH
+	}
 	return Agent{
 		ServerId:                    serverID,
 		AgentKeyPath:                agentKeyPath,
@@ -122,6 +139,10 @@ func GetAgent() Agent {
 		ContainerSocket:             os.Getenv("SYMON_CONTAINER_SOCKET"),
 		ContainerLayerSize:          strings.ToUpper(os.Getenv("SYMON_CONTAINER_LAYER_SIZE")) == "TRUE",
 		CRISocket:                   criSocket,
+		KubeCluster:                 strings.TrimSpace(os.Getenv("SYMON_KUBE_CLUSTER")),
+		KubeAPIURL:                  os.Getenv("SYMON_KUBE_API_URL"),
+		KubeCAPath:                  kubeCAPath,
+		KubeTokenPath:               kubeTokenPath,
 		CollectorEndpoint:           os.Getenv("SYMON_COLLECTOR_ENDPOINT"),
 		CollectorEndpointCACertPath: os.Getenv("SYMON_COLLECTOR_ENDPOINT_CERT_PATH"),
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_AGENT_LOG_FILE_ENABLED")) == "TRUE",
