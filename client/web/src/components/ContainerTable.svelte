@@ -3,12 +3,16 @@
   import { formatBytes, formatPercent, formatRate } from '../lib/format';
 
   // running containers from the latest snapshot, grouped by compose project
+  // or Kubernetes namespace
   let { containers }: { containers: Container[] } = $props();
 
   type SortKey = 'name' | 'cpu' | 'memory';
   let sortBy = $state<SortKey>('cpu');
 
   const name = (c: Container) => c.Name || c.ShortID;
+  // a pod's container is listed under its namespace, so the name leaves it out
+  const shownName = (c: Container) => (c.Namespace ? name(c).slice(c.Namespace.length + 1) : name(c));
+  const groupOf = (c: Container) => c.ComposeProject || (c.Namespace ? `namespace ${c.Namespace}` : '');
 
   const groups = $derived.by(() => {
     const compare: Record<SortKey, (a: Container, b: Container) => number> = {
@@ -18,7 +22,7 @@
     };
     const byProject = new Map<string, Container[]>();
     for (const c of containers) {
-      const project = c.ComposeProject || '';
+      const project = groupOf(c);
       byProject.set(project, [...(byProject.get(project) ?? []), c]);
     }
     // named projects first, loose containers last
@@ -55,7 +59,7 @@
     </label>
   </div>
   {#if !anyNamed}
-    <p class="muted note">Names and images need the agent to reach the Docker or Podman socket. Containers are shown by ID.</p>
+    <p class="muted note">Names and images need the agent to reach the Docker or Podman socket, or the CRI socket for Kubernetes pods. Containers are shown by ID.</p>
   {/if}
   <div class="table-scroll">
     <table class="data">
@@ -79,7 +83,7 @@
           {/if}
           {#each group.list as c (c.ID)}
             <tr>
-              <td title={c.ID}>{name(c)}</td>
+              <td title={c.ID}>{shownName(c)}</td>
               <td class="secondary image" title={c.Image}>{c.Image || '–'}</td>
               <td class="secondary">{c.State}</td>
               <td class="right num">

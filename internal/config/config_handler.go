@@ -13,6 +13,7 @@ const DEFAULT_ENDPOINT_CHECK_INTERVAL int = 60
 const DEFAULT_REFRESH_SECS int = 15
 const DEFAULT_AGENT_KEY_PATH string = "/etc/symon/agent.key"
 const DEFAULT_TASKS_PATH string = "/etc/symon/tasks.json"
+const DEFAULT_CRI_SOCKET string = "/run/containerd/containerd.sock"
 
 type Collector struct {
 	TLSEnabled                bool
@@ -76,6 +77,9 @@ type Agent struct {
 	// ContainerLayerSize measures how much each container wrote to its own
 	// layer, which walks every file in it
 	ContainerLayerSize bool
+	// CRISocket is the container runtime's CRI socket, which names the
+	// containers of Kubernetes pods
+	CRISocket string
 	// TasksPath is the file listing the commands admins may start from the
 	// dashboard. Without the file the host offers none.
 	TasksPath string
@@ -107,12 +111,17 @@ func GetAgent() Agent {
 	if tasksPath == "" {
 		tasksPath = DEFAULT_TASKS_PATH
 	}
+	criSocket := os.Getenv("SYMON_CRI_SOCKET")
+	if criSocket == "" {
+		criSocket = DEFAULT_CRI_SOCKET
+	}
 	return Agent{
 		ServerId:                    serverID,
 		AgentKeyPath:                agentKeyPath,
 		TasksPath:                   tasksPath,
 		ContainerSocket:             os.Getenv("SYMON_CONTAINER_SOCKET"),
 		ContainerLayerSize:          strings.ToUpper(os.Getenv("SYMON_CONTAINER_LAYER_SIZE")) == "TRUE",
+		CRISocket:                   criSocket,
 		CollectorEndpoint:           os.Getenv("SYMON_COLLECTOR_ENDPOINT"),
 		CollectorEndpointCACertPath: os.Getenv("SYMON_COLLECTOR_ENDPOINT_CERT_PATH"),
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_AGENT_LOG_FILE_ENABLED")) == "TRUE",

@@ -9,6 +9,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
+	k8s.io/cri-api v0.37.2
 )
 
 require (

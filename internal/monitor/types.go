@@ -417,6 +417,11 @@ type Container struct {
 	// ComposeProject groups containers started from one compose file
 	ComposeProject    string
 	MetadataAvailable bool
+	// PodUID is set for a Kubernetes pod's container. Namespace and Pod come
+	// from the CRI socket, and Name is then namespace/pod/container.
+	PodUID    string `json:",omitempty"`
+	Namespace string `json:",omitempty"`
+	Pod       string `json:",omitempty"`
 
 	CPU     ContainerCPU
 	Memory  ContainerMemory
@@ -495,6 +500,7 @@ func fromSystatsContainer(c systats.Container) Container {
 		Runtime:           c.Runtime,
 		ComposeProject:    c.Labels["com.docker.compose.project"],
 		MetadataAvailable: c.MetadataAvailable,
+		PodUID:            c.PodUID,
 		CPU: ContainerCPU{
 			CoresUsed:        c.CPU.CoresUsed,
 			PercentOfHost:    c.CPU.PercentOfHost,

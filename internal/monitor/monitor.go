@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -101,6 +102,11 @@ type Collector struct {
 	prevContainersTime time.Time
 	// containersFailed stops a host without cgroups logging every tick
 	containersFailed bool
+
+	// cri names Kubernetes containers, made the first time a container has
+	// a pod UID. criFailed stops a broken socket logging every tick.
+	cri       *criClient
+	criFailed bool
 }
 
 func NewCollector(config *config.Agent) *Collector {
@@ -403,10 +409,14 @@ func (c *Collector) containers(ctx context.Context) []Container {
 	sampled := time.Now()
 	elapsed := sampled.Sub(c.prevContainersTime).Seconds()
 
+	pods := c.podContainers(ctx, samples)
 	var output []Container
 	current := make(map[string]systats.Container, len(samples))
 	for _, sample := range samples {
 		container := fromSystatsContainer(sample)
+		if !namePodContainer(&container, pods) {
+			continue
+		}
 		if prev, ok := c.prevContainers[sample.ID]; ok && elapsed > 0 {
 			container.Rates = fromSystatsContainerRates(sample.RatesSince(prev, elapsed), container.Network)
 		}
@@ -417,6 +427,33 @@ func (c *Collector) containers(ctx context.Context) []Container {
 	c.prevContainers = current
 	c.prevContainersTime = sampled
 	return output
+}
+
+// podContainers asks the CRI socket about the containers of Kubernetes pods.
+// It is nil when there are none or the socket cannot be read, and the
+// containers then keep their IDs.
+func (c *Collector) podContainers(ctx context.Context, samples []systats.Container) map[string]podContainer {
+	if !slices.ContainsFunc(samples, func(s systats.Container) bool { return s.PodUID != "" }) {
+		return nil
+	}
+	if c.cri == nil {
+		cri, err := newCRIClient(c.config.CRISocket)
+		if err != nil {
+			logger.Log("error", "cannot use the CRI socket "+c.config.CRISocket+": "+err.Error())
+			return nil
+		}
+		c.cri = cri
+	}
+	pods, err := c.cri.podContainers(ctx)
+	if err != nil {
+		if !c.criFailed {
+			logger.Log("error", "cannot read pod names from the CRI socket "+c.config.CRISocket+", set SYMON_CRI_SOCKET: "+err.Error())
+			c.criFailed = true
+		}
+		return nil
+	}
+	c.criFailed = false
+	return pods
 }
 
 // temperatures returns nil on hosts without sensors, like most VMs

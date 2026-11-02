@@ -133,6 +133,9 @@ export interface Container {
   Runtime: string;
   ComposeProject: string;
   MetadataAvailable: boolean;
+  // set for a Kubernetes pod's container, whose Name is namespace/pod/container
+  Namespace?: string;
+  Pod?: string;
   CPU: { CoresUsed: number; PercentOfHost: number; PercentOfLimit: number; Limited: boolean; AllocatedCores: number };
   // bytes
   Memory: { Used: number; Limit: number; Limited: boolean; PercentageUsed: number; OOMKills: number };
