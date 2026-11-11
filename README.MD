@@ -2,7 +2,7 @@
 
 [![Go](https://github.com/dhamith93/SyMon/actions/workflows/go.yml/badge.svg)](https://github.com/dhamith93/SyMon/actions/workflows/go.yml) 
 
-SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry Pis and small Kubernetes clusters. A small agent on each host sends its metrics to one server, which keeps the history in TimescaleDB, raises alerts, and shows everything on a web dashboard.
+SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry Pis, small Kubernetes clusters and the network gear around them. A small agent on each host sends its metrics to one server, which keeps the history in TimescaleDB, raises alerts, and shows everything on a web dashboard.
 
 [![The hosts page](png/hosts.png)](png/hosts.png)
 
@@ -25,6 +25,11 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 - A cluster page with nodes, workloads, pods that fail or restart and why, their CPU and memory, restarts and warning events
 - Read by the agent on one node with a read-only service account, nothing to run inside the cluster
 
+**Network devices**
+- Switches, routers, UPSs and NAS boxes over SNMP v2c, polled by the agent on one host in their network
+- Traffic, errors and link state per port, UPS charge, load and minutes left, CPU, memory and volumes of NAS boxes, and any OID you list
+- A page per device, and alerts when a device stops answering, a port loses its link, or a value passes a threshold
+
 **Endpoints**
 - HTTP checks of any URL from the server, with response time and uptime history
 - Alerts on HTTPS certificates that are about to expire
@@ -39,6 +44,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 **Alerts**
 - Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts, HTTP endpoints and certificates
 - Rules for Kubernetes nodes that are not ready, workloads missing replicas, pods stuck pending and containers that keep restarting
+- Rules for network devices that stop answering, ports that lose their link, and any value a device reports
 - Rules are edited on the dashboard and apply right away. They can watch every host, including ones added later
 - Every host is watched for going silent from the start
 - Warning and critical levels, shown on the dashboard and sent by email, to Slack, to PagerDuty or to a webhook
@@ -67,7 +73,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 
 ## Getting started
 
-The **[install guide](docs/install.md)** covers setting up the server, adding hosts, Kubernetes, alerts, upgrades, backups and troubleshooting.
+The **[install guide](docs/install.md)** covers setting up the server, adding hosts, Kubernetes, network devices, alerts, upgrades, backups and troubleshooting.
 
 In short:
 
@@ -81,7 +87,7 @@ In short:
 ![SyMon components](png/symon_components.svg)
 
 ### Agent
-Runs on every monitored host as root and sends a snapshot to the Collector every 15 seconds when installed with the script (`SYMON_MONITOR_INTERVAL_SECONDS`). It also sends custom metrics:
+Runs on every monitored host as root and sends a snapshot to the Collector every 15 seconds when installed with the script (`SYMON_MONITOR_INTERVAL_SECONDS`). With a devices file it also polls SNMP devices, see [Devices](docs/install.md#devices-snmp). It also sends custom metrics:
 
 `sudo /opt/symon/agent/agent -custom -name=queue-length -unit=jobs -value=42`
 
@@ -99,6 +105,7 @@ The web dashboard and its JSON API, on port 8080. It reads everything from the C
 - **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
 - **Agent updates.** Agent builds are signed with a key that stays where you build them (`~/.config/symon/agent-signing.key`). Agents only install updates signed with it, so a tampered download or a spoofed update request cannot run code on your hosts.
 - **Tasks.** A host only runs commands from its own tasks file, which the dashboard can start but not change. The agent refuses a run whose command is not the one in its file, so a stolen dashboard login cannot run anything the host's owner did not list. See [Tasks](docs/install.md#tasks).
+- **SNMP communities.** The devices file with the community strings stays on the polling host, readable by its owner only, and the agent refuses it otherwise. Communities are never sent to the collector. SNMP v2c itself sends them unencrypted, so keep it on a trusted network.
 - **Kubernetes.** The agent that reads a cluster uses a service account that may only list nodes, pods, events and workloads. It never reads secrets or config maps. See [symon-reader.yaml](docs/kubernetes/symon-reader.yaml).
 - **Notification secrets.** Passwords, tokens, keys and webhook URLs of notification channels are kept in the collector's database and never shown on the dashboard again after saving. Database backups contain them.
 - **Roles.** Admins can change alert rules and notification channels, update agents and run tasks, viewers can only look. `-add-user <name> -role viewer` creates a viewer, `-set-role <name> -role admin` changes it.
@@ -144,7 +151,7 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
 * `GET /api/v1/hosts/{host}/custom-metrics`
     * Names of the host's custom metrics
 * `GET /api/v1/alerts?host=&open=1&from=&to=`
-    * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint and Kubernetes alerts have an empty `host`
+    * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint, Kubernetes and device alerts have an empty `host`
 * `POST /api/v1/agents/update` with `{"hosts": ["..."]}` as JSON
     * For admins only. Asks those hosts' agents to update to the dashboard's version, and answers how many were asked. Agents from before updates are left out
 * `GET /api/v1/hosts/{host}/tasks`
@@ -180,5 +187,14 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * `nodes`, `pods`, `workloads` or `restarts` over time, in the same shape as a host's series
 * `DELETE /api/v1/clusters/{name}`
     * For admins only. Forgets the cluster, so another host's agent may report it
+
+* `GET /api/v1/devices`
+    * Every SNMP device an agent reports: `kind`, `address`, the polling `host`, `reportedAt`, the `error` of its last poll, `stale` after 3 missed intervals, `ports` and `portsUp`, traffic over every port in bits per second, and `cpuPct`, `memUsedPct` and the `ups*` values, `null` when the device does not report them
+* `GET /api/v1/devices/{name}`
+    * The device's `summary`, and its last good poll as `state`: system description and uptime, its ports, and every value with its metric, label and unit
+* `GET /api/v1/devices/{name}/series?metric=if_rx_bps&from=&to=`
+    * One metric over time, one series per label, in the same shape as a host's series. Each `label=` keeps only that port or volume
+* `DELETE /api/v1/devices/{name}`
+    * For admins only. Forgets the device, so another host's agent may poll it
 
 The Client also serves `GET /metrics`, every host's latest values in the Prometheus text format, unless `SYMON_CLIENT_METRICS_ENABLED=false`. See [Prometheus and Grafana](docs/install.md#prometheus-and-grafana).

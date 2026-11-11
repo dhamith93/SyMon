@@ -236,6 +236,7 @@ A rule looks like this:
 | `ping` | host silent for longer than `TriggerIntveral` seconds | |
 | `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert`, `CertWarnDays`, `CertCriticalDays` |
 | `kube_node`, `kube_workload`, `kube_pending`, `kube_restarts` | a Kubernetes cluster, see [Kubernetes](#kubernetes), no `Servers` | `Cluster`, `Namespace` |
+| `device_down`, `device_port`, `device_metric` | an SNMP device, see [Devices](#devices-snmp), no `Servers` | `Device`, `Interface`, `DeviceMetric`, `Label` |
 | any name, with `"IsCustom": true` | a custom metric | |
 
 `Servers` lists host names, or `"*"` for every host. `Channels` names the [notification channels](#notifications) the rule's alerts go to; left out, they go to the default channels. `Op` is one of `>`, `<`, `>=`, `<=`, `==` or `!=`. A value has to stay past a threshold for `TriggerIntveral` seconds before the alert opens, and back to normal for as long before it resolves.
@@ -413,6 +414,110 @@ The first three take no thresholds and go critical once the problem has lasted `
 
 **Upgrading.** Upgrade the collector and dashboard before the agents, as for any upgrade. An agent with `SYMON_KUBE_CLUSTER` that reports to an older collector logs that the collector is too old for clusters, and tries again every 10 minutes.
 
+## Devices (SNMP)
+
+SyMon polls switches, routers, UPSs, NAS boxes and other network gear over SNMP v2c. The agent on one host in their network reads them and reports to the collector, so the collector does not have to reach them. The dashboard's Devices page shows up once a device reports, with a page for each device.
+
+**1. Check a device answers.** From the host that will poll it, with the net-snmp tools (`sudo apt install snmp`):
+
+```sh
+snmpwalk -v2c -c <community> 192.168.1.2 1.3.6.1.2.1.1
+```
+
+It should print the device's description and name. A timeout here means the agent will time out too: SNMP is off on the device, the community is wrong, or the device only answers some addresses.
+
+**2. List the devices** on that host in `/etc/symon/snmp.json`, and make it readable by its owner only:
+
+```json
+[
+  {
+    "Name": "core-switch",
+    "Address": "192.168.1.2",
+    "Community": "public",
+    "Profiles": ["interfaces"]
+  },
+  {
+    "Name": "rack-ups",
+    "Address": "192.168.1.3",
+    "Community": "public",
+    "Profiles": ["ups"]
+  },
+  {
+    "Name": "nas",
+    "Address": "192.168.1.4:161",
+    "Community": "public",
+    "Kind": "nas",
+    "IntervalSeconds": 120,
+    "Profiles": ["host", "interfaces"],
+    "Metrics": [{ "Name": "system temperature", "OID": "1.3.6.1.4.1.6574.1.2.0", "Unit": "°C" }]
+  }
+]
+```
+
+```sh
+sudo chmod 600 /etc/symon/snmp.json
+```
+
+Community strings work like passwords, so the agent refuses the file when group or others can read it, or when it belongs to neither root nor the agent's user. The communities never leave the host. The agent reads the file every round, so adding or removing a device needs no restart, and a new device shows on the dashboard within a minute. A mistake in the file stops all polling until it is fixed, and the agent logs which device and field is wrong. Unknown fields count as mistakes. `agent/snmp.json` is a sample.
+
+| Field | |
+|---|---|
+| `Name` | the device on the dashboard and in alert rules. Up to 64 characters, without `/` |
+| `Address` | an IP address or host name, with `:port` when it is not 161 |
+| `Community` | the SNMP v2c community |
+| `Profiles` | what to read: `interfaces`, `host` and `ups`, below |
+| `Interfaces` | only these ports, by name. Left out, every physical port, without VLANs, loopbacks and tunnels |
+| `Metrics` | other numbers to read, below |
+| `Kind` | shown on the dashboard, like `nas` or `printer`. Left out, `ups`, `switch` or `server` from the profiles |
+| `IntervalSeconds` | how often to poll this device, 10 to 3600. Left out, `SYMON_SNMP_INTERVAL_SECONDS` in `/etc/symon/agent.env`, 60 by default |
+
+**Profiles.** Every device reports its description, name and uptime. On top of that:
+
+- `interfaces` reads IF-MIB: traffic in and out in bits per second, errors per second, the link, the speed and the port's description. It uses the 64 bit counters when the device has them.
+- `host` reads HOST-RESOURCES-MIB: CPU, memory used and space used on each volume. Most NAS boxes and Linux machines with snmpd have it, most switches do not.
+- `ups` reads UPS-MIB, or APC's PowerNet MIB from an APC network card: on battery or line power, battery charge, minutes left, load, input voltage and battery temperature.
+
+A profile the device does not have just shows nothing.
+
+**Other numbers.** Each entry in `Metrics` reads one OID and gets its own chart. `Unit` is shown with it. `Scale` multiplies the value, like `0.1` for a device that counts in tenths of a degree. `"Counter": true` turns a number that only grows into a rate per second. The names cannot be the profiles' metric names below.
+
+**The device's page** shows the UPS or system values when the device has them, and for ports a table with each port's link, speed, traffic and errors. Tick up to 8 ports to chart their traffic. It starts with the busiest ones, and the picked ports stay in the page's URL. An errors chart shows when a picked port had errors. When a device does not answer, the page says what the last poll said and keeps the last values it could read. When the polling agent stops, it says how old the last report is.
+
+**Alerts.** Three rule metrics watch devices. Each needs `Device`, a name from the devices file, or `"*"` for every device, including ones added later:
+
+| `MetricName` | Checks | Alerts when | Extra fields |
+|---|---|---|---|
+| `device_down` | each device | it does not answer | |
+| `device_port` | one port of each device | the port is switched on and has no link | `Interface`, the port's name |
+| `device_metric` | one value of each device | it is past the thresholds | `DeviceMetric`, and `Label` for one port, volume or line |
+
+`device_down` and `device_port` take no thresholds and go critical once the problem has lasted `TriggerIntveral` seconds. `device_metric` takes `Op` and whole-number thresholds, and any metric name below or from `Metrics`. Without `Label`, each port or volume alerts on its own.
+
+| Profile | Metric names |
+|---|---|
+| `interfaces` | `if_rx_bps` and `if_tx_bps` in bits per second, `if_rx_errors_ps`, `if_tx_errors_ps`, `if_up` (1 or 0), each with the port as label |
+| `host` | `cpu_pct`, `mem_used_pct`, `storage_used_pct` with the volume as label |
+| `ups` | `ups_on_battery` (1 or 0), `ups_charge_pct`, `ups_minutes_left`, `ups_load_pct`, `ups_input_volts`, `ups_battery_celsius` |
+
+```json
+{
+  "Name": "UPS on battery",
+  "MetricName": "device_metric",
+  "Device": "rack-ups",
+  "DeviceMetric": "ups_on_battery",
+  "Op": "==",
+  "WarnThreshold": 1,
+  "CriticalThreshold": 1,
+  "TriggerIntveral": 30
+}
+```
+
+An alert resolves when the problem is gone, and when its device, port or value is no longer reported. A device that has not been reported for 3 of its intervals is not checked, so its alerts neither open nor resolve while the polling agent is down. That host has its own "Host not reporting" alert. With `SYMON_DASHBOARD_URL` set, messages link to the device's page.
+
+**Moving the poller.** Only the host that first reported a device may report it. To poll it from another host, move its entry to that host's devices file and press Remove device at the bottom of the device's page. The new host takes it over on its next poll, and the device's charts start afresh. Removing the polling host from SyMon frees its devices the same way.
+
+**Upgrading.** Upgrade the collector and dashboard before the agents, as for any upgrade. An agent with a devices file that reports to an older collector logs that the collector is too old for devices, and tries again every 10 minutes.
+
 ## Prometheus and Grafana
 
 The dashboard serves every host's latest values at `/metrics` in the Prometheus format, so Grafana or an existing Prometheus can use them. Add it to `prometheus.yml`:
@@ -528,6 +633,14 @@ sudo -u postgres dropuser symon
 **The cluster never shows up.** The reader logs why when the agent starts: `journalctl -u symon_agent | grep kubernetes`. Usually `SYMON_KUBE_API_URL` is not an `https://` URL, or there is no CA at `SYMON_KUBE_CA_PATH`.
 
 **"another host reports this cluster".** Two nodes have `SYMON_KUBE_CLUSTER` set, or the reader moved. See [Moving the reader](#kubernetes).
+
+**No devices show up.** On the polling host, `journalctl -u symon_agent | grep devices` says why: the file can be read by group or others, belongs to another user, or has a mistake. The agent logs it once, and again when it polls once more.
+
+**A device shows as unreachable.** The page shows what the last poll said. A timeout means the device did not answer: SNMP is off, the community is wrong (most devices ignore a wrong one rather than refuse it), a firewall drops UDP port 161, or the device only answers some addresses. Try `snmpwalk` from the polling host, as in [Devices](#devices-snmp).
+
+**A busy port shows too little traffic.** The device only has 32 bit counters, which wrap in about 34 seconds at 1 Gbps, so a poll a minute misses traffic. Set `IntervalSeconds` to 20 for that device.
+
+**"another host polls this device".** Two hosts list the device, or the poller moved. See [Moving the poller](#devices-snmp).
 
 **A container shows "host network".** It shares the host's network, so its traffic is already counted in the host's own network charts.
 
