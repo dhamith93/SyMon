@@ -6,6 +6,7 @@ require (
 	github.com/dhamith93/systats v0.5.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/handlers v1.5.2
+	github.com/gosnmp/gosnmp v1.47.0
 	github.com/jackc/pgx/v5 v5.11.0
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
