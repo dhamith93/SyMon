@@ -5238,10 +5238,12 @@ type DeviceSeriesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// a metric from the report, like if_rx_bps
-	Metric        string `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
-	From          int64  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
-	To            int64  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
-	MaxPoints     int32  `protobuf:"varint,5,opt,name=maxPoints,proto3" json:"maxPoints,omitempty"`
+	Metric    string `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
+	From      int64  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
+	To        int64  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
+	MaxPoints int32  `protobuf:"varint,5,opt,name=maxPoints,proto3" json:"maxPoints,omitempty"`
+	// only these labels, like a few ports of a big switch, none is all
+	Labels        []string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5309,6 +5311,13 @@ func (x *DeviceSeriesRequest) GetMaxPoints() int32 {
 		return x.MaxPoints
 	}
 	return 0
+}
+
+func (x *DeviceSeriesRequest) GetLabels() []string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
 }
 
 var File_api_api_proto protoreflect.FileDescriptor
@@ -5756,13 +5765,14 @@ const file_api_api_proto_rawDesc = "" +
 	"\n" +
 	"DeviceInfo\x12,\n" +
 	"\asummary\x18\x01 \x01(\v2\x12.api.DeviceSummaryR\asummary\x12\x1c\n" +
-	"\tstateJson\x18\x02 \x01(\tR\tstateJson\"\x83\x01\n" +
+	"\tstateJson\x18\x02 \x01(\tR\tstateJson\"\x9b\x01\n" +
 	"\x13DeviceSeriesRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x12\n" +
 	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
-	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\xad\x14\n" +
+	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints\x12\x16\n" +
+	"\x06labels\x18\x06 \x03(\tR\x06labels2\xad\x14\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x122\n" +
 	"\n" +

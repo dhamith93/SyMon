@@ -27,6 +27,7 @@ type fakeCollector struct {
 	api.UnimplementedMonitorDataServiceServer
 	lastSeries       *api.SeriesRequest
 	lastProcessUsage *api.ProcessUsageRequest
+	lastDeviceLabels []string
 
 	// login: testSession is valid, alice's password is "correct horse
 	// battery", and the user "locked" has failed too often

@@ -194,8 +194,9 @@ func (s *Store) RemoveDevice(ctx context.Context, name string) error {
 var deviceSeriesDef = seriesDef{table: "device_metrics", column: "value", label: "label", hasMax: true}
 
 // DeviceSeries returns one of a device's metrics over a range, one series
-// per label, from the finest data that gives at most maxPoints points
-func (s *Store) DeviceSeries(ctx context.Context, device string, metric string, from time.Time, to time.Time, maxPoints int) (SeriesResult, error) {
+// per label, from the finest data that gives at most maxPoints points.
+// labels keeps only those, like a few ports of a big switch, none is all.
+func (s *Store) DeviceSeries(ctx context.Context, device string, metric string, labels []string, from time.Time, to time.Time, maxPoints int) (SeriesResult, error) {
 	if strings.TrimSpace(metric) == "" {
 		return SeriesResult{}, fmt.Errorf("%w: a metric is needed, like if_rx_bps", ErrInvalid)
 	}
@@ -219,13 +220,18 @@ func (s *Store) DeviceSeries(ctx context.Context, device string, metric string, 
 	if source != "raw" {
 		table, timeColumn = table+"_"+source, "bucket"
 	}
+	args := []any{fmt.Sprintf("%d seconds", int64(step.Seconds())), deviceID, metric, from, to}
+	onlyLabels := ""
+	if len(labels) > 0 {
+		onlyLabels = "AND label = ANY($6)"
+		args = append(args, labels)
+	}
 	rows, err := s.pool.Query(ctx, fmt.Sprintf(`
 		SELECT time_bucket($1::interval, %[1]s) AS t, label, avg(value) AS v
 		FROM %[2]s
-		WHERE device_id = $2 AND metric = $3 AND %[1]s >= $4 AND %[1]s < $5
+		WHERE device_id = $2 AND metric = $3 AND %[1]s >= $4 AND %[1]s < $5 %[3]s
 		GROUP BY t, label
-		ORDER BY label, t`, timeColumn, table),
-		fmt.Sprintf("%d seconds", int64(step.Seconds())), deviceID, metric, from, to)
+		ORDER BY label, t`, timeColumn, table, onlyLabels), args...)
 	if err != nil {
 		return SeriesResult{}, err
 	}

@@ -100,6 +100,8 @@ func (s *server) getDeviceSeries(w http.ResponseWriter, r *http.Request) {
 		From:      from,
 		To:        to,
 		MaxPoints: int32(maxPoints),
+		// label may repeat, to chart a few ports of a big switch
+		Labels: query["label"],
 	})
 	if err != nil {
 		writeGRPCError(w, query.Get("metric")+" for device "+name, err)

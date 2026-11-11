@@ -85,21 +85,25 @@ func TestDeviceReports(t *testing.T) {
 		t.Errorf("unexpected never read device %+v", devices[1])
 	}
 
-	result, err := st.DeviceSeries(ctx, "sw1", snmp.IfRxBps, start.Add(-time.Minute), start.Add(5*time.Minute), 1000)
+	result, err := st.DeviceSeries(ctx, "sw1", snmp.IfRxBps, nil, start.Add(-time.Minute), start.Add(5*time.Minute), 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(result.Series) != 1 || result.Series[0].Label != "Gi1" || len(result.Series[0].Points) != 3 || result.Series[0].Points[0].Value != 1000 || result.Series[0].Points[2].Value != 3000 {
 		t.Errorf("unexpected rx series %+v", result)
 	}
-	up, err := st.DeviceSeries(ctx, "sw1", snmp.IfUp, start.Add(-time.Minute), start.Add(5*time.Minute), 1000)
+	up, err := st.DeviceSeries(ctx, "sw1", snmp.IfUp, nil, start.Add(-time.Minute), start.Add(5*time.Minute), 1000)
 	if err != nil || len(up.Series) != 2 || up.Series[0].Label != "Gi1" || up.Series[1].Label != "Gi2" || up.Series[1].Points[0].Value != 0 {
 		t.Errorf("unexpected link series %+v %v", up, err)
 	}
-	if _, err := st.DeviceSeries(ctx, "sw1", "", start, start.Add(time.Minute), 10); !errors.Is(err, ErrInvalid) {
+	one, err := st.DeviceSeries(ctx, "sw1", snmp.IfUp, []string{"Gi2", "Gi9"}, start.Add(-time.Minute), start.Add(5*time.Minute), 1000)
+	if err != nil || len(one.Series) != 1 || one.Series[0].Label != "Gi2" {
+		t.Errorf("expected only Gi2, got %+v %v", one, err)
+	}
+	if _, err := st.DeviceSeries(ctx, "sw1", "", nil, start, start.Add(time.Minute), 10); !errors.Is(err, ErrInvalid) {
 		t.Errorf("expected an empty metric to be refused, got %v", err)
 	}
-	if _, err := st.DeviceSeries(ctx, "nope", snmp.IfRxBps, start, start.Add(time.Minute), 10); !errors.Is(err, ErrNotFound) {
+	if _, err := st.DeviceSeries(ctx, "nope", snmp.IfRxBps, nil, start, start.Add(time.Minute), 10); !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected an unknown device to be not found, got %v", err)
 	}
 

@@ -712,4 +712,6 @@ message DeviceSeriesRequest {
     int64 from = 3;
     int64 to = 4;
     int32 maxPoints = 5;
+    // only these labels, like a few ports of a big switch, none is all
+    repeated string labels = 6;
 }

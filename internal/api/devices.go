@@ -98,7 +98,7 @@ func (s *Server) Device(ctx context.Context, in *DeviceRequest) (*DeviceInfo, er
 }
 
 func (s *Server) DeviceSeries(ctx context.Context, in *DeviceSeriesRequest) (*SeriesResponse, error) {
-	result, err := s.Store.DeviceSeries(ctx, in.Name, in.Metric, time.Unix(in.From, 0), time.Unix(in.To, 0), int(in.MaxPoints))
+	result, err := s.Store.DeviceSeries(ctx, in.Name, in.Metric, in.Labels, time.Unix(in.From, 0), time.Unix(in.To, 0), int(in.MaxPoints))
 	if err != nil {
 		return nil, toStatus(err)
 	}

@@ -37,6 +37,7 @@ func (f *fakeCollector) DeviceSeries(ctx context.Context, in *api.DeviceSeriesRe
 	if in.Name != "core-switch" {
 		return nil, status.Error(codes.NotFound, "no data")
 	}
+	f.lastDeviceLabels = in.Labels
 	if in.Metric == "" {
 		return nil, status.Error(codes.InvalidArgument, "invalid request: a metric is needed, like if_rx_bps")
 	}
@@ -53,7 +54,7 @@ func (f *fakeCollector) RemoveDevice(ctx context.Context, in *api.DeviceRequest)
 }
 
 func TestDevices(t *testing.T) {
-	s, _ := newTestServer(t, nil)
+	s, fake := newTestServer(t, nil)
 
 	// viewers see devices like admins
 	for _, session := range []string{testSession, viewerSession} {
@@ -74,9 +75,12 @@ func TestDevices(t *testing.T) {
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"name":"rack ups"`) {
 		t.Errorf("unexpected device with a space in its name: %d %s", rec.Code, rec.Body)
 	}
-	rec = call(s, "GET", "/api/v1/devices/core-switch/series?metric=if_rx_bps&from=1699990000&to=1700000100", "", viewerSession, nil)
+	rec = call(s, "GET", "/api/v1/devices/core-switch/series?metric=if_rx_bps&from=1699990000&to=1700000100&label=Gi1/0/24&label=Gi1/0/1", "", viewerSession, nil)
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"label":"Gi1/0/24"`) {
 		t.Errorf("unexpected series %d %s", rec.Code, rec.Body)
+	}
+	if got := strings.Join(fake.lastDeviceLabels, ","); got != "Gi1/0/24,Gi1/0/1" {
+		t.Errorf("expected both ports passed on, got %q", got)
 	}
 
 	tests := []struct {
