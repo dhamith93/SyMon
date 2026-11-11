@@ -1,6 +1,7 @@
 package snmp
 
 import (
+	"maps"
 	"sort"
 	"strconv"
 	"strings"
@@ -144,6 +145,27 @@ func table(s session, root string) (map[string]map[string]any, []string, error) 
 	if err != nil {
 		return nil, nil, err
 	}
+	return rows, sortedIndexes(rows), nil
+}
+
+// column walks one column of a table and returns its cells by row index,
+// with the indexes in numeric order
+func column(s session, table string, col string) (map[string]any, []string, error) {
+	root := table + "." + col
+	cells := map[string]any{}
+	err := s.Walk(root, func(oid string, value any) error {
+		if index, ok := strings.CutPrefix(oid, root+"."); ok {
+			cells[index] = value
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return cells, sortedIndexes(cells), nil
+}
+
+func sortedIndexes[V any](rows map[string]V) []string {
 	indexes := make([]string, 0, len(rows))
 	for index := range rows {
 		indexes = append(indexes, index)
@@ -156,7 +178,7 @@ func table(s session, root string) (map[string]map[string]any, []string, error) 
 		}
 		return indexes[i] < indexes[j]
 	})
-	return rows, indexes, nil
+	return indexes
 }
 
 // readSystem fills in what the device says about itself and returns its
@@ -189,51 +211,81 @@ type port struct {
 }
 
 // readInterfaces reads the ports of a switch or router. wanted keeps only
-// those names, in that order; empty keeps the physical ports.
+// those names, in that order; empty keeps the physical ports. It walks the
+// names, and the types when it has to find the physical ports, then gets
+// the rest for the kept ports only. Some devices take most of a second for
+// every request about their interface table, so walking the whole table
+// took a small router half a minute.
 func readInterfaces(s session, wanted []string) ([]port, error) {
-	rows, indexes, err := table(s, oidIfTable)
+	descrs, indexes, err := column(s, oidIfTable, ifDescr)
 	if err != nil {
 		return nil, err
 	}
-	xrows, _, err := table(s, oidIfXTable)
+	// devices without ifXTable have no names, aliases or 64 bit counters
+	names, _, err := column(s, oidIfXTable, ifName)
 	if err != nil {
 		return nil, err
 	}
+	var types map[string]any
+	if len(wanted) == 0 {
+		if types, _, err = column(s, oidIfTable, ifType); err != nil {
+			return nil, err
+		}
+	}
+
 	var ports []port
 	for _, index := range indexes {
-		row, xrow := rows[index], xrows[index]
-		p := port{
-			index:   index,
-			name:    text(xrow[ifName]),
-			alias:   text(xrow[ifAlias]),
-			typ:     integer(row[ifType]),
-			adminUp: integer(row[ifAdminStatus]) == ifStatusUp,
-			up:      integer(row[ifOperStatus]) == ifStatusUp,
-		}
+		p := port{index: index, name: text(names[index]), typ: integer(types[index])}
 		if p.name == "" {
-			p.name = text(row[ifDescr])
+			p.name = text(descrs[index])
 		}
 		if p.name == "" {
 			p.name = "if" + index
 		}
-		if in, ok := counter(xrow[ifHCInOctets]); ok {
-			p.in = in
-			p.out, _ = counter(xrow[ifHCOutOctets])
-		} else {
-			p.in, _ = counter(row[ifInOctets])
-			p.out, _ = counter(row[ifOutOctets])
-		}
-		p.inErrors, _ = counter(row[ifInErrors])
-		p.outErrors, _ = counter(row[ifOutErrors])
-		// ifHighSpeed is in Mbps and does not overflow at 4 Gbps like ifSpeed
-		if mbps, ok := counter(xrow[ifHighSpeed]); ok && mbps > 0 {
-			p.speed = mbps * 1_000_000
-		} else {
-			p.speed, _ = counter(row[ifSpeed])
-		}
 		ports = append(ports, p)
 	}
-	return selectPorts(ports, wanted), nil
+	ports = selectPorts(ports, wanted)
+
+	columns := []string{oidIfTable + "." + ifSpeed, oidIfTable + "." + ifAdminStatus, oidIfTable + "." + ifOperStatus,
+		oidIfTable + "." + ifInOctets, oidIfTable + "." + ifInErrors, oidIfTable + "." + ifOutOctets, oidIfTable + "." + ifOutErrors}
+	if len(names) > 0 {
+		columns = append(columns, oidIfXTable+"."+ifHCInOctets, oidIfXTable+"."+ifHCOutOctets, oidIfXTable+"."+ifHighSpeed, oidIfXTable+"."+ifAlias)
+	}
+	var oids []string
+	for _, p := range ports {
+		for _, col := range columns {
+			oids = append(oids, col+"."+p.index)
+		}
+	}
+	vars, err := getAll(s, oids)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range ports {
+		p := &ports[i]
+		row := func(col string) any { return vars[oidIfTable+"."+col+"."+p.index] }
+		xrow := func(col string) any { return vars[oidIfXTable+"."+col+"."+p.index] }
+		p.alias = text(xrow(ifAlias))
+		p.adminUp = integer(row(ifAdminStatus)) == ifStatusUp
+		p.up = integer(row(ifOperStatus)) == ifStatusUp
+		if in, ok := counter(xrow(ifHCInOctets)); ok {
+			p.in = in
+			p.out, _ = counter(xrow(ifHCOutOctets))
+		} else {
+			p.in, _ = counter(row(ifInOctets))
+			p.out, _ = counter(row(ifOutOctets))
+		}
+		p.inErrors, _ = counter(row(ifInErrors))
+		p.outErrors, _ = counter(row(ifOutErrors))
+		// ifHighSpeed is in Mbps and does not overflow at 4 Gbps like ifSpeed
+		if mbps, ok := counter(xrow(ifHighSpeed)); ok && mbps > 0 {
+			p.speed = mbps * 1_000_000
+		} else {
+			p.speed, _ = counter(row(ifSpeed))
+		}
+	}
+	return ports, nil
 }
 
 func selectPorts(ports []port, wanted []string) []port {
@@ -367,24 +419,34 @@ func boolValue(b bool) float64 {
 // maxOIDsPerGet keeps a GET small enough for any device
 const maxOIDsPerGet = 20
 
-// readMetrics gets the user's own OIDs, in batches, and returns what the
-// device answered by metric name
-func readMetrics(s session, metrics []Metric) (map[string]any, error) {
-	answers := map[string]any{}
-	for start := 0; start < len(metrics); start += maxOIDsPerGet {
-		batch := metrics[start:min(start+maxOIDsPerGet, len(metrics))]
-		oids := make([]string, 0, len(batch))
-		for _, metric := range batch {
-			oids = append(oids, metric.OID)
-		}
-		vars, err := s.Get(oids)
+// getAll gets OIDs in batches a device can answer
+func getAll(s session, oids []string) (map[string]any, error) {
+	all := map[string]any{}
+	for start := 0; start < len(oids); start += maxOIDsPerGet {
+		vars, err := s.Get(oids[start:min(start+maxOIDsPerGet, len(oids))])
 		if err != nil {
 			return nil, err
 		}
-		for _, metric := range batch {
-			if value, ok := vars[metric.OID]; ok && value != nil {
-				answers[metric.Name] = value
-			}
+		maps.Copy(all, vars)
+	}
+	return all, nil
+}
+
+// readMetrics gets the user's own OIDs and returns what the device
+// answered by metric name
+func readMetrics(s session, metrics []Metric) (map[string]any, error) {
+	oids := make([]string, 0, len(metrics))
+	for _, metric := range metrics {
+		oids = append(oids, metric.OID)
+	}
+	vars, err := getAll(s, oids)
+	if err != nil {
+		return nil, err
+	}
+	answers := map[string]any{}
+	for _, metric := range metrics {
+		if value, ok := vars[metric.OID]; ok && value != nil {
+			answers[metric.Name] = value
 		}
 	}
 	return answers, nil

@@ -18,9 +18,13 @@ type fakeSession struct {
 	values map[string]any
 	err    error
 	closed bool
+	// what was asked for
+	walks []string
+	gets  []string
 }
 
 func (f *fakeSession) Get(oids []string) (map[string]any, error) {
+	f.gets = append(f.gets, oids...)
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -34,6 +38,7 @@ func (f *fakeSession) Get(oids []string) (map[string]any, error) {
 }
 
 func (f *fakeSession) Walk(root string, fn func(oid string, value any) error) error {
+	f.walks = append(f.walks, root)
 	if f.err != nil {
 		return f.err
 	}
@@ -156,6 +161,56 @@ func TestInterfacesProfile(t *testing.T) {
 	third := p.Poll(context.Background(), device, now.Add(60*time.Second))
 	if len(third.Interfaces) != 2 || third.Interfaces[0].Name != "Gi1/0/2" || third.Interfaces[1].Name != "Gi1/0/1" {
 		t.Errorf("unexpected picked ports %+v", third.Interfaces)
+	}
+}
+
+// Some devices are slow for every request about their interfaces, so a
+// poll walks the names only and gets the rest for the kept ports
+func TestInterfacesAskForLittle(t *testing.T) {
+	fake := &fakeSession{values: switchValues()}
+	p := newPoller(fake, nil)
+	device := Device{Name: "sw1", Address: "10.0.0.2", Community: "public", Profiles: []string{ProfileInterfaces}, Interfaces: []string{"Gi1/0/2"}}
+	report := p.Poll(context.Background(), device, time.Unix(1700000000, 0))
+	if len(report.Interfaces) != 1 || report.Interfaces[0].SpeedBps != 100_000_000 || !report.Interfaces[0].AdminUp {
+		t.Fatalf("unexpected ports %+v", report.Interfaces)
+	}
+	if want := []string{oidIfTable + "." + ifDescr, oidIfXTable + "." + ifName}; !slices.Equal(fake.walks, want) {
+		t.Errorf("walked %v, want only %v", fake.walks, want)
+	}
+	for _, oid := range fake.gets {
+		if strings.HasPrefix(oid, oidIfTable+".") || strings.HasPrefix(oid, oidIfXTable+".") {
+			if !strings.HasSuffix(oid, ".2") {
+				t.Errorf("asked for %s, which is not the listed port", oid)
+			}
+		}
+	}
+
+	// without a list it also needs the types, to keep the physical ports
+	fake.walks = nil
+	device.Interfaces = nil
+	p.Poll(context.Background(), device, time.Unix(1700000030, 0))
+	if !slices.Contains(fake.walks, oidIfTable+"."+ifType) || slices.Contains(fake.walks, oidIfTable) {
+		t.Errorf("unexpected walks %v", fake.walks)
+	}
+}
+
+// a device without ifXTable gets no requests for it beyond the name walk
+func TestInterfacesWithoutIfXTable(t *testing.T) {
+	values := switchValues()
+	for oid := range values {
+		if strings.HasPrefix(oid, oidIfXTable+".") {
+			delete(values, oid)
+		}
+	}
+	fake := &fakeSession{values: values}
+	report := newPoller(fake, nil).Poll(context.Background(), Device{Name: "ap", Address: "10.0.0.9", Community: "public", Profiles: []string{ProfileInterfaces}, Interfaces: []string{"GigabitEthernet1/0/1"}}, time.Unix(1700000000, 0))
+	if len(report.Interfaces) != 1 || report.Interfaces[0].Name != "GigabitEthernet1/0/1" || report.Interfaces[0].SpeedBps != 1_000_000_000 {
+		t.Fatalf("unexpected ports %+v", report.Interfaces)
+	}
+	for _, oid := range fake.gets {
+		if strings.HasPrefix(oid, oidIfXTable+".") {
+			t.Errorf("asked for %s from a device without ifXTable", oid)
+		}
 	}
 }
 
