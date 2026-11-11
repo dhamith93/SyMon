@@ -102,6 +102,10 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("GET /api/v1/clusters/{name}", s.getCluster)
 	data.HandleFunc("GET /api/v1/clusters/{name}/series", s.getClusterSeries)
 	data.HandleFunc("DELETE /api/v1/clusters/{name}", s.requireAdmin(s.deleteCluster))
+	data.HandleFunc("GET /api/v1/devices", s.getDevices)
+	data.HandleFunc("GET /api/v1/devices/{name}", s.getDevice)
+	data.HandleFunc("GET /api/v1/devices/{name}/series", s.getDeviceSeries)
+	data.HandleFunc("DELETE /api/v1/devices/{name}", s.requireAdmin(s.deleteDevice))
 	data.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no such endpoint")
 	})
