@@ -53,5 +53,6 @@ FROM device_metrics_1m
 GROUP BY 1, device_id, metric, label
 WITH NO DATA;
 
-SELECT add_continuous_aggregate_policy('device_metrics_1m', start_offset => INTERVAL '2 hours', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
-SELECT add_continuous_aggregate_policy('device_metrics_1h', start_offset => INTERVAL '2 days', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '30 minutes');
+-- the wide windows from 003, so data that arrives late still rolls up
+SELECT add_continuous_aggregate_policy('device_metrics_1m', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
+SELECT add_continuous_aggregate_policy('device_metrics_1h', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '30 minutes');
