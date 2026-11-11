@@ -2,7 +2,20 @@
   import { api, type Channel } from '../lib/api';
   import { isAdmin } from '../lib/auth.svelte';
   import { navigate } from '../lib/router.svelte';
-  import { applyKindDefaults, formFromRule, isKube, kinds, newForm, ops, ruleFromForm, thresholdKinds, type Kind, type RuleForm } from '../lib/rules';
+  import {
+    applyKindDefaults,
+    deviceMetrics,
+    formFromRule,
+    isDevice,
+    isKube,
+    kinds,
+    newForm,
+    ops,
+    ruleFromForm,
+    thresholdKinds,
+    type Kind,
+    type RuleForm,
+  } from '../lib/rules';
 
   // id 0 is a new rule
   let { id }: { id: number } = $props();
@@ -10,6 +23,7 @@
   let form = $state<RuleForm>(newForm());
   let fleetHosts = $state<string[]>([]);
   let clusters = $state<string[]>([]);
+  let devices = $state<string[]>([]);
   let channels = $state<Channel[]>([]);
   let loaded = $state(false);
   let error = $state('');
@@ -27,12 +41,16 @@
   const kube = $derived(isKube(form.kind));
   // a cluster the rule names that does not report any more still shows
   const clusterChoices = $derived([...new Set([...clusters, ...(form.cluster ? [form.cluster] : [])])].sort());
+  const device = $derived(isDevice(form.kind));
+  // and so does a device, "*" is every device
+  const deviceChoices = $derived([...new Set([...devices, ...(form.device && form.device !== '*' ? [form.device] : [])])].sort());
 
   async function load() {
     try {
       fleetHosts = (await api.fleet()).hosts.map((h) => h.name);
       channels = (await api.channels()).channels;
       clusters = (await api.clusters().catch(() => ({ clusters: [] }))).clusters.map((c) => c.name);
+      devices = (await api.devices().catch(() => ({ devices: [] }))).devices.map((d) => d.name);
       if (id) {
         const found = (await api.rules()).rules.find((r) => r.id === id);
         if (!found) {
@@ -213,6 +231,43 @@
           </div>
           {#if clusterChoices.length === 0}
             <p class="hint muted">No cluster reports yet. The name is the agent's SYMON_KUBE_CLUSTER.</p>
+          {/if}
+        {:else if device}
+          <div class="row">
+            <label class="grow">
+              <span>Device</span>
+              <select class="control" required bind:value={form.device}>
+                <option value="*">Every device, including ones added later</option>
+                {#each deviceChoices as name (name)}<option>{name}</option>{/each}
+              </select>
+            </label>
+            {#if form.kind === 'device_port'}
+              <label class="grow">
+                <span>Port, as on the device's page</span>
+                <input class="control" required bind:value={form.iface} placeholder="Gi1/0/24" />
+              </label>
+            {/if}
+          </div>
+          {#if form.kind === 'device_metric'}
+            <div class="row">
+              <label class="grow">
+                <span>Value</span>
+                <input class="control" required list="device-metrics" bind:value={form.deviceMetric} placeholder="ups_charge_pct" />
+                <datalist id="device-metrics">
+                  {#each deviceMetrics as metric (metric)}<option value={metric}></option>{/each}
+                </datalist>
+              </label>
+              <label class="grow">
+                <span>Port, volume or line, empty for every one</span>
+                <input class="control" bind:value={form.label} placeholder="/volume1" />
+              </label>
+            </div>
+            <p class="hint muted">A metric from the devices file works too, by its name. Port traffic is in bits per second.</p>
+          {:else if form.kind === 'device_port'}
+            <p class="hint muted">Only a port that is switched on and has no link alerts. A port switched off on the device does not.</p>
+          {/if}
+          {#if deviceChoices.length === 0}
+            <p class="hint muted">No device reports yet. The names come from the devices file on the polling host.</p>
           {/if}
         {:else}
           <div class="hosts">

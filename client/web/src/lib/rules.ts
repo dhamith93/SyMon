@@ -15,6 +15,9 @@ export type Kind =
   | 'kube_workload'
   | 'kube_pending'
   | 'kube_restarts'
+  | 'device_down'
+  | 'device_port'
+  | 'device_metric'
   | 'custom';
 
 export const kinds: { value: Kind; label: string }[] = [
@@ -30,15 +33,39 @@ export const kinds: { value: Kind; label: string }[] = [
   { value: 'kube_workload', label: 'Kubernetes workload missing replicas' },
   { value: 'kube_pending', label: 'Kubernetes pods stuck pending' },
   { value: 'kube_restarts', label: 'Kubernetes restarts in the last hour' },
+  { value: 'device_down', label: 'Device not answering SNMP' },
+  { value: 'device_port', label: 'Device port down' },
+  { value: 'device_metric', label: 'Device value, like UPS charge' },
   { value: 'custom', label: 'Custom metric' },
 ];
 
 // kinds compared with a warning and a critical level
-export const thresholdKinds: Kind[] = ['procUsage', 'memory', 'swap', 'disks', 'disk_forecast', 'kube_restarts', 'custom'];
+export const thresholdKinds: Kind[] = ['procUsage', 'memory', 'swap', 'disks', 'disk_forecast', 'kube_restarts', 'device_metric', 'custom'];
 
 // kinds that check a Kubernetes cluster instead of hosts
 export const kubeKinds: Kind[] = ['kube_node', 'kube_workload', 'kube_pending', 'kube_restarts'];
 export const isKube = (kind: Kind) => kubeKinds.includes(kind);
+
+// kinds that check SNMP devices instead of hosts
+export const deviceKinds: Kind[] = ['device_down', 'device_port', 'device_metric'];
+export const isDevice = (kind: Kind) => deviceKinds.includes(kind);
+
+// what the profiles report, as suggestions for a device_metric rule
+export const deviceMetrics = [
+  'ups_on_battery',
+  'ups_charge_pct',
+  'ups_minutes_left',
+  'ups_load_pct',
+  'ups_input_volts',
+  'ups_battery_celsius',
+  'cpu_pct',
+  'mem_used_pct',
+  'storage_used_pct',
+  'if_rx_bps',
+  'if_tx_bps',
+  'if_rx_errors_ps',
+  'if_tx_errors_ps',
+];
 
 export const ops = ['>', '<', '>=', '<=', '==', '!='];
 
@@ -49,7 +76,7 @@ export function kindOf(rule: RuleConfig): Kind {
 function unit(kind: Kind): string {
   if (kind === 'disk_forecast') return ' days';
   if (kind === 'kube_restarts') return ' restarts';
-  return kind === 'custom' ? '' : '%';
+  return kind === 'custom' || kind === 'device_metric' ? '' : '%';
 }
 
 // what a rule watches, in words
@@ -79,6 +106,12 @@ export function describeWatch(rule: RuleConfig): string {
       return `Pending pods${inNamespace(rule)}`;
     case 'kube_restarts':
       return `Container restarts${inNamespace(rule)}`;
+    case 'device_down':
+      return 'Device answering';
+    case 'device_port':
+      return `Port ${rule.Interface ?? ''}`;
+    case 'device_metric':
+      return `${rule.DeviceMetric ?? ''}${rule.Label ? ` of ${rule.Label}` : ''}`;
     case 'custom':
       return `Custom metric ${rule.MetricName}`;
   }
@@ -90,6 +123,7 @@ const inNamespace = (rule: RuleConfig) => (rule.Namespace ? ` in ${rule.Namespac
 export function describeHosts(rule: RuleConfig): string {
   if (kindOf(rule) === 'endpoint') return 'Checked from the collector';
   if (isKube(kindOf(rule))) return `Cluster ${rule.Cluster ?? ''}`;
+  if (isDevice(kindOf(rule))) return rule.Device === '*' ? 'All devices' : `Device ${rule.Device ?? ''}`;
   const servers = rule.Servers ?? [];
   return servers.includes('*') ? 'All hosts' : servers.join(', ');
 }
@@ -112,6 +146,10 @@ export function describeLevels(rule: RuleConfig): string {
       return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} missing replicas`;
     case 'kube_pending':
       return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} pending`;
+    case 'device_down':
+      return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} not answering`;
+    case 'device_port':
+      return `critical after ${formatDuration(rule.TriggerIntveral ?? 0)} down`;
     case 'endpoint': {
       const text = `critical when not HTTP ${rule.ExpectedHTTPCode || 200}`;
       if (!rule.Endpoint?.toLowerCase().startsWith('https://')) return text;
@@ -180,6 +218,12 @@ export interface RuleForm {
   // the Kubernetes cluster, and a namespace or empty for all
   cluster: string;
   namespace: string;
+  // the device or "*", the port of a device_port rule, and the value of
+  // a device_metric rule with a label or empty for all
+  device: string;
+  iface: string;
+  deviceMetric: string;
+  label: string;
   // the notification channels picked by name, none for the default ones
   channels: string[];
   template: string;
@@ -193,12 +237,13 @@ const defaults: Partial<Record<Kind, { op: string; warn: number; critical: numbe
   disks: { op: '>', warn: 80, critical: 90 },
   disk_forecast: { op: '<', warn: 14, critical: 3 },
   kube_restarts: { op: '>', warn: 3, critical: 10 },
+  device_metric: { op: '>', warn: 80, critical: 90 },
   custom: { op: '>', warn: 0, critical: 0 },
 };
 
 export function defaultTemplate(kind: Kind): string {
-  // the collector writes what is wrong and what the pods say
-  if (isKube(kind)) return '';
+  // the collector writes what is wrong and what the pods or device say
+  if (isKube(kind) || isDevice(kind)) return '';
   if (kind === 'endpoint') return '{subject}\n{endpoint} expected {expected}, got {actual}: {error}';
   if (kind === 'ping') return '{subject}\n{serverName} has sent nothing for over {triggerInterval} seconds';
   return '{subject}\n{serverName} {metricName} {value} {op} {expected} at {timestamp}';
@@ -246,6 +291,10 @@ export function newForm(): RuleForm {
     certCritical: null,
     cluster: '',
     namespace: '',
+    device: '*',
+    iface: '',
+    deviceMetric: '',
+    label: '',
     channels: [],
     template: '',
   };
@@ -281,6 +330,10 @@ export function formFromRule(rule: RuleConfig, enabled: boolean, channels: Chann
     certCritical: rule.CertCriticalDays ?? null,
     cluster: rule.Cluster ?? '',
     namespace: rule.Namespace ?? '',
+    device: rule.Device ?? '*',
+    iface: rule.Interface ?? '',
+    deviceMetric: rule.DeviceMetric ?? '',
+    label: rule.Label ?? '',
     channels: pickedChannels(rule, channels),
     template: rule.Template ?? '',
   };
@@ -299,10 +352,18 @@ export function ruleFromForm(form: RuleForm): RuleConfig {
   if (form.description.trim()) rule.Description = form.description.trim();
   if (form.channels.length > 0) rule.Channels = [...form.channels];
   if (kind === 'custom') rule.IsCustom = true;
-  if (kind !== 'endpoint' && !isKube(kind)) rule.Servers = form.allHosts ? ['*'] : form.hosts;
+  if (kind !== 'endpoint' && !isKube(kind) && !isDevice(kind)) rule.Servers = form.allHosts ? ['*'] : form.hosts;
   if (isKube(kind)) {
     rule.Cluster = form.cluster.trim();
     if (kind !== 'kube_node' && form.namespace.trim()) rule.Namespace = form.namespace.trim();
+  }
+  if (isDevice(kind)) {
+    rule.Device = form.device.trim();
+    if (kind === 'device_port') rule.Interface = form.iface.trim();
+    if (kind === 'device_metric') {
+      rule.DeviceMetric = form.deviceMetric.trim();
+      if (form.label.trim()) rule.Label = form.label.trim();
+    }
   }
   if (thresholdKinds.includes(kind)) {
     rule.Op = form.op;

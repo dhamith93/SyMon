@@ -18,6 +18,21 @@ export function formatRate(bytesPerSecond: number): string {
   return `${formatBytes(bytesPerSecond)}/s`;
 }
 
+const bitUnits = ['bps', 'kbps', 'Mbps', 'Gbps', 'Tbps'];
+
+// network gear counts in bits and powers of 1000: 1500000 -> "1.5 Mbps"
+export function formatBits(bitsPerSecond: number, digits = 1): string {
+  if (!Number.isFinite(bitsPerSecond)) return '–';
+  let value = Math.abs(bitsPerSecond);
+  let unit = 0;
+  while (value >= 1000 && unit < bitUnits.length - 1) {
+    value /= 1000;
+    unit++;
+  }
+  const sign = bitsPerSecond < 0 ? '-' : '';
+  return `${sign}${unit === 0 ? value.toFixed(0) : value.toFixed(digits)} ${bitUnits[unit]}`;
+}
+
 // memory and swap arrive in MiB
 export function formatMiB(mib: number): string {
   return formatBytes(mib * 1024 * 1024);
@@ -107,7 +122,7 @@ export function formatTime(unixSeconds: number, spanSeconds: number): string {
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: spanSeconds < 3600 ? '2-digit' : undefined });
 }
 
-export type Unit = 'percent' | 'rate' | 'bytes' | 'mib' | 'celsius' | 'ms' | 'number';
+export type Unit = 'percent' | 'rate' | 'bits' | 'bytes' | 'mib' | 'celsius' | 'ms' | 'number';
 
 export function formatValue(value: number, unit: Unit): string {
   switch (unit) {
@@ -115,6 +130,8 @@ export function formatValue(value: number, unit: Unit): string {
       return formatPercent(value, value < 10 ? 1 : 0);
     case 'rate':
       return formatRate(value);
+    case 'bits':
+      return formatBits(value);
     case 'bytes':
       return formatBytes(value);
     case 'mib':

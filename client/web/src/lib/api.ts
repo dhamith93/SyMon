@@ -225,6 +225,75 @@ export interface RuleConfig {
   // the Kubernetes cluster of a kube_ rule, and one namespace or all
   Cluster?: string;
   Namespace?: string;
+  // the SNMP device of a device_ rule or "*" for every device, the port of
+  // a device_port rule, and the value of a device_metric rule with one
+  // label or all
+  Device?: string;
+  Interface?: string;
+  DeviceMetric?: string;
+  Label?: string;
+}
+
+// An SNMP device, as the agent that polls it reports it. reportedAt is the
+// last poll, error why it could not read the device. A stale device has not
+// been reported for 3 intervals. The numbers are from the last good read,
+// and null when the device does not report them.
+export interface DeviceSummary {
+  name: string;
+  kind: string;
+  address: string;
+  host: string;
+  reportedAt: number;
+  intervalSeconds: number;
+  error: string;
+  stale: boolean;
+  uptimeSeconds: number;
+  ports: number;
+  portsUp: number;
+  // bits per second, every port added up
+  rxBps: number;
+  txBps: number;
+  cpuPct: number | null;
+  memUsedPct: number | null;
+  upsChargePct: number | null;
+  upsLoadPct: number | null;
+  upsMinutesLeft: number | null;
+  upsOnBattery: boolean | null;
+}
+
+// snmp.DeviceReport, the last poll that could read the device. Time is 0
+// when none could yet.
+export interface DeviceInterface {
+  Name: string;
+  Alias?: string;
+  // the link, and whether the port is switched on
+  Up: boolean;
+  AdminUp: boolean;
+  SpeedBps?: number;
+}
+
+export interface DeviceValue {
+  Metric: string;
+  // a port, volume or line, empty for a single value
+  Label?: string;
+  Unit?: string;
+  Value: number;
+}
+
+export interface DeviceState {
+  Device: string;
+  Time: number;
+  IntervalSeconds: number;
+  Kind: string;
+  Address: string;
+  System: { Descr?: string; Name?: string; UptimeSeconds?: number };
+  Interfaces?: DeviceInterface[];
+  Values?: DeviceValue[];
+}
+
+export interface DeviceDetail {
+  summary: DeviceSummary;
+  state: DeviceState;
 }
 
 // A Kubernetes cluster, as the agent that reads it reports it. stateTime is
@@ -511,6 +580,7 @@ async function get<T>(path: string, params: Record<string, string | number | boo
 }
 
 const host = (name: string) => `/api/v1/hosts/${encodeURIComponent(name)}`;
+const device = (name: string) => `/api/v1/devices/${encodeURIComponent(name)}`;
 
 export const api = {
   session,
@@ -553,4 +623,13 @@ export const api = {
   clusterSeries: (name: string, metric: 'nodes' | 'pods' | 'workloads' | 'restarts', from: number, to: number) =>
     get<SeriesResponse>(`/api/v1/clusters/${encodeURIComponent(name)}/series`, { metric, from, to }),
   removeCluster: (name: string) => send<{ name: string }>('DELETE', `/api/v1/clusters/${encodeURIComponent(name)}`),
+  devices: () => get<{ devices: DeviceSummary[] }>('/api/v1/devices'),
+  device: (name: string) => get<DeviceDetail>(device(name)),
+  // labels keeps only those series, like the picked ports, none is all
+  deviceSeries: (name: string, metric: string, from: number, to: number, labels: string[] = []) => {
+    const query = new URLSearchParams({ metric, from: String(from), to: String(to) });
+    for (const label of labels) query.append('label', label);
+    return get<SeriesResponse>(`${device(name)}/series?${query}`);
+  },
+  removeDevice: (name: string) => send<{ name: string }>('DELETE', device(name)),
 };

@@ -56,6 +56,52 @@ describe('describing rules', () => {
   });
 });
 
+describe('device rules', () => {
+  it('describes device rules by their device', () => {
+    const port: RuleConfig = { Name: 'Uplink', MetricName: 'device_port', Device: 'sw1', Interface: 'Gi1/0/24', TriggerIntveral: 60 };
+    expect(describeWatch(port)).toBe('Port Gi1/0/24');
+    expect(describeHosts(port)).toBe('Device sw1');
+    expect(describeLevels(port)).toBe('critical after 1m down');
+    const volumes: RuleConfig = { Name: 'x', MetricName: 'device_metric', Device: '*', DeviceMetric: 'storage_used_pct', Label: '/volume1', Op: '>', WarnThreshold: 80, CriticalThreshold: 90 };
+    expect(describeWatch(volumes)).toBe('storage_used_pct of /volume1');
+    expect(describeHosts(volumes)).toBe('All devices');
+    expect(describeLevels(volumes)).toBe('warning > 80, critical > 90');
+    expect(describeLevels({ Name: 'x', MetricName: 'device_down', Device: 'ups1', TriggerIntveral: 120 })).toBe('critical after 2m not answering');
+  });
+
+  it('keeps only the fields a device kind uses', () => {
+    const form = newForm();
+    form.name = 'On battery';
+    applyKindDefaults(form, 'device_metric');
+    form.device = 'ups1';
+    form.iface = 'Gi1';
+    form.deviceMetric = ' ups_on_battery ';
+    form.op = '==';
+    form.warn = 1;
+    form.critical = 1;
+    const rule = ruleFromForm(form);
+    expect(rule).toEqual({
+      Name: 'On battery',
+      MetricName: 'device_metric',
+      TriggerIntveral: 120,
+      Template: '',
+      Device: 'ups1',
+      DeviceMetric: 'ups_on_battery',
+      Op: '==',
+      WarnThreshold: 1,
+      CriticalThreshold: 1,
+    });
+    expect(formFromRule(rule, true).deviceMetric).toBe('ups_on_battery');
+
+    applyKindDefaults(form, 'device_port');
+    const port = ruleFromForm(form);
+    expect(port.Interface).toBe('Gi1');
+    expect(port.Servers).toBeUndefined();
+    expect(port.Op).toBeUndefined();
+    expect(formFromRule({ Name: 'x', MetricName: 'device_down' }, true).device).toBe('*');
+  });
+});
+
 describe('channels', () => {
   it('reads the ticks from before channels as every channel of that kind', () => {
     const old: RuleConfig = { Name: 'x', MetricName: 'ping', Email: true, Pagerduty: true, Channels: ['team slack'] };

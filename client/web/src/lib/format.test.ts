@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAgo, formatAxis, formatBytes, formatDays, formatDuration, formatMs, formatNumber, formatPercent, formatRate, formatValue } from './format';
+import { formatAgo, formatAxis, formatBits, formatBytes, formatDays, formatDuration, formatMs, formatNumber, formatPercent, formatRate, formatValue } from './format';
 
 describe('formatBytes', () => {
   it('uses binary units', () => {
@@ -11,6 +11,17 @@ describe('formatBytes', () => {
 
   it('handles bad input', () => {
     expect(formatBytes(NaN)).toBe('–');
+  });
+});
+
+describe('formatBits', () => {
+  it('uses powers of 1000 like network gear', () => {
+    expect(formatBits(0)).toBe('0 bps');
+    expect(formatBits(999)).toBe('999 bps');
+    expect(formatBits(1_500_000)).toBe('1.5 Mbps');
+    expect(formatBits(10e9)).toBe('10.0 Gbps');
+    expect(formatValue(2500, 'bits')).toBe('2.5 kbps');
+    expect(formatBits(Infinity)).toBe('–');
   });
 });
 

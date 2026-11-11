@@ -8,6 +8,8 @@ export type Page =
   | { name: 'alerts' }
   | { name: 'endpoints' }
   | { name: 'kubernetes' }
+  | { name: 'devices' }
+  | { name: 'device'; device: string }
   | { name: 'account' }
   | { name: 'rules' }
   | { name: 'notifications' }
@@ -55,6 +57,9 @@ export function match(path: string): Page {
   if (path === '/alerts') return { name: 'alerts' };
   if (path === '/endpoints') return { name: 'endpoints' };
   if (path === '/kubernetes') return { name: 'kubernetes' };
+  if (path === '/devices') return { name: 'devices' };
+  const device = path.match(/^\/devices\/([^/]+)\/?$/);
+  if (device) return { name: 'device', device: decodeURIComponent(device[1]) };
   if (path === '/account') return { name: 'account' };
   if (path === '/rules') return { name: 'rules' };
   if (path === '/notifications') return { name: 'notifications' };
@@ -74,4 +79,8 @@ export function match(path: string): Page {
 // a host's page, or one of the pages under it
 export function hostPath(host: string, sub?: 'custom' | 'tasks'): string {
   return `/hosts/${encodeURIComponent(host)}${sub ? `/${sub}` : ''}`;
+}
+
+export function devicePath(device: string): string {
+  return `/devices/${encodeURIComponent(device)}`;
 }

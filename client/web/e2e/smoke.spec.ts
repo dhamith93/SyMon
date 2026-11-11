@@ -138,6 +138,23 @@ test('a reporting cluster has a kubernetes page', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('a reporting device has a devices page', async ({ page }) => {
+  const errors = watchErrors(page);
+  const { devices } = await (await page.request.get('/api/v1/devices')).json();
+  test.skip(devices.length === 0, 'no device reports');
+
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Devices', exact: true }).click();
+  await expect(page).toHaveURL(/\/devices$/);
+  await expect(page.getByRole('heading', { name: 'Devices', level: 1 })).toBeVisible();
+  const card = page.locator('a.device').first();
+  const name = (await card.locator('.name').textContent()) ?? '';
+  await card.click();
+  await expect(page).toHaveURL(/\/devices\/[^/]+$/);
+  await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('logging out brings back the login page', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Log out' }).click();

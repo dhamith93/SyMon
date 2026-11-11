@@ -6,6 +6,8 @@
   import Account from './pages/Account.svelte';
   import Alerts from './pages/Alerts.svelte';
   import CustomMetrics from './pages/CustomMetrics.svelte';
+  import Device from './pages/Device.svelte';
+  import Devices from './pages/Devices.svelte';
   import Endpoints from './pages/Endpoints.svelte';
   import Fleet from './pages/Fleet.svelte';
   import Host from './pages/Host.svelte';
@@ -21,8 +23,9 @@
   const onAlerts = $derived(page.name === 'alerts');
   const onEndpoints = $derived(page.name === 'endpoints');
   const onKubernetes = $derived(page.name === 'kubernetes');
+  const onDevices = $derived(page.name === 'devices' || page.name === 'device');
   const onRules = $derived(page.name === 'rules' || page.name === 'rule' || page.name === 'notifications');
-  const onHosts = $derived(!onAlerts && !onEndpoints && !onKubernetes && !onRules && page.name !== 'account');
+  const onHosts = $derived(!onAlerts && !onEndpoints && !onKubernetes && !onDevices && !onRules && page.name !== 'account');
   // one version when the dashboard and collector match, both when they do not
   const sameVersion = $derived(!appConfig.collectorVersion || appConfig.collectorVersion === appConfig.version);
 
@@ -49,6 +52,9 @@
         <a href="/endpoints" class:active={onEndpoints} aria-current={onEndpoints ? 'page' : undefined}>Endpoints</a>
         {#if appConfig.clusters.length > 0 || onKubernetes}
           <a href="/kubernetes" class:active={onKubernetes} aria-current={onKubernetes ? 'page' : undefined}>Kubernetes</a>
+        {/if}
+        {#if appConfig.devices.length > 0 || onDevices}
+          <a href="/devices" class:active={onDevices} aria-current={onDevices ? 'page' : undefined}>Devices</a>
         {/if}
         <a href="/alerts" class:active={onAlerts} aria-current={onAlerts ? 'page' : undefined}>Alerts</a>
         <a href="/rules" class:active={onRules} aria-current={onRules ? 'page' : undefined}>Rules</a>
@@ -96,6 +102,10 @@
     <Endpoints />
   {:else if page.name === 'kubernetes'}
     <Kubernetes />
+  {:else if page.name === 'devices'}
+    <Devices />
+  {:else if page.name === 'device'}
+    {#key page.device}<Device device={page.device} />{/key}
   {:else if page.name === 'account'}
     <Account />
   {:else if page.name === 'rules'}

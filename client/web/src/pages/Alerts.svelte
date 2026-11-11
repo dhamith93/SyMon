@@ -3,7 +3,7 @@
   import { appConfig } from '../lib/config.svelte';
   import { formatDateTime, formatDays, formatDuration, formatNumber, formatPercent } from '../lib/format';
   import { poll } from '../lib/poll';
-  import { hostPath, location, navigate } from '../lib/router.svelte';
+  import { devicePath, hostPath, location, navigate } from '../lib/router.svelte';
   import NoChannelsNotice from '../components/NoChannelsNotice.svelte';
   import StatTile from '../components/StatTile.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
@@ -90,6 +90,12 @@
       case 'kube_pending':
       case 'kube_restarts':
         return alert.target;
+      case 'device_down':
+        return 'Answering SNMP';
+      case 'device_port':
+        return `Port ${targetPart(alert.target)}`;
+      case 'device_metric':
+        return targetPart(alert.target) || 'Value';
       default:
         return alert.metric;
     }
@@ -121,10 +127,18 @@
         return `${alert.value} pending`;
       case 'kube_restarts':
         return `${alert.value} restarts`;
+      case 'device_down':
+        return alert.value ? 'unreachable' : 'answering';
+      case 'device_port':
+        return alert.value ? 'down' : 'up';
       default:
         return formatNumber(alert.value);
     }
   }
+
+  // a device alert's target is the device, then / and a port or label
+  const targetDevice = (target: string) => target.split('/')[0];
+  const targetPart = (target: string) => target.slice(targetDevice(target).length + 1);
 
   function duration(alert: AlertRecord): string {
     const end = alert.resolvedAt || Date.now() / 1000;
@@ -205,9 +219,10 @@
                   {#if alert.resolvedAt}<span class="muted severity">was {alert.severity === 2 ? 'critical' : 'warning'}</span>{/if}
                 </td>
                 <td>
-                  <!-- endpoint and kubernetes alerts belong to no host -->
+                  <!-- endpoint, kubernetes and device alerts belong to no host -->
                   {#if alert.host}<a href={hostPath(alert.host)}>{alert.host}</a>
                   {:else if alert.metric.startsWith('kube_')}<a href="/kubernetes">Kubernetes</a>
+                  {:else if alert.metric.startsWith('device_')}<a href={devicePath(targetDevice(alert.target))}>{targetDevice(alert.target)}</a>
                   {:else}<a href="/endpoints">Endpoint</a>{/if}
                 </td>
                 <td>{alert.rule}</td>
