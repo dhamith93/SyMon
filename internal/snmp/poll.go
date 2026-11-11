@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sync"
 	"time"
 )
 
@@ -19,9 +20,11 @@ type session interface {
 }
 
 // Poller polls devices and keeps the counters of the poll before, so
-// traffic and errors come out as rates
+// traffic and errors come out as rates. Devices may be polled at the same
+// time.
 type Poller struct {
 	open func(ctx context.Context, device Device) (session, error)
+	mu   sync.Mutex
 	prev map[string]sample
 }
 
@@ -52,28 +55,34 @@ func (p *Poller) Poll(ctx context.Context, device Device, now time.Time) DeviceR
 	}
 	defer s.Close()
 
+	p.mu.Lock()
+	prev := p.prev[device.Name]
+	p.mu.Unlock()
 	counts := map[string]uint64{}
-	if err := p.read(s, device, &report, counts); err != nil {
+	if err := p.read(s, device, prev, &report, counts); err != nil {
 		report.Error = fmt.Sprintf("cannot read %s: %v", device.Address, err)
 		return DeviceReport{Device: report.Device, Time: report.Time, IntervalSeconds: report.IntervalSeconds, Kind: report.Kind, Address: report.Address, Error: report.Error}
 	}
+	p.mu.Lock()
 	p.prev[device.Name] = sample{at: now, counts: counts}
+	p.mu.Unlock()
 	return report
 }
 
 // Forget drops what was kept about a device that left the file
 func (p *Poller) Forget(name string) {
+	p.mu.Lock()
 	delete(p.prev, name)
+	p.mu.Unlock()
 }
 
-// read runs the profiles and turns counters into rates against the poll
-// before. counts collects this poll's counters for the next one.
-func (p *Poller) read(s session, device Device, report *DeviceReport, counts map[string]uint64) error {
+// read runs the profiles and turns counters into rates against prev, the
+// poll before. counts collects this poll's counters for the next one.
+func (p *Poller) read(s session, device Device, prev sample, report *DeviceReport, counts map[string]uint64) error {
 	sysObjectID, err := readSystem(s, report)
 	if err != nil {
 		return err
 	}
-	prev := p.prev[device.Name]
 	elapsed := time.Unix(report.Time, 0).Sub(prev.at).Seconds()
 	rate := func(key string, current uint64) (float64, bool) {
 		counts[key] = current

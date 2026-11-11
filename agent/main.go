@@ -101,6 +101,7 @@ func main() {
 			go reader.loop()
 		}
 	}
+	go newDevicePoller(&config, client).loop()
 	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
 	collector := monitor.NewCollector(&config)
 	ticker := time.NewTicker(interval)

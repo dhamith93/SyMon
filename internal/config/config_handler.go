@@ -16,6 +16,8 @@ const DEFAULT_TASKS_PATH string = "/etc/symon/tasks.json"
 const DEFAULT_CRI_SOCKET string = "/run/containerd/containerd.sock"
 const DEFAULT_KUBE_CA_PATH string = "/etc/kubernetes/pki/ca.crt"
 const DEFAULT_KUBE_TOKEN_PATH string = "/etc/symon/kube.token"
+const DEFAULT_SNMP_DEVICES_PATH string = "/etc/symon/snmp.json"
+const DEFAULT_SNMP_INTERVAL_SECS int = 60
 
 type Collector struct {
 	TLSEnabled                bool
@@ -92,6 +94,10 @@ type Agent struct {
 	// TasksPath is the file listing the commands admins may start from the
 	// dashboard. Without the file the host offers none.
 	TasksPath string
+	// SNMPDevicesPath lists the devices this agent polls over SNMP, and
+	// SNMPIntervalSeconds how often. No file means no devices.
+	SNMPDevicesPath     string
+	SNMPIntervalSeconds int
 }
 
 type ServiceToMonitor struct {
@@ -132,6 +138,14 @@ func GetAgent() Agent {
 	if kubeTokenPath == "" {
 		kubeTokenPath = DEFAULT_KUBE_TOKEN_PATH
 	}
+	snmpDevicesPath := os.Getenv("SYMON_SNMP_DEVICES_PATH")
+	if snmpDevicesPath == "" {
+		snmpDevicesPath = DEFAULT_SNMP_DEVICES_PATH
+	}
+	snmpInterval := positiveInt(os.Getenv("SYMON_SNMP_INTERVAL_SECONDS"))
+	if snmpInterval == 0 {
+		snmpInterval = DEFAULT_SNMP_INTERVAL_SECS
+	}
 	return Agent{
 		ServerId:                    serverID,
 		AgentKeyPath:                agentKeyPath,
@@ -143,6 +157,8 @@ func GetAgent() Agent {
 		KubeAPIURL:                  os.Getenv("SYMON_KUBE_API_URL"),
 		KubeCAPath:                  kubeCAPath,
 		KubeTokenPath:               kubeTokenPath,
+		SNMPDevicesPath:             snmpDevicesPath,
+		SNMPIntervalSeconds:         snmpInterval,
 		CollectorEndpoint:           os.Getenv("SYMON_COLLECTOR_ENDPOINT"),
 		CollectorEndpointCACertPath: os.Getenv("SYMON_COLLECTOR_ENDPOINT_CERT_PATH"),
 		LogFileEnabled:              strings.ToUpper(os.Getenv("SYMON_AGENT_LOG_FILE_ENABLED")) == "TRUE",
