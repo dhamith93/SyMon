@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // seriesDef says where a chartable metric lives. Rollups of table are
@@ -130,25 +132,35 @@ func (s *Store) QuerySeries(ctx context.Context, q SeriesQuery) (SeriesResult, e
 	}
 	defer rows.Close()
 
-	result := SeriesResult{Source: source, Step: step, Series: []Series{}}
+	series, err := readSeries(rows)
+	if err != nil {
+		return SeriesResult{}, err
+	}
+	return SeriesResult{Source: source, Step: step, Series: series}, nil
+}
+
+// readSeries reads rows of time, label and value, ordered by label, into
+// one series per label
+func readSeries(rows pgx.Rows) ([]Series, error) {
+	series := []Series{}
 	for rows.Next() {
 		var at time.Time
 		var label string
 		var value *float64
 		if err := rows.Scan(&at, &label, &value); err != nil {
-			return SeriesResult{}, err
+			return nil, err
 		}
 		if value == nil {
 			continue
 		}
 		// rows are ordered by label, so a new label starts a new series
-		if len(result.Series) == 0 || result.Series[len(result.Series)-1].Label != label {
-			result.Series = append(result.Series, Series{Label: label})
+		if len(series) == 0 || series[len(series)-1].Label != label {
+			series = append(series, Series{Label: label})
 		}
-		last := &result.Series[len(result.Series)-1]
+		last := &series[len(series)-1]
 		last.Points = append(last.Points, Point{Time: at, Value: *value})
 	}
-	return result, rows.Err()
+	return series, rows.Err()
 }
 
 // pickSource chooses the finest data that is still kept for the whole

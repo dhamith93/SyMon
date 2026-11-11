@@ -572,6 +572,14 @@ service MonitorDataService {
     rpc ClusterSeries(ClusterSeriesRequest) returns (SeriesResponse) {}
     // forgets a cluster, so another host may report it
     rpc RemoveCluster(ClusterRequest) returns (Message) {}
+
+    // Devices read over SNMP by one host's agent each, see internal/snmp.
+    // Agents report, the dashboard reads.
+    rpc ReportDevice(DeviceReport) returns (Message) {}
+    rpc Devices(Void) returns (DeviceList) {}
+    rpc Device(DeviceRequest) returns (DeviceInfo) {}
+    rpc DeviceSeries(DeviceSeriesRequest) returns (SeriesResponse) {}
+    rpc RemoveDevice(DeviceRequest) returns (Message) {}
 }
 
 // stateJson is a kube.ClusterState. An agent key's host replaces host.
@@ -646,6 +654,60 @@ message KubeRestart {
 message ClusterSeriesRequest {
     string name = 1;
     // nodes, pods, workloads or restarts
+    string metric = 2;
+    int64 from = 3;
+    int64 to = 4;
+    int32 maxPoints = 5;
+}
+
+// reportJson is an snmp.DeviceReport. An agent key's host replaces host.
+message DeviceReport {
+    string host = 1;
+    string reportJson = 2;
+}
+
+message DeviceRequest {
+    string name = 1;
+}
+
+// host is the host whose agent polls the device. error is why the last
+// poll could not read it, stale that the agent stopped reporting. The
+// numbers are the newest values, left unset when the device has none.
+message DeviceSummary {
+    string name = 1;
+    string kind = 2;
+    string address = 3;
+    string host = 4;
+    int64 reportedAt = 5;
+    int32 intervalSeconds = 6;
+    string error = 7;
+    bool stale = 8;
+    int64 uptimeSeconds = 9;
+    int32 ports = 10;
+    int32 portsUp = 11;
+    double rxBps = 12;
+    double txBps = 13;
+    optional double cpuPct = 14;
+    optional double memUsedPct = 15;
+    optional double upsChargePct = 16;
+    optional double upsLoadPct = 17;
+    optional double upsMinutesLeft = 18;
+    optional bool upsOnBattery = 19;
+}
+
+message DeviceList {
+    repeated DeviceSummary devices = 1;
+}
+
+// stateJson is the newest snmp.DeviceReport that could read the device
+message DeviceInfo {
+    DeviceSummary summary = 1;
+    string stateJson = 2;
+}
+
+message DeviceSeriesRequest {
+    string name = 1;
+    // a metric from the report, like if_rx_bps
     string metric = 2;
     int64 from = 3;
     int64 to = 4;

@@ -62,6 +62,11 @@ const (
 	MonitorDataService_Cluster_FullMethodName                 = "/api.MonitorDataService/Cluster"
 	MonitorDataService_ClusterSeries_FullMethodName           = "/api.MonitorDataService/ClusterSeries"
 	MonitorDataService_RemoveCluster_FullMethodName           = "/api.MonitorDataService/RemoveCluster"
+	MonitorDataService_ReportDevice_FullMethodName            = "/api.MonitorDataService/ReportDevice"
+	MonitorDataService_Devices_FullMethodName                 = "/api.MonitorDataService/Devices"
+	MonitorDataService_Device_FullMethodName                  = "/api.MonitorDataService/Device"
+	MonitorDataService_DeviceSeries_FullMethodName            = "/api.MonitorDataService/DeviceSeries"
+	MonitorDataService_RemoveDevice_FullMethodName            = "/api.MonitorDataService/RemoveDevice"
 )
 
 // MonitorDataServiceClient is the client API for MonitorDataService service.
@@ -130,6 +135,13 @@ type MonitorDataServiceClient interface {
 	ClusterSeries(ctx context.Context, in *ClusterSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
 	// forgets a cluster, so another host may report it
 	RemoveCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*Message, error)
+	// Devices read over SNMP by one host's agent each, see internal/snmp.
+	// Agents report, the dashboard reads.
+	ReportDevice(ctx context.Context, in *DeviceReport, opts ...grpc.CallOption) (*Message, error)
+	Devices(ctx context.Context, in *Void, opts ...grpc.CallOption) (*DeviceList, error)
+	Device(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*DeviceInfo, error)
+	DeviceSeries(ctx context.Context, in *DeviceSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error)
+	RemoveDevice(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*Message, error)
 }
 
 type monitorDataServiceClient struct {
@@ -570,6 +582,56 @@ func (c *monitorDataServiceClient) RemoveCluster(ctx context.Context, in *Cluste
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) ReportDevice(ctx context.Context, in *DeviceReport, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_ReportDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Devices(ctx context.Context, in *Void, opts ...grpc.CallOption) (*DeviceList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeviceList)
+	err := c.cc.Invoke(ctx, MonitorDataService_Devices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) Device(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*DeviceInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeviceInfo)
+	err := c.cc.Invoke(ctx, MonitorDataService_Device_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) DeviceSeries(ctx context.Context, in *DeviceSeriesRequest, opts ...grpc.CallOption) (*SeriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SeriesResponse)
+	err := c.cc.Invoke(ctx, MonitorDataService_DeviceSeries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) RemoveDevice(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MonitorDataService_RemoveDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MonitorDataServiceServer is the server API for MonitorDataService service.
 // All implementations must embed UnimplementedMonitorDataServiceServer
 // for forward compatibility.
@@ -636,6 +698,13 @@ type MonitorDataServiceServer interface {
 	ClusterSeries(context.Context, *ClusterSeriesRequest) (*SeriesResponse, error)
 	// forgets a cluster, so another host may report it
 	RemoveCluster(context.Context, *ClusterRequest) (*Message, error)
+	// Devices read over SNMP by one host's agent each, see internal/snmp.
+	// Agents report, the dashboard reads.
+	ReportDevice(context.Context, *DeviceReport) (*Message, error)
+	Devices(context.Context, *Void) (*DeviceList, error)
+	Device(context.Context, *DeviceRequest) (*DeviceInfo, error)
+	DeviceSeries(context.Context, *DeviceSeriesRequest) (*SeriesResponse, error)
+	RemoveDevice(context.Context, *DeviceRequest) (*Message, error)
 	mustEmbedUnimplementedMonitorDataServiceServer()
 }
 
@@ -774,6 +843,21 @@ func (UnimplementedMonitorDataServiceServer) ClusterSeries(context.Context, *Clu
 }
 func (UnimplementedMonitorDataServiceServer) RemoveCluster(context.Context, *ClusterRequest) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCluster not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) ReportDevice(context.Context, *DeviceReport) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportDevice not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Devices(context.Context, *Void) (*DeviceList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Devices not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) Device(context.Context, *DeviceRequest) (*DeviceInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Device not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) DeviceSeries(context.Context, *DeviceSeriesRequest) (*SeriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeviceSeries not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) RemoveDevice(context.Context, *DeviceRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveDevice not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) mustEmbedUnimplementedMonitorDataServiceServer() {}
 func (UnimplementedMonitorDataServiceServer) testEmbeddedByValue()                            {}
@@ -1570,6 +1654,96 @@ func _MonitorDataService_RemoveCluster_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_ReportDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceReport)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).ReportDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_ReportDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).ReportDevice(ctx, req.(*DeviceReport))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Devices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Devices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Devices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Devices(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_Device_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).Device(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_Device_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).Device(ctx, req.(*DeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_DeviceSeries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceSeriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).DeviceSeries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_DeviceSeries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).DeviceSeries(ctx, req.(*DeviceSeriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_RemoveDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).RemoveDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_RemoveDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).RemoveDevice(ctx, req.(*DeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MonitorDataService_ServiceDesc is the grpc.ServiceDesc for MonitorDataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1748,6 +1922,26 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveCluster",
 			Handler:    _MonitorDataService_RemoveCluster_Handler,
+		},
+		{
+			MethodName: "ReportDevice",
+			Handler:    _MonitorDataService_ReportDevice_Handler,
+		},
+		{
+			MethodName: "Devices",
+			Handler:    _MonitorDataService_Devices_Handler,
+		},
+		{
+			MethodName: "Device",
+			Handler:    _MonitorDataService_Device_Handler,
+		},
+		{
+			MethodName: "DeviceSeries",
+			Handler:    _MonitorDataService_DeviceSeries_Handler,
+		},
+		{
+			MethodName: "RemoveDevice",
+			Handler:    _MonitorDataService_RemoveDevice_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

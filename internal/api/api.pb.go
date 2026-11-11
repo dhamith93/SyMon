@@ -4849,6 +4849,468 @@ func (x *ClusterSeriesRequest) GetMaxPoints() int32 {
 	return 0
 }
 
+// reportJson is an snmp.DeviceReport. An agent key's host replaces host.
+type DeviceReport struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	ReportJson    string                 `protobuf:"bytes,2,opt,name=reportJson,proto3" json:"reportJson,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceReport) Reset() {
+	*x = DeviceReport{}
+	mi := &file_api_api_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceReport) ProtoMessage() {}
+
+func (x *DeviceReport) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceReport.ProtoReflect.Descriptor instead.
+func (*DeviceReport) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *DeviceReport) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *DeviceReport) GetReportJson() string {
+	if x != nil {
+		return x.ReportJson
+	}
+	return ""
+}
+
+type DeviceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceRequest) Reset() {
+	*x = DeviceRequest{}
+	mi := &file_api_api_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceRequest) ProtoMessage() {}
+
+func (x *DeviceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceRequest.ProtoReflect.Descriptor instead.
+func (*DeviceRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *DeviceRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// host is the host whose agent polls the device. error is why the last
+// poll could not read it, stale that the agent stopped reporting. The
+// numbers are the newest values, left unset when the device has none.
+type DeviceSummary struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Kind            string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Address         string                 `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
+	Host            string                 `protobuf:"bytes,4,opt,name=host,proto3" json:"host,omitempty"`
+	ReportedAt      int64                  `protobuf:"varint,5,opt,name=reportedAt,proto3" json:"reportedAt,omitempty"`
+	IntervalSeconds int32                  `protobuf:"varint,6,opt,name=intervalSeconds,proto3" json:"intervalSeconds,omitempty"`
+	Error           string                 `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	Stale           bool                   `protobuf:"varint,8,opt,name=stale,proto3" json:"stale,omitempty"`
+	UptimeSeconds   int64                  `protobuf:"varint,9,opt,name=uptimeSeconds,proto3" json:"uptimeSeconds,omitempty"`
+	Ports           int32                  `protobuf:"varint,10,opt,name=ports,proto3" json:"ports,omitempty"`
+	PortsUp         int32                  `protobuf:"varint,11,opt,name=portsUp,proto3" json:"portsUp,omitempty"`
+	RxBps           float64                `protobuf:"fixed64,12,opt,name=rxBps,proto3" json:"rxBps,omitempty"`
+	TxBps           float64                `protobuf:"fixed64,13,opt,name=txBps,proto3" json:"txBps,omitempty"`
+	CpuPct          *float64               `protobuf:"fixed64,14,opt,name=cpuPct,proto3,oneof" json:"cpuPct,omitempty"`
+	MemUsedPct      *float64               `protobuf:"fixed64,15,opt,name=memUsedPct,proto3,oneof" json:"memUsedPct,omitempty"`
+	UpsChargePct    *float64               `protobuf:"fixed64,16,opt,name=upsChargePct,proto3,oneof" json:"upsChargePct,omitempty"`
+	UpsLoadPct      *float64               `protobuf:"fixed64,17,opt,name=upsLoadPct,proto3,oneof" json:"upsLoadPct,omitempty"`
+	UpsMinutesLeft  *float64               `protobuf:"fixed64,18,opt,name=upsMinutesLeft,proto3,oneof" json:"upsMinutesLeft,omitempty"`
+	UpsOnBattery    *bool                  `protobuf:"varint,19,opt,name=upsOnBattery,proto3,oneof" json:"upsOnBattery,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeviceSummary) Reset() {
+	*x = DeviceSummary{}
+	mi := &file_api_api_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceSummary) ProtoMessage() {}
+
+func (x *DeviceSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceSummary.ProtoReflect.Descriptor instead.
+func (*DeviceSummary) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *DeviceSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeviceSummary) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *DeviceSummary) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *DeviceSummary) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *DeviceSummary) GetReportedAt() int64 {
+	if x != nil {
+		return x.ReportedAt
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetIntervalSeconds() int32 {
+	if x != nil {
+		return x.IntervalSeconds
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *DeviceSummary) GetStale() bool {
+	if x != nil {
+		return x.Stale
+	}
+	return false
+}
+
+func (x *DeviceSummary) GetUptimeSeconds() int64 {
+	if x != nil {
+		return x.UptimeSeconds
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetPorts() int32 {
+	if x != nil {
+		return x.Ports
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetPortsUp() int32 {
+	if x != nil {
+		return x.PortsUp
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetRxBps() float64 {
+	if x != nil {
+		return x.RxBps
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetTxBps() float64 {
+	if x != nil {
+		return x.TxBps
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetCpuPct() float64 {
+	if x != nil && x.CpuPct != nil {
+		return *x.CpuPct
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetMemUsedPct() float64 {
+	if x != nil && x.MemUsedPct != nil {
+		return *x.MemUsedPct
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetUpsChargePct() float64 {
+	if x != nil && x.UpsChargePct != nil {
+		return *x.UpsChargePct
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetUpsLoadPct() float64 {
+	if x != nil && x.UpsLoadPct != nil {
+		return *x.UpsLoadPct
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetUpsMinutesLeft() float64 {
+	if x != nil && x.UpsMinutesLeft != nil {
+		return *x.UpsMinutesLeft
+	}
+	return 0
+}
+
+func (x *DeviceSummary) GetUpsOnBattery() bool {
+	if x != nil && x.UpsOnBattery != nil {
+		return *x.UpsOnBattery
+	}
+	return false
+}
+
+type DeviceList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Devices       []*DeviceSummary       `protobuf:"bytes,1,rep,name=devices,proto3" json:"devices,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceList) Reset() {
+	*x = DeviceList{}
+	mi := &file_api_api_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceList) ProtoMessage() {}
+
+func (x *DeviceList) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceList.ProtoReflect.Descriptor instead.
+func (*DeviceList) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *DeviceList) GetDevices() []*DeviceSummary {
+	if x != nil {
+		return x.Devices
+	}
+	return nil
+}
+
+// stateJson is the newest snmp.DeviceReport that could read the device
+type DeviceInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summary       *DeviceSummary         `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	StateJson     string                 `protobuf:"bytes,2,opt,name=stateJson,proto3" json:"stateJson,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceInfo) Reset() {
+	*x = DeviceInfo{}
+	mi := &file_api_api_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceInfo) ProtoMessage() {}
+
+func (x *DeviceInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceInfo.ProtoReflect.Descriptor instead.
+func (*DeviceInfo) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{74}
+}
+
+func (x *DeviceInfo) GetSummary() *DeviceSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *DeviceInfo) GetStateJson() string {
+	if x != nil {
+		return x.StateJson
+	}
+	return ""
+}
+
+type DeviceSeriesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// a metric from the report, like if_rx_bps
+	Metric        string `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
+	From          int64  `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
+	To            int64  `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
+	MaxPoints     int32  `protobuf:"varint,5,opt,name=maxPoints,proto3" json:"maxPoints,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeviceSeriesRequest) Reset() {
+	*x = DeviceSeriesRequest{}
+	mi := &file_api_api_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceSeriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceSeriesRequest) ProtoMessage() {}
+
+func (x *DeviceSeriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceSeriesRequest.ProtoReflect.Descriptor instead.
+func (*DeviceSeriesRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *DeviceSeriesRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeviceSeriesRequest) GetMetric() string {
+	if x != nil {
+		return x.Metric
+	}
+	return ""
+}
+
+func (x *DeviceSeriesRequest) GetFrom() int64 {
+	if x != nil {
+		return x.From
+	}
+	return 0
+}
+
+func (x *DeviceSeriesRequest) GetTo() int64 {
+	if x != nil {
+		return x.To
+	}
+	return 0
+}
+
+func (x *DeviceSeriesRequest) GetMaxPoints() int32 {
+	if x != nil {
+		return x.MaxPoints
+	}
+	return 0
+}
+
 var File_api_api_proto protoreflect.FileDescriptor
 
 const file_api_api_proto_rawDesc = "" +
@@ -5247,7 +5709,60 @@ const file_api_api_proto_rawDesc = "" +
 	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x12\n" +
 	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
-	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\xab\x12\n" +
+	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints\"B\n" +
+	"\fDeviceReport\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x1e\n" +
+	"\n" +
+	"reportJson\x18\x02 \x01(\tR\n" +
+	"reportJson\"#\n" +
+	"\rDeviceRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xa1\x05\n" +
+	"\rDeviceSummary\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
+	"\aaddress\x18\x03 \x01(\tR\aaddress\x12\x12\n" +
+	"\x04host\x18\x04 \x01(\tR\x04host\x12\x1e\n" +
+	"\n" +
+	"reportedAt\x18\x05 \x01(\x03R\n" +
+	"reportedAt\x12(\n" +
+	"\x0fintervalSeconds\x18\x06 \x01(\x05R\x0fintervalSeconds\x12\x14\n" +
+	"\x05error\x18\a \x01(\tR\x05error\x12\x14\n" +
+	"\x05stale\x18\b \x01(\bR\x05stale\x12$\n" +
+	"\ruptimeSeconds\x18\t \x01(\x03R\ruptimeSeconds\x12\x14\n" +
+	"\x05ports\x18\n" +
+	" \x01(\x05R\x05ports\x12\x18\n" +
+	"\aportsUp\x18\v \x01(\x05R\aportsUp\x12\x14\n" +
+	"\x05rxBps\x18\f \x01(\x01R\x05rxBps\x12\x14\n" +
+	"\x05txBps\x18\r \x01(\x01R\x05txBps\x12\x1b\n" +
+	"\x06cpuPct\x18\x0e \x01(\x01H\x00R\x06cpuPct\x88\x01\x01\x12#\n" +
+	"\n" +
+	"memUsedPct\x18\x0f \x01(\x01H\x01R\n" +
+	"memUsedPct\x88\x01\x01\x12'\n" +
+	"\fupsChargePct\x18\x10 \x01(\x01H\x02R\fupsChargePct\x88\x01\x01\x12#\n" +
+	"\n" +
+	"upsLoadPct\x18\x11 \x01(\x01H\x03R\n" +
+	"upsLoadPct\x88\x01\x01\x12+\n" +
+	"\x0eupsMinutesLeft\x18\x12 \x01(\x01H\x04R\x0eupsMinutesLeft\x88\x01\x01\x12'\n" +
+	"\fupsOnBattery\x18\x13 \x01(\bH\x05R\fupsOnBattery\x88\x01\x01B\t\n" +
+	"\a_cpuPctB\r\n" +
+	"\v_memUsedPctB\x0f\n" +
+	"\r_upsChargePctB\r\n" +
+	"\v_upsLoadPctB\x11\n" +
+	"\x0f_upsMinutesLeftB\x0f\n" +
+	"\r_upsOnBattery\":\n" +
+	"\n" +
+	"DeviceList\x12,\n" +
+	"\adevices\x18\x01 \x03(\v2\x12.api.DeviceSummaryR\adevices\"X\n" +
+	"\n" +
+	"DeviceInfo\x12,\n" +
+	"\asummary\x18\x01 \x01(\v2\x12.api.DeviceSummaryR\asummary\x12\x1c\n" +
+	"\tstateJson\x18\x02 \x01(\tR\tstateJson\"\x83\x01\n" +
+	"\x13DeviceSeriesRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06metric\x18\x02 \x01(\tR\x06metric\x12\x12\n" +
+	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
+	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
+	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints2\xad\x14\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x122\n" +
 	"\n" +
@@ -5295,7 +5810,12 @@ const file_api_api_proto_rawDesc = "" +
 	"\bClusters\x12\t.api.Void\x1a\x10.api.ClusterList\"\x00\x122\n" +
 	"\aCluster\x12\x13.api.ClusterRequest\x1a\x10.api.ClusterInfo\"\x00\x12A\n" +
 	"\rClusterSeries\x12\x19.api.ClusterSeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x124\n" +
-	"\rRemoveCluster\x12\x13.api.ClusterRequest\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
+	"\rRemoveCluster\x12\x13.api.ClusterRequest\x1a\f.api.Message\"\x00\x121\n" +
+	"\fReportDevice\x12\x11.api.DeviceReport\x1a\f.api.Message\"\x00\x12'\n" +
+	"\aDevices\x12\t.api.Void\x1a\x0f.api.DeviceList\"\x00\x12/\n" +
+	"\x06Device\x12\x12.api.DeviceRequest\x1a\x0f.api.DeviceInfo\"\x00\x12?\n" +
+	"\fDeviceSeries\x12\x18.api.DeviceSeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x122\n" +
+	"\fRemoveDevice\x12\x12.api.DeviceRequest\x1a\f.api.Message\"\x00B)Z'github.com/dhamith93/SyMon/internal/apib\x06proto3"
 
 var (
 	file_api_api_proto_rawDescOnce sync.Once
@@ -5309,7 +5829,7 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 70)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 76)
 var file_api_api_proto_goTypes = []any{
 	(*Void)(nil),                  // 0: api.Void
 	(*Message)(nil),               // 1: api.Message
@@ -5381,6 +5901,12 @@ var file_api_api_proto_goTypes = []any{
 	(*ContainerUsage)(nil),        // 67: api.ContainerUsage
 	(*KubeRestart)(nil),           // 68: api.KubeRestart
 	(*ClusterSeriesRequest)(nil),  // 69: api.ClusterSeriesRequest
+	(*DeviceReport)(nil),          // 70: api.DeviceReport
+	(*DeviceRequest)(nil),         // 71: api.DeviceRequest
+	(*DeviceSummary)(nil),         // 72: api.DeviceSummary
+	(*DeviceList)(nil),            // 73: api.DeviceList
+	(*DeviceInfo)(nil),            // 74: api.DeviceInfo
+	(*DeviceSeriesRequest)(nil),   // 75: api.DeviceSeriesRequest
 }
 var file_api_api_proto_depIdxs = []int32{
 	7,  // 0: api.ServerInfo.tasks:type_name -> api.TaskInfo
@@ -5403,97 +5929,109 @@ var file_api_api_proto_depIdxs = []int32{
 	64, // 17: api.ClusterInfo.summary:type_name -> api.ClusterSummary
 	67, // 18: api.ClusterInfo.usage:type_name -> api.ContainerUsage
 	68, // 19: api.ClusterInfo.restarts:type_name -> api.KubeRestart
-	26, // 20: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
-	2,  // 21: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	2,  // 22: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	25, // 23: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	25, // 24: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0,  // 25: api.MonitorDataService.Fleet:input_type -> api.Void
-	30, // 26: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	32, // 27: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	36, // 28: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	30, // 29: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	39, // 30: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	30, // 31: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
-	44, // 32: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
-	0,  // 33: api.MonitorDataService.Snapshots:input_type -> api.Void
-	49, // 34: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
-	52, // 35: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
-	0,  // 36: api.MonitorDataService.Version:input_type -> api.Void
-	53, // 37: api.MonitorDataService.Login:input_type -> api.Credentials
-	56, // 38: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
-	56, // 39: api.MonitorDataService.Logout:input_type -> api.SessionRequest
-	55, // 40: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
-	53, // 41: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
-	0,  // 42: api.MonitorDataService.HasUsers:input_type -> api.Void
-	0,  // 43: api.MonitorDataService.AlertRules:input_type -> api.Void
-	60, // 44: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
-	61, // 45: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
-	5,  // 46: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
-	9,  // 47: api.MonitorDataService.NextTask:input_type -> api.TaskWait
-	11, // 48: api.MonitorDataService.ReportTask:input_type -> api.TaskProgress
-	30, // 49: api.MonitorDataService.HostTasks:input_type -> api.HostRequest
-	12, // 50: api.MonitorDataService.RequestTaskRun:input_type -> api.TaskRunRequest
-	14, // 51: api.MonitorDataService.TaskRuns:input_type -> api.TaskRunsRequest
-	16, // 52: api.MonitorDataService.TaskRun:input_type -> api.TaskRunQuery
-	0,  // 53: api.MonitorDataService.NotificationChannels:input_type -> api.Void
-	19, // 54: api.MonitorDataService.SaveChannel:input_type -> api.SaveChannelRequest
-	20, // 55: api.MonitorDataService.DeleteChannel:input_type -> api.ChannelRequest
-	20, // 56: api.MonitorDataService.TestChannel:input_type -> api.ChannelRequest
-	23, // 57: api.MonitorDataService.RecentNotifications:input_type -> api.NotificationsRequest
-	62, // 58: api.MonitorDataService.ReportCluster:input_type -> api.ClusterReport
-	0,  // 59: api.MonitorDataService.Clusters:input_type -> api.Void
-	63, // 60: api.MonitorDataService.Cluster:input_type -> api.ClusterRequest
-	69, // 61: api.MonitorDataService.ClusterSeries:input_type -> api.ClusterSeriesRequest
-	63, // 62: api.MonitorDataService.RemoveCluster:input_type -> api.ClusterRequest
-	27, // 63: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	4,  // 64: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
-	1,  // 65: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 66: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 67: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	29, // 68: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	31, // 69: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	35, // 70: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	37, // 71: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	38, // 72: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	41, // 73: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	43, // 74: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	46, // 75: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	48, // 76: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	51, // 77: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	35, // 78: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	1,  // 79: api.MonitorDataService.Version:output_type -> api.Message
-	54, // 80: api.MonitorDataService.Login:output_type -> api.SessionInfo
-	54, // 81: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
-	1,  // 82: api.MonitorDataService.Logout:output_type -> api.Message
-	1,  // 83: api.MonitorDataService.ChangePassword:output_type -> api.Message
-	1,  // 84: api.MonitorDataService.CheckPassword:output_type -> api.Message
-	57, // 85: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
-	59, // 86: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
-	58, // 87: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
-	1,  // 88: api.MonitorDataService.DeleteRule:output_type -> api.Message
-	6,  // 89: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
-	10, // 90: api.MonitorDataService.NextTask:output_type -> api.TaskAssignment
-	1,  // 91: api.MonitorDataService.ReportTask:output_type -> api.Message
-	8,  // 92: api.MonitorDataService.HostTasks:output_type -> api.TaskList
-	13, // 93: api.MonitorDataService.RequestTaskRun:output_type -> api.TaskRunInfo
-	15, // 94: api.MonitorDataService.TaskRuns:output_type -> api.TaskRunList
-	13, // 95: api.MonitorDataService.TaskRun:output_type -> api.TaskRunInfo
-	18, // 96: api.MonitorDataService.NotificationChannels:output_type -> api.ChannelList
-	17, // 97: api.MonitorDataService.SaveChannel:output_type -> api.ChannelInfo
-	1,  // 98: api.MonitorDataService.DeleteChannel:output_type -> api.Message
-	21, // 99: api.MonitorDataService.TestChannel:output_type -> api.TestResult
-	24, // 100: api.MonitorDataService.RecentNotifications:output_type -> api.NotificationList
-	1,  // 101: api.MonitorDataService.ReportCluster:output_type -> api.Message
-	65, // 102: api.MonitorDataService.Clusters:output_type -> api.ClusterList
-	66, // 103: api.MonitorDataService.Cluster:output_type -> api.ClusterInfo
-	35, // 104: api.MonitorDataService.ClusterSeries:output_type -> api.SeriesResponse
-	1,  // 105: api.MonitorDataService.RemoveCluster:output_type -> api.Message
-	63, // [63:106] is the sub-list for method output_type
-	20, // [20:63] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	72, // 20: api.DeviceList.devices:type_name -> api.DeviceSummary
+	72, // 21: api.DeviceInfo.summary:type_name -> api.DeviceSummary
+	26, // 22: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
+	2,  // 23: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 24: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	25, // 25: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	25, // 26: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 27: api.MonitorDataService.Fleet:input_type -> api.Void
+	30, // 28: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	32, // 29: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	36, // 30: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	30, // 31: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	39, // 32: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	30, // 33: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
+	44, // 34: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
+	0,  // 35: api.MonitorDataService.Snapshots:input_type -> api.Void
+	49, // 36: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
+	52, // 37: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
+	0,  // 38: api.MonitorDataService.Version:input_type -> api.Void
+	53, // 39: api.MonitorDataService.Login:input_type -> api.Credentials
+	56, // 40: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
+	56, // 41: api.MonitorDataService.Logout:input_type -> api.SessionRequest
+	55, // 42: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
+	53, // 43: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
+	0,  // 44: api.MonitorDataService.HasUsers:input_type -> api.Void
+	0,  // 45: api.MonitorDataService.AlertRules:input_type -> api.Void
+	60, // 46: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
+	61, // 47: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
+	5,  // 48: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
+	9,  // 49: api.MonitorDataService.NextTask:input_type -> api.TaskWait
+	11, // 50: api.MonitorDataService.ReportTask:input_type -> api.TaskProgress
+	30, // 51: api.MonitorDataService.HostTasks:input_type -> api.HostRequest
+	12, // 52: api.MonitorDataService.RequestTaskRun:input_type -> api.TaskRunRequest
+	14, // 53: api.MonitorDataService.TaskRuns:input_type -> api.TaskRunsRequest
+	16, // 54: api.MonitorDataService.TaskRun:input_type -> api.TaskRunQuery
+	0,  // 55: api.MonitorDataService.NotificationChannels:input_type -> api.Void
+	19, // 56: api.MonitorDataService.SaveChannel:input_type -> api.SaveChannelRequest
+	20, // 57: api.MonitorDataService.DeleteChannel:input_type -> api.ChannelRequest
+	20, // 58: api.MonitorDataService.TestChannel:input_type -> api.ChannelRequest
+	23, // 59: api.MonitorDataService.RecentNotifications:input_type -> api.NotificationsRequest
+	62, // 60: api.MonitorDataService.ReportCluster:input_type -> api.ClusterReport
+	0,  // 61: api.MonitorDataService.Clusters:input_type -> api.Void
+	63, // 62: api.MonitorDataService.Cluster:input_type -> api.ClusterRequest
+	69, // 63: api.MonitorDataService.ClusterSeries:input_type -> api.ClusterSeriesRequest
+	63, // 64: api.MonitorDataService.RemoveCluster:input_type -> api.ClusterRequest
+	70, // 65: api.MonitorDataService.ReportDevice:input_type -> api.DeviceReport
+	0,  // 66: api.MonitorDataService.Devices:input_type -> api.Void
+	71, // 67: api.MonitorDataService.Device:input_type -> api.DeviceRequest
+	75, // 68: api.MonitorDataService.DeviceSeries:input_type -> api.DeviceSeriesRequest
+	71, // 69: api.MonitorDataService.RemoveDevice:input_type -> api.DeviceRequest
+	27, // 70: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	4,  // 71: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
+	1,  // 72: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 73: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 74: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	29, // 75: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	31, // 76: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	35, // 77: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	37, // 78: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	38, // 79: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	41, // 80: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	43, // 81: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	46, // 82: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	48, // 83: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	51, // 84: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	35, // 85: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 86: api.MonitorDataService.Version:output_type -> api.Message
+	54, // 87: api.MonitorDataService.Login:output_type -> api.SessionInfo
+	54, // 88: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
+	1,  // 89: api.MonitorDataService.Logout:output_type -> api.Message
+	1,  // 90: api.MonitorDataService.ChangePassword:output_type -> api.Message
+	1,  // 91: api.MonitorDataService.CheckPassword:output_type -> api.Message
+	57, // 92: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
+	59, // 93: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
+	58, // 94: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
+	1,  // 95: api.MonitorDataService.DeleteRule:output_type -> api.Message
+	6,  // 96: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
+	10, // 97: api.MonitorDataService.NextTask:output_type -> api.TaskAssignment
+	1,  // 98: api.MonitorDataService.ReportTask:output_type -> api.Message
+	8,  // 99: api.MonitorDataService.HostTasks:output_type -> api.TaskList
+	13, // 100: api.MonitorDataService.RequestTaskRun:output_type -> api.TaskRunInfo
+	15, // 101: api.MonitorDataService.TaskRuns:output_type -> api.TaskRunList
+	13, // 102: api.MonitorDataService.TaskRun:output_type -> api.TaskRunInfo
+	18, // 103: api.MonitorDataService.NotificationChannels:output_type -> api.ChannelList
+	17, // 104: api.MonitorDataService.SaveChannel:output_type -> api.ChannelInfo
+	1,  // 105: api.MonitorDataService.DeleteChannel:output_type -> api.Message
+	21, // 106: api.MonitorDataService.TestChannel:output_type -> api.TestResult
+	24, // 107: api.MonitorDataService.RecentNotifications:output_type -> api.NotificationList
+	1,  // 108: api.MonitorDataService.ReportCluster:output_type -> api.Message
+	65, // 109: api.MonitorDataService.Clusters:output_type -> api.ClusterList
+	66, // 110: api.MonitorDataService.Cluster:output_type -> api.ClusterInfo
+	35, // 111: api.MonitorDataService.ClusterSeries:output_type -> api.SeriesResponse
+	1,  // 112: api.MonitorDataService.RemoveCluster:output_type -> api.Message
+	1,  // 113: api.MonitorDataService.ReportDevice:output_type -> api.Message
+	73, // 114: api.MonitorDataService.Devices:output_type -> api.DeviceList
+	74, // 115: api.MonitorDataService.Device:output_type -> api.DeviceInfo
+	35, // 116: api.MonitorDataService.DeviceSeries:output_type -> api.SeriesResponse
+	1,  // 117: api.MonitorDataService.RemoveDevice:output_type -> api.Message
+	70, // [70:118] is the sub-list for method output_type
+	22, // [22:70] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -5503,13 +6041,14 @@ func file_api_api_proto_init() {
 	}
 	file_api_api_proto_msgTypes[28].OneofWrappers = []any{}
 	file_api_api_proto_msgTypes[42].OneofWrappers = []any{}
+	file_api_api_proto_msgTypes[72].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   70,
+			NumMessages:   76,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -54,7 +54,7 @@ func toStatus(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, store.ErrInvalid):
 		return status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, store.ErrClusterTaken):
+	case errors.Is(err, store.ErrClusterTaken), errors.Is(err, store.ErrDeviceTaken):
 		return status.Error(codes.FailedPrecondition, err.Error())
 	case errors.Is(err, store.ErrBadLogin), errors.Is(err, store.ErrBadSession):
 		return status.Error(codes.Unauthenticated, err.Error())
