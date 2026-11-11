@@ -190,18 +190,20 @@ func TestDeliverDue(t *testing.T) {
 
 func TestAlertLink(t *testing.T) {
 	cases := []struct {
-		dashboard, host, metric, want string
+		dashboard, host, metric, target, want string
 	}{
-		{"", "web1", monitor.PROC_USAGE, ""},
-		{"https://symon.example.com", "web1", monitor.PROC_USAGE, "https://symon.example.com/hosts/web1"},
-		{"https://symon.example.com", "", monitor.ENDPOINT, "https://symon.example.com/endpoints"},
-		{"https://symon.example.com", "", monitor.CERTIFICATE, "https://symon.example.com/endpoints"},
-		{"https://symon.example.com", "", monitor.KUBE_WORKLOAD, "https://symon.example.com/kubernetes"},
-		{"https://symon.example.com", "", "custom", "https://symon.example.com/alerts"},
+		{"", "web1", monitor.PROC_USAGE, "", ""},
+		{"https://symon.example.com", "web1", monitor.PROC_USAGE, "", "https://symon.example.com/hosts/web1"},
+		{"https://symon.example.com", "", monitor.ENDPOINT, "https://example.com", "https://symon.example.com/endpoints"},
+		{"https://symon.example.com", "", monitor.CERTIFICATE, "https://example.com", "https://symon.example.com/endpoints"},
+		{"https://symon.example.com", "", monitor.KUBE_WORKLOAD, "default/deployment/web", "https://symon.example.com/kubernetes"},
+		{"https://symon.example.com", "", monitor.DEVICE_PORT, "sw1/Gi1/0/24", "https://symon.example.com/devices/sw1"},
+		{"https://symon.example.com", "", monitor.DEVICE_DOWN, "rack ups", "https://symon.example.com/devices/rack%20ups"},
+		{"https://symon.example.com", "", "custom", "", "https://symon.example.com/alerts"},
 	}
 	for _, c := range cases {
-		if got := alertLink(c.dashboard, c.host, c.metric); got != c.want {
-			t.Errorf("alertLink(%q, %q, %q) = %q, want %q", c.dashboard, c.host, c.metric, got, c.want)
+		if got := alertLink(c.dashboard, c.host, c.metric, c.target); got != c.want {
+			t.Errorf("alertLink(%q, %q, %q, %q) = %q, want %q", c.dashboard, c.host, c.metric, c.target, got, c.want)
 		}
 	}
 }

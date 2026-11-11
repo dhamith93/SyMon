@@ -80,10 +80,10 @@ func handleAlerts(config *config.Collector, st *store.Store) {
 }
 
 // ruleHosts are the hosts a rule checks. "*" is every registered host.
-// Endpoint rules are checked from the collector and kubernetes rules check a
-// cluster, so they have none.
+// Endpoint rules are checked from the collector, kubernetes rules check a
+// cluster and device rules a device, so they have none.
 func ruleHosts(rule *alerts.AlertConfig, hosts []string) []string {
-	if rule.MetricName == monitor.ENDPOINT || monitor.IsKube(rule.MetricName) {
+	if rule.MetricName == monitor.ENDPOINT || monitor.IsKube(rule.MetricName) || monitor.IsDevice(rule.MetricName) {
 		return []string{""}
 	}
 	if slices.Contains(rule.Servers, alerts.AllHosts) {

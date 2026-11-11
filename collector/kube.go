@@ -49,13 +49,15 @@ func (e *evaluator) evaluateCluster(ctx context.Context, rule *alerts.AlertConfi
 	}
 
 	targets := kubeTargets(rule, cluster.State, restarts)
+	present := map[string]bool{}
 	for _, t := range targets {
+		present[t.target] = true
 		e.reasons[rule.Name+"|"+t.target] = t.reason
 		if err := e.check(ctx, rule, "", t.target, t.value, at); err != nil {
 			return err
 		}
 	}
-	return e.resolveGone(ctx, rule, targets, at)
+	return e.resolveGone(ctx, rule, present, at)
 }
 
 // kubeTargets are what a rule checks in a state. Pending and restart rules
@@ -145,14 +147,10 @@ func podReason(pods []kube.Pod, lastRun bool) string {
 	return ""
 }
 
-// resolveGone resolves a rule's open alerts whose node or workload is not
-// in the cluster any more, like a deleted deployment, and forgets what the
-// evaluator kept about them
-func (e *evaluator) resolveGone(ctx context.Context, rule *alerts.AlertConfig, targets []kubeTarget, at time.Time) error {
-	present := map[string]bool{}
-	for _, t := range targets {
-		present[t.target] = true
-	}
+// resolveGone resolves a rule's open alerts whose target is not among the
+// present ones any more, like a deleted deployment or a device taken out
+// of the devices file, and forgets what the evaluator kept about them
+func (e *evaluator) resolveGone(ctx context.Context, rule *alerts.AlertConfig, present map[string]bool, at time.Time) error {
 	open, err := e.store.Alerts(ctx, store.AlertFilter{Rule: rule.Name, OpenOnly: true})
 	if err != nil {
 		return err
@@ -165,7 +163,11 @@ func (e *evaluator) resolveGone(ctx context.Context, rule *alerts.AlertConfig, t
 			return err
 		}
 		n := e.message(rule, "", a.Target, a.ID, notify.Resolved, alertstatus.Normal, 0, at)
-		n.subject, n.body = kubeGoneText(rule, a.Target, at)
+		if monitor.IsDevice(rule.MetricName) {
+			n.subject, n.body = deviceGoneText(rule, a.Target, at)
+		} else {
+			n.subject, n.body = kubeGoneText(rule, a.Target, at)
+		}
 		e.notify(ctx, n)
 	}
 

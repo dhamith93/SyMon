@@ -21,6 +21,8 @@ type alertStore interface {
 	LatestCertificate(ctx context.Context, name string) (time.Time, time.Time, error)
 	Cluster(ctx context.Context, name string) (store.Cluster, error)
 	RestartsSince(ctx context.Context, cluster string, since time.Time) (map[string]int, error)
+	Devices(ctx context.Context) ([]store.Device, error)
+	Device(ctx context.Context, name string) (store.Device, error)
 	Alerts(ctx context.Context, filter store.AlertFilter) ([]store.Alert, error)
 	OpenAlert(ctx context.Context, host string, rule string, metric string, target string) (*store.Alert, error)
 	CreateAlert(ctx context.Context, alert store.Alert) (int64, error)
@@ -46,7 +48,8 @@ type evaluator struct {
 	// its alert message
 	checkErrors map[string]string
 	// reasons is what a kube rule's target says is wrong, like
-	// CrashLoopBackOff, for its alert message
+	// CrashLoopBackOff, or a device's error or a metric's unit, for its
+	// alert message
 	reasons map[string]string
 }
 
@@ -84,6 +87,9 @@ func ruleTarget(rule *alerts.AlertConfig) string {
 func (e *evaluator) evaluate(ctx context.Context, rule *alerts.AlertConfig, host string) error {
 	if monitor.IsKube(rule.MetricName) {
 		return e.evaluateCluster(ctx, rule)
+	}
+	if monitor.IsDevice(rule.MetricName) {
+		return e.evaluateDevice(ctx, rule)
 	}
 	target := ruleTarget(rule)
 	value, at, err := e.latest(ctx, rule, host, target)
@@ -160,7 +166,8 @@ func (e *evaluator) latest(ctx context.Context, rule *alerts.AlertConfig, host s
 // ruleStatus compares a value with a rule. Ping rules have no thresholds,
 // a host is critical once it has been silent longer than the trigger interval.
 // An endpoint is critical while it answers with another status code, and a
-// kubernetes node, workload or pending rule while its value is above 0.
+// kubernetes node, workload or pending rule, a device down or a port down
+// while its value is above 0.
 func ruleStatus(rule *alerts.AlertConfig, value float64) alertstatus.StatusType {
 	if rule.MetricName == monitor.ENDPOINT {
 		if int(value) != expectedCode(rule) {
@@ -175,8 +182,9 @@ func ruleStatus(rule *alerts.AlertConfig, value float64) alertstatus.StatusType 
 		return alertstatus.Normal
 	}
 	switch rule.MetricName {
-	case monitor.KUBE_NODE, monitor.KUBE_WORKLOAD, monitor.KUBE_PENDING:
-		// a node not ready, replicas missing or pods pending
+	case monitor.KUBE_NODE, monitor.KUBE_WORKLOAD, monitor.KUBE_PENDING, monitor.DEVICE_DOWN, monitor.DEVICE_PORT:
+		// a node not ready, replicas missing, pods pending, a device not
+		// answering or a port down
 		if value > 0 {
 			return alertstatus.Critical
 		}
@@ -254,6 +262,8 @@ func (e *evaluator) message(rule *alerts.AlertConfig, host string, target string
 	switch rule.MetricName {
 	case monitor.KUBE_NODE, monitor.KUBE_WORKLOAD, monitor.KUBE_PENDING, monitor.KUBE_RESTARTS:
 		n.subject, n.body = kubeText(rule, target, e.reasons[rule.Name+"|"+target], status, value, at)
+	case monitor.DEVICE_DOWN, monitor.DEVICE_PORT, monitor.DEVICE_METRIC:
+		n.subject, n.body = deviceText(rule, target, e.reasons[rule.Name+"|"+target], status, value, at)
 	case monitor.ENDPOINT:
 		n.subject, n.body = endpointText(rule, int(value), e.checkErrors[rule.Name], status == alertstatus.Normal, at)
 	case monitor.CERTIFICATE:

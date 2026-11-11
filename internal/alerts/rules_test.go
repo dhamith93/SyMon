@@ -9,10 +9,15 @@ func TestParseRules(t *testing.T) {
 	rules, err := ParseRules([]byte(`[
 		{"Name": "CPU", "MetricName": "procUsage", "Servers": ["*"], "Op": ">", "WarnThreshold": 80, "CriticalThreshold": 95},
 		{"Name": "Shop", "MetricName": "endpoint", "Endpoint": "https://shop.example.com", "PagerDuty": true, "Channels": [" ops email ", "phone"]},
-		{"Name": "Pods", "MetricName": "kube_workload", "Cluster": " homelab ", "Namespace": " media "}
+		{"Name": "Pods", "MetricName": "kube_workload", "Cluster": " homelab ", "Namespace": " media "},
+		{"Name": "Uplink", "MetricName": "device_port", "Device": " sw1 ", "Interface": " Gi1/0/24 "},
+		{"Name": "Volumes", "MetricName": "device_metric", "Device": "*", "DeviceMetric": " storage_used_pct ", "Label": " /volume1 ", "Op": ">", "WarnThreshold": 80, "CriticalThreshold": 90}
 	]`))
-	if err != nil || len(rules) != 3 || rules[2].Cluster != "homelab" || rules[2].Namespace != "media" || rules[0].Servers[0] != AllHosts || !rules[1].Pagerduty || strings.Join(rules[1].Channels, ",") != "ops email,phone" {
-		t.Fatalf("expected three rules, got %+v %v", rules, err)
+	if err != nil || len(rules) != 5 || rules[2].Cluster != "homelab" || rules[2].Namespace != "media" || rules[0].Servers[0] != AllHosts || !rules[1].Pagerduty || strings.Join(rules[1].Channels, ",") != "ops email,phone" {
+		t.Fatalf("expected five rules, got %+v %v", rules, err)
+	}
+	if rules[3].Device != "sw1" || rules[3].Interface != "Gi1/0/24" || rules[4].DeviceMetric != "storage_used_pct" || rules[4].Label != "/volume1" {
+		t.Errorf("expected the device fields trimmed, got %+v and %+v", rules[3], rules[4])
 	}
 
 	tests := []struct {
@@ -37,6 +42,10 @@ func TestParseRules(t *testing.T) {
 		{"channel twice", `[{"Name": "x", "MetricName": "ping", "Servers": ["*"], "Channels": ["ops", "ops "]}]`, `the channel "ops" is in Channels twice`},
 		{"kube without cluster", `[{"Name": "x", "MetricName": "kube_workload", "Cluster": " "}]`, "needs Cluster"},
 		{"kube restarts op", `[{"Name": "x", "MetricName": "kube_restarts", "Cluster": "homelab", "Op": "=>"}]`, `unknown Op "=>"`},
+		{"device without device", `[{"Name": "x", "MetricName": "device_down", "Device": " "}]`, "needs Device"},
+		{"port without interface", `[{"Name": "x", "MetricName": "device_port", "Device": "sw1"}]`, "needs Interface"},
+		{"device metric without metric", `[{"Name": "x", "MetricName": "device_metric", "Device": "sw1", "Op": ">"}]`, "needs DeviceMetric"},
+		{"device metric op", `[{"Name": "x", "MetricName": "device_metric", "Device": "ups1", "DeviceMetric": "ups_charge_pct", "Op": "=>"}]`, `unknown Op "=>"`},
 		{"duplicate names", `[{"Name": "x", "MetricName": "ping", "Servers": ["*"]}, {"Name": "x", "MetricName": "ping", "Servers": ["*"]}]`, "already a rule named"},
 	}
 	for _, tt := range tests {

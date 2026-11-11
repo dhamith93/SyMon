@@ -59,6 +59,24 @@ func IsKube(metric string) bool {
 	return false
 }
 
+// alert metrics of SNMP devices, from the reports the agent polling them
+// sends. DEVICE_DOWN is a device that does not answer, DEVICE_PORT a port
+// that is down, DEVICE_METRIC any value a report carries against thresholds.
+const (
+	DEVICE_DOWN   string = "device_down"
+	DEVICE_PORT   string = "device_port"
+	DEVICE_METRIC string = "device_metric"
+)
+
+// IsDevice is true for the alert metrics of SNMP devices
+func IsDevice(metric string) bool {
+	switch metric {
+	case DEVICE_DOWN, DEVICE_PORT, DEVICE_METRIC:
+		return true
+	}
+	return false
+}
+
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off
 const (
 	CollectorDiskIO     string = "diskio"

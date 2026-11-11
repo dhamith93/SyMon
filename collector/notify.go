@@ -206,13 +206,13 @@ func message(n store.Notification, dashboard string, at time.Time) notify.Messag
 		AlertID:   n.AlertID,
 		StartedAt: n.StartedAt,
 		At:        at,
-		Link:      alertLink(dashboard, n.Host, n.Metric),
+		Link:      alertLink(dashboard, n.Host, n.Metric, n.Target),
 	}
 }
 
 // alertLink points at the page that shows an alert best, when the
 // dashboard's address is set
-func alertLink(dashboard string, host string, metric string) string {
+func alertLink(dashboard string, host string, metric string, target string) string {
 	switch {
 	case dashboard == "":
 		return ""
@@ -220,6 +220,9 @@ func alertLink(dashboard string, host string, metric string) string {
 		return dashboard + "/endpoints"
 	case monitor.IsKube(metric):
 		return dashboard + "/kubernetes"
+	case monitor.IsDevice(metric):
+		device, _ := splitTarget(target)
+		return dashboard + "/devices/" + url.PathEscape(device)
 	case host != "":
 		return dashboard + "/hosts/" + url.PathEscape(host)
 	}

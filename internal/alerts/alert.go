@@ -29,6 +29,15 @@ type AlertConfig struct {
 	// names it. Namespace limits the rule to one namespace, empty is all.
 	Cluster   string `json:",omitempty"`
 	Namespace string `json:",omitempty"`
+	// Device is the SNMP device a device_ rule checks, as the devices file
+	// names it, or "*" for every device. Interface is the port a
+	// device_port rule watches. DeviceMetric is what a device_metric rule
+	// compares, like ups_charge_pct, and Label the port or volume, empty
+	// for every one.
+	Device       string `json:",omitempty"`
+	Interface    string `json:",omitempty"`
+	DeviceMetric string `json:",omitempty"`
+	Label        string `json:",omitempty"`
 	// Channels are the notification channels this rule's alerts go to, by
 	// name. A rule with none goes to the default channels.
 	Channels []string `json:",omitempty"`

@@ -27,7 +27,9 @@ type fakeStore struct {
 	// cluster is the newest cluster state, none while its name is empty
 	cluster  store.Cluster
 	restarts map[string]int
-	alerts   []store.Alert
+	// devices are the newest device reports
+	devices []store.Device
+	alerts  []store.Alert
 }
 
 func (f *fakeStore) Cluster(ctx context.Context, name string) (store.Cluster, error) {
@@ -35,6 +37,19 @@ func (f *fakeStore) Cluster(ctx context.Context, name string) (store.Cluster, er
 		return store.Cluster{}, store.ErrNotFound
 	}
 	return f.cluster, nil
+}
+
+func (f *fakeStore) Devices(ctx context.Context) ([]store.Device, error) {
+	return f.devices, nil
+}
+
+func (f *fakeStore) Device(ctx context.Context, name string) (store.Device, error) {
+	for _, device := range f.devices {
+		if device.Name == name {
+			return device, nil
+		}
+	}
+	return store.Device{}, store.ErrNotFound
 }
 
 func (f *fakeStore) RestartsSince(ctx context.Context, cluster string, since time.Time) (map[string]int, error) {

@@ -97,10 +97,25 @@ func (rule *AlertConfig) Validate() error {
 		return rule.checkCluster()
 	case monitor.KUBE_RESTARTS:
 		return firstError(rule.checkCluster(), rule.checkOp())
+	case monitor.DEVICE_DOWN:
+		return rule.checkDevice()
+	case monitor.DEVICE_PORT:
+		rule.Interface = strings.TrimSpace(rule.Interface)
+		if rule.Interface == "" {
+			return errors.New("a device_port rule needs Interface, the port's name like Gi1/0/24")
+		}
+		return rule.checkDevice()
+	case monitor.DEVICE_METRIC:
+		rule.DeviceMetric = strings.TrimSpace(rule.DeviceMetric)
+		rule.Label = strings.TrimSpace(rule.Label)
+		if rule.DeviceMetric == "" {
+			return errors.New("a device_metric rule needs DeviceMetric, like ups_charge_pct or a metric from the devices file")
+		}
+		return firstError(rule.checkDevice(), rule.checkOp())
 	case "":
 		return errors.New("a rule needs MetricName")
 	}
-	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, services, ping, endpoint, kube_node, kube_workload, kube_pending, kube_restarts, or a custom metric's name with IsCustom", rule.MetricName)
+	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, services, ping, endpoint, kube_node, kube_workload, kube_pending, kube_restarts, device_down, device_port, device_metric, or a custom metric's name with IsCustom", rule.MetricName)
 }
 
 // checkChannels only checks the names. Whether those channels exist is
@@ -137,6 +152,14 @@ func (rule *AlertConfig) checkCluster() error {
 	rule.Namespace = strings.TrimSpace(rule.Namespace)
 	if rule.Cluster == "" {
 		return errors.New("a kubernetes rule needs Cluster, the name its agent reports the cluster as")
+	}
+	return nil
+}
+
+func (rule *AlertConfig) checkDevice() error {
+	rule.Device = strings.TrimSpace(rule.Device)
+	if rule.Device == "" {
+		return fmt.Errorf(`a device rule needs Device, a name from the devices file or "%s" for every device`, AllHosts)
 	}
 	return nil
 }
