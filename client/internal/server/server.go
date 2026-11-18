@@ -78,6 +78,7 @@ func (s *server) routes() http.Handler {
 	data.HandleFunc("GET /api/v1/hosts/{host}/processes", s.getProcesses)
 	data.HandleFunc("GET /api/v1/hosts/{host}/process-usage", s.getProcessUsage)
 	data.HandleFunc("GET /api/v1/hosts/{host}/process-activity", s.getProcessActivity)
+	data.HandleFunc("GET /api/v1/hosts/{host}/process-network", s.getProcessNetwork)
 	data.HandleFunc("GET /api/v1/hosts/{host}/custom-metrics", s.getCustomMetrics)
 	data.HandleFunc("GET /api/v1/hosts/{host}/disk-forecasts", s.getDiskForecasts)
 	data.HandleFunc("GET /api/v1/alerts", s.getAlerts)

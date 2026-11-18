@@ -453,6 +453,32 @@ message ProcessActivityReport {
     int64 exitsFrom = 4;
 }
 
+message ProcessNetworkRequest {
+    string host = 1;
+    int64 from = 2;
+    int64 to = 3;
+}
+
+// What one program received and sent over a range, and its fastest
+// interval in bytes per second
+message ProgramTraffic {
+    string name = 1;
+    int64 rxBytes = 2;
+    int64 txBytes = 3;
+    double rxPeak = 4;
+    double txPeak = 5;
+}
+
+message ProcessNetworkReport {
+    // every program, the ones not listed too, loopback left out
+    int64 rxBytes = 1;
+    int64 txBytes = 2;
+    // how much of the range the counters covered
+    double seconds = 3;
+    // the most bytes first
+    repeated ProgramTraffic programs = 4;
+}
+
 // The newest value of one of a host's custom metrics
 message CustomValue {
     string host = 1;
@@ -580,6 +606,7 @@ service MonitorDataService {
     rpc DiskForecasts(HostRequest) returns (DiskForecastList) {}
     rpc ProcessUsage(ProcessUsageRequest) returns (ProcessUsageList) {}
     rpc ProcessActivity(ProcessActivityRequest) returns (ProcessActivityReport) {}
+    rpc ProcessNetwork(ProcessNetworkRequest) returns (ProcessNetworkReport) {}
     // every host's latest snapshot, for the metrics endpoint
     rpc Snapshots(Void) returns (SnapshotList) {}
     rpc Endpoints(EndpointsRequest) returns (EndpointList) {}

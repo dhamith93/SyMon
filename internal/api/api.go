@@ -427,6 +427,19 @@ func (s *Server) ProcessActivity(ctx context.Context, in *ProcessActivityRequest
 	return report, nil
 }
 
+// ProcessNetwork returns what each program on a host received and sent
+func (s *Server) ProcessNetwork(ctx context.Context, in *ProcessNetworkRequest) (*ProcessNetworkReport, error) {
+	result, err := s.Store.ProcessNetwork(ctx, in.Host, time.Unix(in.From, 0), time.Unix(in.To, 0))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	report := &ProcessNetworkReport{RxBytes: result.RxBytes, TxBytes: result.TxBytes, Seconds: result.Seconds}
+	for _, p := range result.Programs {
+		report.Programs = append(report.Programs, &ProgramTraffic{Name: p.Name, RxBytes: p.RxBytes, TxBytes: p.TxBytes, RxPeak: p.RxPeak, TxPeak: p.TxPeak})
+	}
+	return report, nil
+}
+
 func (s *Server) CustomMetricNames(ctx context.Context, in *HostRequest) (*NameList, error) {
 	names, err := s.Store.CustomMetricNames(ctx, in.Host)
 	if err != nil {
