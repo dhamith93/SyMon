@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/proctrace"
 )
 
 func TestDiskLatency(t *testing.T) {
@@ -106,6 +108,115 @@ func TestDiskLatency(t *testing.T) {
 		// an idle disk has no latency to alert on
 		if _, _, err := st.LatestValue(ctx, "web1", monitor.DISK_READ_LATENCY, "/dev/sdb", false); !errors.Is(err, ErrNotFound) {
 			t.Errorf("expected no data for an idle disk, got %v", err)
+		}
+	})
+}
+
+func TestDiskLatencyBuckets(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+	if err := st.AddHost(ctx, "db1", "UTC"); err != nil {
+		t.Fatal(err)
+	}
+
+	buckets := func(set map[int]uint64) []uint64 {
+		counts := make([]uint64, proctrace.LatencyBuckets)
+		for i, c := range set {
+			counts[i] = c
+		}
+		return counts
+	}
+	// on a two hour boundary, so every rollup puts the snapshots in one step
+	start := time.Now().Add(-3 * time.Hour).Truncate(2 * time.Hour)
+	at := func(i int) time.Time { return start.Add(time.Duration(i) * 15 * time.Second) }
+	for i := range 4 {
+		data := testSnapshot("db1", at(i))
+		data.DiskLatency = &monitor.DiskLatency{Seconds: 15, Disks: []monitor.DiskLatencyCounts{
+			// 90 reads from 32 to 64 µs and 10 from 8 to 16 ms, 20 writes
+			{Device: "sda", Reads: 100, Writes: 20, ReadBuckets: buckets(map[int]uint64{2: 90, 10: 10}), WriteBuckets: buckets(map[int]uint64{7: 20})},
+			// a partition has no buckets
+			{Device: "sda1", Reads: 100},
+			{Device: "sdb", Writes: 3, WriteBuckets: buckets(map[int]uint64{5: 3})},
+			// a disk the tracer saw nothing on
+			{Device: "sdc", ReadBuckets: buckets(nil)},
+		}}
+		if err := st.SaveSnapshot(ctx, data); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	now := time.Now()
+	// the same share of fast and slow reads in every step
+	p50, p95, p99 := 0.032+0.032*50/90, 8.192*1.5, 8.192*1.9
+	check := func(t *testing.T, result DiskLatencyResult, device string, steps int, quantiles ...float64) {
+		t.Helper()
+		if strings.Join(result.Devices, ",") != "/dev/sda,/dev/sdb" || result.Device != device || len(result.Steps) != steps {
+			t.Fatalf("expected %d steps of %s, got %+v", steps, device, result)
+		}
+		for i, step := range result.Steps {
+			got := []float64{step.P50, step.P95, step.P99}
+			for j := range quantiles {
+				if math.Abs(got[j]-quantiles[j]) > 1e-6 {
+					t.Errorf("step %d: expected quantiles %v, got %v", i, quantiles, got)
+					break
+				}
+			}
+		}
+	}
+
+	t.Run("raw", func(t *testing.T) {
+		from, to := start.Add(-time.Minute), start.Add(5*time.Minute)
+		result, err := st.DiskLatency(ctx, "db1", "", "read", from, to)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// the busiest disk when none is asked for
+		check(t, result, "/dev/sda", 4, p50, p95, p99)
+		if b := result.Steps[0].Buckets; len(b) != proctrace.LatencyBuckets || b[2] != 90 || b[10] != 10 || !result.Steps[0].Time.Equal(at(0)) {
+			t.Errorf("unexpected first step %+v", result.Steps[0])
+		}
+
+		result, err = st.DiskLatency(ctx, "db1", "/dev/sdb", "write", from, to)
+		if err != nil {
+			t.Fatal(err)
+		}
+		check(t, result, "/dev/sdb", 4, 0.256+0.256*1.5/3)
+
+		// a disk without a histogram picks the busiest
+		result, err = st.DiskLatency(ctx, "db1", "/dev/sda1", "read", from, to)
+		if err != nil {
+			t.Fatal(err)
+		}
+		check(t, result, "/dev/sda", 4, p50)
+	})
+
+	t.Run("rollups", func(t *testing.T) {
+		refreshRollups(t, st, "disk_latency_buckets_1m", "disk_latency_buckets_1h")
+		for _, back := range []time.Duration{20 * time.Hour, 50 * 24 * time.Hour} {
+			result, err := st.DiskLatency(ctx, "db1", "/dev/sda", "read", now.Add(-back), now)
+			if err != nil {
+				t.Fatal(err)
+			}
+			check(t, result, "/dev/sda", 1, p50, p95, p99)
+			if b := result.Steps[0].Buckets; b[2] != 360 || b[10] != 40 {
+				t.Errorf("expected the four snapshots added up, got %v", b)
+			}
+		}
+	})
+
+	t.Run("mistakes", func(t *testing.T) {
+		if _, err := st.DiskLatency(ctx, "db1", "", "trim", start, now); !errors.Is(err, ErrInvalid) {
+			t.Errorf("expected an unknown op to be refused, got %v", err)
+		}
+		if _, err := st.DiskLatency(ctx, "db1", "", "read", now, start); !errors.Is(err, ErrInvalid) {
+			t.Errorf("expected a backwards range to be refused, got %v", err)
+		}
+		if _, err := st.DiskLatency(ctx, "ghost", "", "read", start, now); !errors.Is(err, ErrNotFound) {
+			t.Errorf("expected an unknown host, got %v", err)
+		}
+		empty, err := st.DiskLatency(ctx, "db1", "", "read", start.Add(-3*time.Hour), start.Add(-2*time.Hour))
+		if err != nil || empty.Devices == nil || len(empty.Devices) != 0 || empty.Device != "" || len(empty.Steps) != 0 {
+			t.Errorf("expected nothing before the first snapshot, got %+v, %v", empty, err)
 		}
 	})
 }

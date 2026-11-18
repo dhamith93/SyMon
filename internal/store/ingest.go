@@ -215,6 +215,33 @@ func queueDiskLatency(batch *pgx.Batch, at time.Time, hostID int64, latency *mon
 		FROM unnest($4::text[], $5::bigint[], $6::bigint[], $7::bigint[], $8::bigint[], $9::bigint[])
 			AS d(device, reads, read_ms, writes, write_ms, queue_ms)`,
 		at, hostID, float32(latency.Seconds), devices, reads, readMs, writes, writeMs, queueMs)
+
+	for _, disk := range latency.Disks {
+		queueLatencyBuckets(batch, at, hostID, "/dev/"+disk.Device, "read", disk.ReadBuckets)
+		queueLatencyBuckets(batch, at, hostID, "/dev/"+disk.Device, "write", disk.WriteBuckets)
+	}
+}
+
+// queueLatencyBuckets adds the eBPF tracer's buckets for one disk and op,
+// when there are any
+func queueLatencyBuckets(batch *pgx.Batch, at time.Time, hostID int64, device string, op string, buckets []uint64) {
+	if len(buckets) != proctrace.LatencyBuckets {
+		return
+	}
+	args := []any{at, hostID, device, op}
+	var total uint64
+	for _, count := range buckets {
+		args = append(args, int64(count))
+		total += count
+	}
+	if total == 0 {
+		return
+	}
+	placeholders := make([]string, len(args))
+	for i := range placeholders {
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+	}
+	batch.Queue("INSERT INTO disk_latency_buckets (time, host_id, device, op, "+bucketColumns+") VALUES ("+strings.Join(placeholders, ", ")+")", args...)
 }
 
 func floatPtr(v int) *float64 {
