@@ -72,3 +72,37 @@ func TestPerMinuteSeriesSQL(t *testing.T) {
 		}
 	}
 }
+
+// bytes are a rate over the bucket, worked out for each program before the
+// quiet ones are added into one series, which comes last
+func TestTopLabelsSeriesSQL(t *testing.T) {
+	from := time.Unix(1700000000, 0)
+	for _, source := range []string{"raw", "1m", "1h"} {
+		q := SeriesQuery{Metric: "proc_net_rx", From: from, To: from.Add(time.Hour), Label: "nginx"}
+		sql, args := seriesSQL(seriesDefs["proc_net_rx"], source, time.Minute, 7, q)
+		table := "FROM process_network"
+		timeColumn := "time"
+		if source != "raw" {
+			table += "_" + source
+			timeColumn = "bucket"
+		}
+		for _, want := range []string{
+			table + "\n",
+			"time_bucket($1::interval, " + timeColumn + ")",
+			"sum(rx_bytes)::float8 / greatest(extract(epoch FROM $1::interval)::float8, sum(seconds)::float8) AS v",
+			"AND name::text = $5",
+			"CASE WHEN r.rank <= 7 THEN p.label ELSE 'All other programs' END",
+			"ORDER BY label = 'All other programs', label, t",
+		} {
+			if !strings.Contains(sql, want) {
+				t.Errorf("%s: expected %q in sql:\n%s", source, want, sql)
+			}
+		}
+		if len(args) != 5 || args[4] != "nginx" {
+			t.Errorf("%s: unexpected args %v", source, args)
+		}
+	}
+	if len(otherLabel) < 16 {
+		t.Errorf("%q could be the name of a program", otherLabel)
+	}
+}

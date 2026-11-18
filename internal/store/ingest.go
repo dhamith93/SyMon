@@ -84,6 +84,9 @@ func (s *Store) SaveSnapshot(ctx context.Context, data *monitor.MonitorData) err
 	if data.ProcessActivity != nil {
 		queueProcessActivity(batch, at, hostID, data.ProcessActivity)
 	}
+	if data.ProcessNetwork != nil {
+		queueProcessNetwork(batch, at, hostID, data.ProcessNetwork)
+	}
 
 	// keep the newest snapshot even if an older one arrives late
 	batch.Queue(`INSERT INTO host_latest (host_id, time, snapshot) VALUES ($1, $2, $3)
@@ -160,6 +163,35 @@ func queueProcessActivity(batch *pgx.Batch, at time.Time, hostID int64, activity
 		FROM unnest($1::timestamptz[], $3::text[], $4::text[], $5::int[], $6::int[], $7::bigint[], $8::smallint[], $9::smallint[], $10::bool[], $11::bool[], $12::real[])
 			AS e(t, name, parent, pid, ppid, uid, status, signal, core, oom, lifetime)`,
 		times, hostID, names, parents, pids, ppids, uids, statuses, signals, cores, ooms, lifetimes)
+}
+
+// queueProcessNetwork adds a row for each listed program and one with an
+// empty name for the rest, as one insert. The rest row is there even in a
+// quiet interval, so the table shows when the counters were on.
+func queueProcessNetwork(batch *pgx.Batch, at time.Time, hostID int64, network *proctrace.NetSummary) {
+	seconds := float32(max(network.To-network.From, 1))
+	names := make([]string, 0, len(network.Programs)+1)
+	rx := make([]int64, 0, len(network.Programs)+1)
+	tx := make([]int64, 0, len(network.Programs)+1)
+	var listedRx, listedTx uint64
+	for _, p := range network.Programs {
+		// an empty name would read as the rest, so it is left in the rest
+		if p.Name == "" {
+			continue
+		}
+		names = append(names, p.Name)
+		rx = append(rx, int64(p.RxBytes))
+		tx = append(tx, int64(p.TxBytes))
+		listedRx += p.RxBytes
+		listedTx += p.TxBytes
+	}
+	names = append(names, "")
+	rx = append(rx, int64(network.RxBytes-min(listedRx, network.RxBytes)))
+	tx = append(tx, int64(network.TxBytes-min(listedTx, network.TxBytes)))
+
+	batch.Queue(`INSERT INTO process_network (time, host_id, name, seconds, rx_bytes, tx_bytes)
+		SELECT $1, $2, name, $3, rx, tx FROM unnest($4::text[], $5::bigint[], $6::bigint[]) AS p(name, rx, tx)`,
+		at, hostID, seconds, names, rx, tx)
 }
 
 func floatPtr(v int) *float64 {

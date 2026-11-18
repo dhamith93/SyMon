@@ -24,7 +24,17 @@ type seriesDef struct {
 	// perMinute columns count events over the table's seconds column, at
 	// every resolution, and read as events per minute
 	perMinute bool
+	// perSecond columns count bytes, and read as bytes per second over the
+	// bucket, or over the table's seconds column when a row covers more
+	perSecond bool
+	// topLabels keeps that many labels, the most bytes over the range
+	// first, and adds the others and the empty label into otherLabel
+	topLabels int
 }
+
+// otherLabel is the series for the labels past topLabels. It is longer
+// than a kernel comm can be, so no program can have the same name.
+const otherLabel = "All other programs"
 
 var seriesDefs = map[string]seriesDef{
 	"cpu":                {table: "host_metrics", column: "cpu_pct", hasMax: true},
@@ -66,6 +76,8 @@ var seriesDefs = map[string]seriesDef{
 	"proc_failed":        {table: "process_activity", column: "nonzero_exits", perMinute: true},
 	"proc_signaled":      {table: "process_activity", column: "signaled", perMinute: true},
 	"proc_failed_execs":  {table: "process_activity", column: "failed_execs", perMinute: true},
+	"proc_net_rx":        {table: "process_network", column: "rx_bytes", label: "name", perSecond: true, topLabels: 7},
+	"proc_net_tx":        {table: "process_network", column: "tx_bytes", label: "name", perSecond: true, topLabels: 7},
 }
 
 // SeriesMetrics lists the metric names QuerySeries accepts
@@ -186,6 +198,33 @@ func pickSource(def seriesDef, from time.Time, to time.Time, now time.Time, maxP
 	return "1h", roundUp(step, time.Hour)
 }
 
+// topLabelsSQL works out each label's values first and then adds the ones
+// past def.topLabels into otherLabel, so a rate is never divided by the
+// seconds of several labels at once
+func topLabelsSQL(def seriesDef, timeColumn string, label string, value string, table string, filter string) string {
+	return fmt.Sprintf(`
+		WITH per_label AS (
+			SELECT time_bucket($1::interval, %[1]s) AS t, %[2]s AS label, %[3]s AS v, sum(%[6]s) AS total
+			FROM %[4]s
+			WHERE host_id = $2 AND %[1]s >= $3 AND %[1]s < $4 %[5]s
+			GROUP BY t, label
+		),
+		ranked AS (
+			SELECT label, row_number() OVER (ORDER BY sum(total) DESC, label) AS rank
+			FROM per_label
+			WHERE label <> ''
+			GROUP BY label
+		),
+		folded AS (
+			SELECT p.t, CASE WHEN r.rank <= %[7]d THEN p.label ELSE '%[8]s' END AS label, p.v
+			FROM per_label p LEFT JOIN ranked r ON r.label = p.label
+		)
+		SELECT t, label, sum(v) AS v
+		FROM folded
+		GROUP BY t, label
+		ORDER BY label = '%[8]s', label, t`, timeColumn, label, value, table, filter, def.column, def.topLabels, otherLabel)
+}
+
 func roundUp(d time.Duration, unit time.Duration) time.Duration {
 	if d <= unit {
 		return unit
@@ -200,6 +239,10 @@ func seriesSQL(def seriesDef, source string, step time.Duration, hostID int64, q
 	}
 	if def.perMinute {
 		value = "sum(" + def.column + ")::float8 * 60 / nullif(sum(seconds)::float8, 0)"
+	}
+	if def.perSecond {
+		// a raw row covers an agent interval, longer than a short bucket
+		value = "sum(" + def.column + ")::float8 / greatest(extract(epoch FROM $1::interval)::float8, sum(seconds)::float8)"
 	}
 	if q.Max {
 		value = "max(" + def.column + ")"
@@ -220,6 +263,9 @@ func seriesSQL(def seriesDef, source string, step time.Duration, hostID int64, q
 	}
 
 	// table and column names come from seriesDefs, never from the caller
+	if def.topLabels > 0 {
+		return topLabelsSQL(def, timeColumn, label, value, table, filter), args
+	}
 	sql := fmt.Sprintf(`
 		SELECT time_bucket($1::interval, %[1]s) AS t, %[2]s AS label, %[3]s AS v
 		FROM %[4]s
