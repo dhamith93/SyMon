@@ -30,6 +30,10 @@ type seriesDef struct {
 	// topLabels keeps that many labels, the most bytes over the range
 	// first, and adds the others and the empty label into otherLabel
 	topLabels int
+	// per divides the sum of column by the sum of per, a column or an
+	// expression of the table's columns, like a disk's time over its IOs.
+	// Sums keep it exact at every resolution.
+	per string
 }
 
 // otherLabel is the series for the labels past topLabels. It is longer
@@ -61,6 +65,9 @@ var seriesDefs = map[string]seriesDef{
 	"disk_read":          {table: "disk_io_metrics", column: "read_bps", label: "device", hasMax: true},
 	"disk_write":         {table: "disk_io_metrics", column: "write_bps", label: "device", hasMax: true},
 	"disk_util":          {table: "disk_io_metrics", column: "util_pct", label: "device", hasMax: true},
+	"disk_read_latency":  {table: "disk_latency", column: "read_ms", label: "device", per: "reads"},
+	"disk_write_latency": {table: "disk_latency", column: "write_ms", label: "device", per: "writes"},
+	"disk_queue":         {table: "disk_latency", column: "queue_ms", label: "device", per: "seconds * 1000"},
 	"net_rx":             {table: "net_metrics", column: "rx_bps", label: "iface", hasMax: true},
 	"net_tx":             {table: "net_metrics", column: "tx_bps", label: "iface", hasMax: true},
 	"temperature":        {table: "temp_metrics", column: "celsius", label: "sensor", hasMax: true},
@@ -243,6 +250,10 @@ func seriesSQL(def seriesDef, source string, step time.Duration, hostID int64, q
 	if def.perSecond {
 		// a raw row covers an agent interval, longer than a short bucket
 		value = "sum(" + def.column + ")::float8 / greatest(extract(epoch FROM $1::interval)::float8, sum(seconds)::float8)"
+	}
+	if def.per != "" {
+		// an idle disk divides by zero, which leaves a gap
+		value = "sum(" + def.column + ")::float8 / nullif(sum(" + def.per + ")::float8, 0)"
 	}
 	if q.Max {
 		value = "max(" + def.column + ")"

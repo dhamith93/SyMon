@@ -37,6 +37,9 @@ describe('formatValue', () => {
     expect(formatValue(0.25, 'perMinute')).toBe('0.25/min');
     expect(formatMs(4.25)).toBe('4.3 ms');
     expect(formatMs(1250)).toBe('1.25 s');
+    expect(formatMs(0.08)).toBe('80 µs');
+    expect(formatMs(0.9999)).toBe('1.0 ms');
+    expect(formatMs(0)).toBe('0.0 ms');
     expect(formatPercent(12.345, 1)).toBe('12.3%');
   });
 
@@ -85,5 +88,7 @@ describe('formatAxis', () => {
     expect(formatAxis([0, 0.5, 1], 'perMinute')).toEqual(['0.0/min', '0.5/min', '1.0/min']);
     expect(formatAxis([0, 500, 1000, 1500], 'ms')).toEqual(['0.0 s', '0.5 s', '1.0 s', '1.5 s']);
     expect(formatAxis([0, 2000, 4000], 'ms')).toEqual(['0 s', '2 s', '4 s']);
+    expect(formatAxis([0, 0.05, 0.1, 0.15], 'ms')).toEqual(['0 µs', '50 µs', '100 µs', '150 µs']);
+    expect(formatAxis([0, 0.5, 1, 1.5], 'ms')).toEqual(['0.0 ms', '0.5 ms', '1.0 ms', '1.5 ms']);
   });
 });

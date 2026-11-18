@@ -160,6 +160,26 @@ type DiskIO struct {
 	UtilPercent      float64
 }
 
+// DiskLatency is the IO each disk finished between two diskstats samples,
+// Seconds apart
+type DiskLatency struct {
+	Seconds float64
+	Disks   []DiskLatencyCounts
+}
+
+// DiskLatencyCounts are a disk's finished reads and writes and the time
+// they took, queueing included, as iostat counts them. QueueMs is the time
+// IOs spent in flight added up, so QueueMs over the interval is the
+// average queue depth.
+type DiskLatencyCounts struct {
+	Device  string
+	Reads   uint64
+	ReadMs  uint64
+	Writes  uint64
+	WriteMs uint64
+	QueueMs uint64
+}
+
 type TCPStates struct {
 	Established int
 	SynSent     int

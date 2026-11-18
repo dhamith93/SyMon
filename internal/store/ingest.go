@@ -50,6 +50,9 @@ func (s *Store) SaveSnapshot(ctx context.Context, data *monitor.MonitorData) err
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 			at, hostID, "/dev/"+io.Device, io.ReadBytesPerSec, io.WriteBytesPerSec, io.ReadsPerSec, io.WritesPerSec, io.UtilPercent)
 	}
+	if data.DiskLatency != nil {
+		queueDiskLatency(batch, at, hostID, data.DiskLatency)
+	}
 	for _, network := range data.Networks {
 		var rxBps, txBps, rxPps, txPps *float64
 		if network.Rates != nil {
@@ -192,6 +195,26 @@ func queueProcessNetwork(batch *pgx.Batch, at time.Time, hostID int64, network *
 	batch.Queue(`INSERT INTO process_network (time, host_id, name, seconds, rx_bytes, tx_bytes)
 		SELECT $1, $2, name, $3, rx, tx FROM unnest($4::text[], $5::bigint[], $6::bigint[]) AS p(name, rx, tx)`,
 		at, hostID, seconds, names, rx, tx)
+}
+
+// queueDiskLatency adds a row for every disk, idle ones too, as one insert
+func queueDiskLatency(batch *pgx.Batch, at time.Time, hostID int64, latency *monitor.DiskLatency) {
+	n := len(latency.Disks)
+	devices := make([]string, 0, n)
+	reads, readMs := make([]int64, 0, n), make([]int64, 0, n)
+	writes, writeMs := make([]int64, 0, n), make([]int64, 0, n)
+	queueMs := make([]int64, 0, n)
+	for _, disk := range latency.Disks {
+		devices = append(devices, "/dev/"+disk.Device)
+		reads, readMs = append(reads, int64(disk.Reads)), append(readMs, int64(disk.ReadMs))
+		writes, writeMs = append(writes, int64(disk.Writes)), append(writeMs, int64(disk.WriteMs))
+		queueMs = append(queueMs, int64(disk.QueueMs))
+	}
+	batch.Queue(`INSERT INTO disk_latency (time, host_id, device, seconds, reads, read_ms, writes, write_ms, queue_ms)
+		SELECT $1, $2, device, $3, reads, read_ms, writes, write_ms, queue_ms
+		FROM unnest($4::text[], $5::bigint[], $6::bigint[], $7::bigint[], $8::bigint[], $9::bigint[])
+			AS d(device, reads, read_ms, writes, write_ms, queue_ms)`,
+		at, hostID, float32(latency.Seconds), devices, reads, readMs, writes, writeMs, queueMs)
 }
 
 func floatPtr(v int) *float64 {

@@ -115,6 +115,7 @@ type MonitorData struct {
 	// optional sections, left out when disabled, unsupported on the host,
 	// or (for DiskIO) on the first tick before there is a previous sample
 	DiskIO          []DiskIO              `json:",omitempty"`
+	DiskLatency     *DiskLatency          `json:",omitempty"`
 	TCPStates       *TCPStates            `json:",omitempty"`
 	Pressure        *Pressure             `json:",omitempty"`
 	Temperatures    []Temperature         `json:",omitempty"`
@@ -240,7 +241,7 @@ func (c *Collector) Collect(ctx context.Context) MonitorData {
 	}
 
 	if c.enabled[CollectorDiskIO] {
-		data.DiskIO = c.diskIO()
+		data.DiskIO, data.DiskLatency = c.diskIO()
 	}
 	if c.enabled[CollectorTCP] {
 		data.TCPStates = c.tcpStates()
@@ -422,17 +423,18 @@ func (c *Collector) services(ctx context.Context, unixTime string) []Service {
 	return services
 }
 
-// diskIO returns nil on the first call, rates need two samples
-func (c *Collector) diskIO() []DiskIO {
+// diskIO returns nil on the first call, rates and latency need two samples
+func (c *Collector) diskIO() ([]DiskIO, *DiskLatency) {
 	samples, err := c.stats.GetDiskIO()
 	if err != nil {
 		logger.Log("error", err.Error())
-		return nil
+		return nil, nil
 	}
 	sampled := time.Now()
 	elapsed := sampled.Sub(c.prevDiskIOTime).Seconds()
 
 	var rates []DiskIO
+	var latency []DiskLatencyCounts
 	current := make(map[string]systats.DiskIO, len(samples))
 	for _, sample := range samples {
 		if c.ignoredDisk("/dev/" + sample.Device) {
@@ -440,13 +442,38 @@ func (c *Collector) diskIO() []DiskIO {
 		}
 		if prev, ok := c.prevDiskIO[sample.Device]; ok {
 			rates = append(rates, fromSystatsDiskIORates(sample.RatesSince(prev, elapsed)))
+			if counts, ok := diskLatencyCounts(prev, sample); ok {
+				latency = append(latency, counts)
+			}
 		}
 		current[sample.Device] = sample
 	}
 
 	c.prevDiskIO = current
 	c.prevDiskIOTime = sampled
-	return rates
+	if len(latency) == 0 || elapsed <= 0 {
+		return rates, nil
+	}
+	return rates, &DiskLatency{Seconds: elapsed, Disks: latency}
+}
+
+// diskLatencyCounts is the IO a disk finished between two samples. It is
+// false when a counter went down, because the disk was removed and added
+// back or a 32-bit kernel's counter wrapped.
+func diskLatencyCounts(prev systats.DiskIO, cur systats.DiskIO) (DiskLatencyCounts, bool) {
+	if cur.ReadsCompleted < prev.ReadsCompleted || cur.ReadTimeMs < prev.ReadTimeMs ||
+		cur.WritesCompleted < prev.WritesCompleted || cur.WriteTimeMs < prev.WriteTimeMs ||
+		cur.WeightedIOTimeMs < prev.WeightedIOTimeMs {
+		return DiskLatencyCounts{}, false
+	}
+	return DiskLatencyCounts{
+		Device:  cur.Device,
+		Reads:   cur.ReadsCompleted - prev.ReadsCompleted,
+		ReadMs:  cur.ReadTimeMs - prev.ReadTimeMs,
+		Writes:  cur.WritesCompleted - prev.WritesCompleted,
+		WriteMs: cur.WriteTimeMs - prev.WriteTimeMs,
+		QueueMs: cur.WeightedIOTimeMs - prev.WeightedIOTimeMs,
+	}, true
 }
 
 func (c *Collector) tcpStates() *TCPStates {

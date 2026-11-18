@@ -64,7 +64,7 @@ func TestWireFormatKeepsOldFields(t *testing.T) {
 	}
 	assertContains(t, "payload", want, got)
 
-	for _, key := range []string{"DiskIO", "TCPStates", "Pressure", "Temperatures"} {
+	for _, key := range []string{"DiskIO", "DiskLatency", "TCPStates", "Pressure", "Temperatures"} {
 		if _, ok := got[key]; ok {
 			t.Errorf("expected empty %s to be left out", key)
 		}
@@ -193,8 +193,8 @@ func TestDiskIO(t *testing.T) {
    8      16 sdb 1000 0 20000 500 2000 0 40000 800 0 1200 1300
    7       0 loop0 10 0 20 1 0 0 0 0 0 1 1
 `)
-	if rates := c.diskIO(); rates != nil {
-		t.Fatalf("expected no rates on the first sample, got %+v", rates)
+	if rates, latency := c.diskIO(); rates != nil || latency != nil {
+		t.Fatalf("expected nothing on the first sample, got %+v and %+v", rates, latency)
 	}
 
 	// pretend the first sample was taken 10 seconds ago
@@ -203,13 +203,31 @@ func TestDiskIO(t *testing.T) {
    8       0 sda 1100 0 40000 600 2500 0 60000 900 0 6200 6300
    8      16 sdb 1100 0 40000 600 2500 0 60000 900 0 6200 6300
 `)
-	rates := c.diskIO()
+	rates, latency := c.diskIO()
 	if len(rates) != 1 || rates[0].Device != "sda" {
 		t.Fatalf("expected rates for sda only, got %+v", rates)
 	}
 	// 20000 sectors of 512 bytes over about 10 seconds
 	if !near(rates[0].ReadBytesPerSec, 1024000) || !near(rates[0].ReadsPerSec, 10) || !near(rates[0].UtilPercent, 50) {
 		t.Errorf("disk io rates were incorrect: %+v", rates[0])
+	}
+
+	// 100 reads took 100 ms and 500 writes 100 ms, with 5 seconds of IO
+	// time added up over all IOs in flight
+	if latency == nil || !near(latency.Seconds, 10) || len(latency.Disks) != 1 {
+		t.Fatalf("expected latency for sda only, got %+v", latency)
+	}
+	want := DiskLatencyCounts{Device: "sda", Reads: 100, ReadMs: 100, Writes: 500, WriteMs: 100, QueueMs: 5000}
+	if latency.Disks[0] != want {
+		t.Errorf("expected %+v, got %+v", want, latency.Disks[0])
+	}
+
+	// sda was removed and added back, so its counters start again
+	writeFile(t, c.stats.DiskStatsPath, `
+   8       0 sda 10 0 400 6 25 0 600 9 0 62 63
+`)
+	if _, latency := c.diskIO(); latency != nil {
+		t.Errorf("expected no latency after a counter went down, got %+v", latency)
 	}
 }
 

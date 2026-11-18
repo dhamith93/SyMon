@@ -106,3 +106,26 @@ func TestTopLabelsSeriesSQL(t *testing.T) {
 		t.Errorf("%q could be the name of a program", otherLabel)
 	}
 }
+
+func TestPerSeriesSQL(t *testing.T) {
+	from := time.Unix(1700000000, 0)
+	for metric, value := range map[string]string{
+		"disk_read_latency":  "sum(read_ms)::float8 / nullif(sum(reads)::float8, 0) AS v",
+		"disk_write_latency": "sum(write_ms)::float8 / nullif(sum(writes)::float8, 0) AS v",
+		"disk_queue":         "sum(queue_ms)::float8 / nullif(sum(seconds * 1000)::float8, 0) AS v",
+	} {
+		for _, source := range []string{"raw", "1m", "1h"} {
+			q := SeriesQuery{Metric: metric, From: from, To: from.Add(time.Hour)}
+			sql, _ := seriesSQL(seriesDefs[metric], source, time.Minute, 7, q)
+			table := "FROM disk_latency"
+			if source != "raw" {
+				table += "_" + source
+			}
+			for _, want := range []string{table + "\n", value, "device::text AS label"} {
+				if !strings.Contains(sql, want) {
+					t.Errorf("%s %s: expected %q in sql:\n%s", metric, source, want, sql)
+				}
+			}
+		}
+	}
+}

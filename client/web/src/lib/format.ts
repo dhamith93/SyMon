@@ -53,9 +53,11 @@ export function formatNumber(value: number, digits = 1): string {
   return value.toFixed(abs < 10 ? 2 : digits);
 }
 
-// 850 -> "850 ms", 1250 -> "1.25 s"
+// 0.08 -> "80 µs", 850 -> "850 ms", 1250 -> "1.25 s"
 export function formatMs(ms: number): string {
   if (!Number.isFinite(ms)) return '–';
+  // fast disks answer in microseconds
+  if (ms > 0 && ms < 0.995) return `${Math.round(ms * 1000)} µs`;
   if (ms < 1000) return `${ms.toFixed(ms < 10 ? 1 : 0)} ms`;
   return `${(ms / 1000).toFixed(2)} s`;
 }
@@ -153,9 +155,13 @@ export function formatValue(value: number, unit: Unit): string {
 export function formatAxis(ticks: number[], unit: Unit): string[] {
   const step = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : Math.abs(ticks[0] ?? 1);
   const digits = step >= 1 || step === 0 ? 0 : step >= 0.1 ? 1 : 2;
-  // response times switch to seconds once the axis reaches a second
-  const seconds = unit === 'ms' && Math.max(...ticks.map(Math.abs)) >= 1000;
+  // response times switch to seconds once the axis reaches a second, and
+  // to microseconds while it stays under a millisecond
+  const top = Math.max(...ticks.map(Math.abs));
+  const seconds = unit === 'ms' && top >= 1000;
   const secondDigits = step >= 1000 || step === 0 ? 0 : step >= 100 ? 1 : 2;
+  const micros = unit === 'ms' && top > 0 && top < 1;
+  const microDigits = step >= 0.001 || step === 0 ? 0 : 1;
   return ticks.map((value) => {
     switch (unit) {
       case 'percent':
@@ -163,6 +169,7 @@ export function formatAxis(ticks: number[], unit: Unit): string[] {
       case 'celsius':
         return `${value.toFixed(digits)} °C`;
       case 'ms':
+        if (micros) return `${(value * 1000).toFixed(microDigits)} µs`;
         return seconds ? `${(value / 1000).toFixed(secondDigits)} s` : `${value.toFixed(digits)} ms`;
       case 'number':
         return Math.abs(value) >= 1e4 ? formatNumber(value) : value.toFixed(digits);
