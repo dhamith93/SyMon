@@ -15,6 +15,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 - Pressure stall information and temperature sensors
 - The top processes by CPU and memory at any point in time, and the programs that used the most over any range
 - Processes that ran out of memory, crashed, were killed or exited with an error, by program, and how many start and end a minute, from an eBPF tracer in the agent
+- Network traffic per program, how much each received and sent and how fast, also with eBPF
 - Whether chosen systemd services are running
 
 **Containers**
@@ -142,13 +143,15 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * The host's latest snapshot as the agent sent it, with `up` and `lastSeen`
 * `GET /api/v1/hosts/{host}/series?metric=cpu&from=&to=`
     * A metric over time. `from` and `to` default to the last hour. `label` keeps one series (a mount point, interface, sensor, container or custom metric name), `maxPoints` sets the most points per series (default 1000) and `max=1` returns the peak of each bucket instead of the average
-    * Metrics: `cpu`, `cpu_core`, `load1`, `load5`, `load15`, `memory`, `memory_used`, `swap`, `swap_used`, `psi_cpu`, `psi_memory`, `psi_memory_full`, `psi_io`, `psi_io_full`, `tcp_established`, `tcp_time_wait`, `tcp_close_wait`, `tcp_listen`, `tcp_total`, `disk_used`, `disk_inodes`, `disk_read`, `disk_write`, `disk_util`, `net_rx`, `net_tx`, `temperature`, `custom`, `container_cpu`, `container_memory`, `container_rx`, `container_tx`, `container_io_read`, `container_io_write`, and per minute from the process tracer `proc_started`, `proc_ended`, `proc_failed`, `proc_signaled`, `proc_failed_execs`
+    * Metrics: `cpu`, `cpu_core`, `load1`, `load5`, `load15`, `memory`, `memory_used`, `swap`, `swap_used`, `psi_cpu`, `psi_memory`, `psi_memory_full`, `psi_io`, `psi_io_full`, `tcp_established`, `tcp_time_wait`, `tcp_close_wait`, `tcp_listen`, `tcp_total`, `disk_used`, `disk_inodes`, `disk_read`, `disk_write`, `disk_util`, `net_rx`, `net_tx`, `temperature`, `custom`, `container_cpu`, `container_memory`, `container_rx`, `container_tx`, `container_io_read`, `container_io_write`, per minute from the process tracer `proc_started`, `proc_ended`, `proc_failed`, `proc_signaled`, `proc_failed_execs`, and in bytes per second per program `proc_net_rx`, `proc_net_tx` (the 7 busiest and `All other programs`)
 * `GET /api/v1/hosts/{host}/processes?at=`
     * Top processes by CPU and by memory at or before `at`, or the latest
 * `GET /api/v1/hosts/{host}/process-usage?from=&to=`
     * The programs that used the most CPU and memory over the range, 24 hours at most, with their average, peak and how often they were among the top processes. Processes with the same name are added up
 * `GET /api/v1/hosts/{host}/process-activity?from=&to=`
     * From hosts with the eBPF process tracer: the counts over the range (`execs`, `exits`, `nonZeroExits`, `signaled`, `failedExecs`, and the `oom` kills and `crashes`), the processes that ended badly grouped by program and how, worst first, and the newest 100. They are kept for the raw retention, so they are listed from `exitsFrom`
+* `GET /api/v1/hosts/{host}/process-network?from=&to=`
+    * From hosts with the eBPF network counters: what every program received and sent together (`rxBytes`, `txBytes`, loopback left out), how much of the range was covered (`seconds`), and the 50 busiest `programs` with their bytes and fastest interval (`rxPeak`, `txPeak`, bytes per second)
 * `GET /api/v1/hosts/{host}/disk-forecasts`
     * Each disk's growth per day over the last week, and `daysToFull`, or null when the disk is not filling up
 * `GET /api/v1/hosts/{host}/custom-metrics`

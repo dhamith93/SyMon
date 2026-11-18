@@ -172,11 +172,11 @@ The script downloads the agent for the host's CPU, enrolls it, and starts it as 
 
 ### What the agent collects
 
-Out of the box: CPU (overall and per core), load, memory and swap, disks, disk IO, network, TCP connections, pressure stall, temperatures, the top processes, running containers, and processes that start and end (see [Process activity](#process-activity)).
+Out of the box: CPU (overall and per core), load, memory and swap, disks, disk IO, network, TCP connections, pressure stall, temperatures, the top processes, running containers, processes that start and end (see [Process activity](#process-activity)), and network traffic per program (see [Process network](#process-network)).
 
 - **Services.** Point `SYMON_SERVICE_LIST_PATH` at a JSON file listing systemd services to watch, like [agent/services.json](../agent/services.json).
 - **Containers.** Docker, Podman, containerd, LXC and systemd-nspawn containers are found from the cgroup tree. Names and images come from the Docker socket. For Podman, set `SYMON_CONTAINER_SOCKET=/run/podman/podman.sock`. Kubernetes pods are named from the container runtime, see [Kubernetes](#kubernetes).
-- **Switching collectors off.** `SYMON_DISABLED_COLLECTORS=diskio,tcp,pressure,temps,containers,procactivity` turns off any of those.
+- **Switching collectors off.** `SYMON_DISABLED_COLLECTORS=diskio,tcp,pressure,temps,containers,procactivity,procnet` turns off any of those.
 - **Custom metrics.** Send any number from a script or cron job, and it gets its own chart:
 
   ```sh
@@ -196,6 +196,21 @@ Only processes that ended badly are sent one by one, up to 50 per agent interval
 It needs Linux 5.8 or newer with BTF (`/sys/kernel/btf/vmlinux`), which Debian 11, Ubuntu 22.04 and newer have, and an agent running as root, as the install script sets it up. On start the agent logs `process activity is on`, or `process activity is off:` and why, and carries on without it. Hosts without it have no Process activity section. To switch it off, add `procactivity` to `SYMON_DISABLED_COLLECTORS`.
 
 Many failed execs are normal: a shell tries each folder in `PATH` until it finds a command, and each miss counts.
+
+### Process network
+
+The agent also counts what each program receives and sends over TCP and UDP with eBPF, all processes of a program together. The host page shows it in the Network section, as Received by program and Sent by program charts with the 7 busiest programs and the rest added up, and in the Busiest over this range card under By network, with each program's total and its fastest interval.
+
+What it counts:
+
+- the bytes a program actually sent or read, not the packets on the wire, so TCP/IP headers and resent packets are left out and the numbers run a few percent under the interface charts
+- not loopback (`127.0.0.0/8`, `::1`). UDP sent to `127.0.0.53` without connecting the socket first, like some DNS lookups, still counts, as the kernel only knows the address per packet then.
+- not traffic the host only forwards (a router, NAT, or containers on a bridge going out), and not what the kernel moves for itself, like NFS or WireGuard
+- programs by name, as the kernel knows it (15 characters at most). Kernel threads like `kworker/u8:2` show as `kworker`.
+
+The 20 busiest programs of each agent interval are kept by name and the rest as one sum, like other metrics: raw for `SYMON_RETENTION_RAW_DAYS`, then as minute and hourly sums.
+
+It needs a kernel with BTF that can attach fentry programs: x86_64 from 5.5, arm64 from 6.0, not 32-bit ARM, and an agent running as root. On start the agent logs `process network is on`, or `process network is off:` and why. To switch it off, add `procnet` to `SYMON_DISABLED_COLLECTORS`.
 
 ### Adding a host by hand
 
@@ -657,6 +672,8 @@ sudo -u postgres dropuser symon
 **"another host polls this device".** Two hosts list the device, or the poller moved. See [Moving the poller](#devices-snmp).
 
 **A host has no Process activity section.** Its agent logs why on start, `journalctl -u symon_agent | grep "process activity"`. Usually the kernel has no BTF or is older than 5.8, or the agent does not run as root. See [Process activity](#process-activity).
+
+**A host has no Received by program chart.** Its agent logs why on start, `journalctl -u symon_agent | grep "process network"`. Usually the kernel has no BTF, it is an arm64 kernel older than 6.0, or the agent does not run as root. See [Process network](#process-network).
 
 **A container shows "host network".** It shares the host's network, so its traffic is already counted in the host's own network charts.
 
