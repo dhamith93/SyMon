@@ -22,6 +22,8 @@ export interface Section {
   charts: ChartSpec[];
 }
 
+export const processActivityTitle = 'Process activity';
+
 export const hostSections: Section[] = [
   {
     title: 'CPU',
@@ -106,6 +108,34 @@ export const hostSections: Section[] = [
   {
     title: 'Sensors',
     charts: [{ key: 'temperature', title: 'Temperatures', unit: 'celsius', optional: true, metrics: [{ metric: 'temperature' }] }],
+  },
+  // from agents with the eBPF process tracer. The host page shows it after
+  // the process lists, with the exits.
+  {
+    title: processActivityTitle,
+    charts: [
+      {
+        key: 'proc_churn',
+        title: 'Processes started and ended',
+        unit: 'perMinute',
+        optional: true,
+        metrics: [
+          { metric: 'proc_started', name: 'Started' },
+          { metric: 'proc_ended', name: 'Ended' },
+        ],
+      },
+      {
+        key: 'proc_failures',
+        title: 'Exits with an error or a signal',
+        unit: 'perMinute',
+        optional: true,
+        note: 'OOM kills count as signals',
+        metrics: [
+          { metric: 'proc_failed', name: 'Exit status' },
+          { metric: 'proc_signaled', name: 'Signal' },
+        ],
+      },
+    ],
   },
 ];
 

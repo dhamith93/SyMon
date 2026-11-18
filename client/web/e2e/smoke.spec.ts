@@ -90,6 +90,30 @@ test('containers show on a host that runs them', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Container CPU, share of the host' })).toBeVisible();
 });
 
+test('process activity shows on a host with the eBPF tracer', async ({ page }) => {
+  const errors = watchErrors(page);
+  const fleet = await (await page.request.get('/api/v1/fleet')).json();
+  const to = Math.floor(Date.now() / 1000);
+  let host: string | undefined;
+  for (const h of fleet.hosts.filter((h: { up: boolean }) => h.up)) {
+    const activity = await (await page.request.get(`/api/v1/hosts/${encodeURIComponent(h.name)}/process-activity?from=${to - 3600}&to=${to}`)).json();
+    if (activity.totals?.seconds > 0) {
+      host = h.name;
+      break;
+    }
+  }
+  test.skip(!host, 'no reporting host sends process activity');
+
+  await page.goto(`/hosts/${encodeURIComponent(host ?? '')}?range=1h`);
+  const section = page.locator('#process-activity');
+  await expect(section.getByRole('heading', { name: 'Process activity' })).toBeVisible();
+  await expect(section.locator('.tiles').getByText('Started', { exact: true })).toBeVisible();
+  await expect(section.getByRole('heading', { name: 'Processes started and ended' })).toBeVisible();
+  await section.getByRole('button', { name: 'Latest' }).click();
+  await expect(section.getByRole('button', { name: 'Latest' })).toHaveAttribute('aria-pressed', 'true');
+  expect(errors).toEqual([]);
+});
+
 // only looks: starting a task would run a command on a real host
 test('a host has a tasks page', async ({ page }) => {
   const errors = watchErrors(page);

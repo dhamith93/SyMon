@@ -119,6 +119,59 @@ export interface ProcessUsage {
   seenPct: number;
 }
 
+// How a process ended badly: status is 0 when a signal ended it, signal is
+// 0 when it exited by itself
+export interface ExitKind {
+  status: number;
+  signal: number;
+  coreDumped: boolean;
+  oom: boolean;
+}
+
+// One program that ended the same way over a range
+export interface ExitGroup extends ExitKind {
+  name: string;
+  count: number;
+  first: number;
+  last: number;
+  // the parent seen most, and the median lifetime
+  parent: string;
+  lifetimeSeconds: number;
+}
+
+export interface ProcessExit extends ExitKind {
+  time: number;
+  name: string;
+  parent: string;
+  pid: number;
+  ppid: number;
+  uid: number;
+  lifetimeSeconds: number;
+}
+
+// A host's process activity over a range, from the agent's eBPF tracer.
+// seconds is how much of the range the tracer covered. listed, oom and
+// crashes count the kept exits since exitsFrom.
+export interface ProcessActivityReport {
+  totals: {
+    seconds: number;
+    execs: number;
+    failedExecs: number;
+    exits: number;
+    nonZeroExits: number;
+    signaled: number;
+    dropped: number;
+    listed: number;
+    oom: number;
+    crashes: number;
+  };
+  // the worst first
+  groups: ExitGroup[];
+  // newest first
+  latest: ProcessExit[];
+  exitsFrom: number;
+}
+
 export interface Processes {
   CPU: Process[] | null;
   Memory: Process[] | null;
@@ -187,6 +240,8 @@ export interface Snapshot {
   Services: { Name: string; Running: boolean }[] | null;
   Processes: Processes;
   Containers?: Container[];
+  // from agents with the eBPF process tracer, the last interval's counts
+  ProcessActivity?: { From: number; To: number; Execs: number; Exits: number };
   // missing from agents older than it
   AgentVersion?: string;
 }
@@ -601,6 +656,7 @@ export const api = {
   processes: (name: string, at?: number) => get<{ time: number; processes: Processes }>(`${host(name)}/processes`, { at }),
   processUsage: (name: string, from: number, to: number) =>
     get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
+  processActivity: (name: string, from: number, to: number) => get<ProcessActivityReport>(`${host(name)}/process-activity`, { from, to }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
   channels: () => get<{ channels: Channel[] }>('/api/v1/notifications/channels'),
   createChannel: (channel: ChannelInput) => post<Channel>('/api/v1/notifications/channels', channel),

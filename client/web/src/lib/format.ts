@@ -122,7 +122,8 @@ export function formatTime(unixSeconds: number, spanSeconds: number): string {
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: spanSeconds < 3600 ? '2-digit' : undefined });
 }
 
-export type Unit = 'percent' | 'rate' | 'bits' | 'bytes' | 'mib' | 'celsius' | 'ms' | 'number';
+// perMinute is events a minute, like processes started
+export type Unit = 'percent' | 'rate' | 'bits' | 'bytes' | 'mib' | 'celsius' | 'ms' | 'perMinute' | 'number';
 
 export function formatValue(value: number, unit: Unit): string {
   switch (unit) {
@@ -140,6 +141,8 @@ export function formatValue(value: number, unit: Unit): string {
       return formatCelsius(value);
     case 'ms':
       return formatMs(value);
+    case 'perMinute':
+      return `${formatNumber(value)}/min`;
     default:
       return formatNumber(value);
   }
@@ -163,6 +166,8 @@ export function formatAxis(ticks: number[], unit: Unit): string[] {
         return seconds ? `${(value / 1000).toFixed(secondDigits)} s` : `${value.toFixed(digits)} ms`;
       case 'number':
         return Math.abs(value) >= 1e4 ? formatNumber(value) : value.toFixed(digits);
+      case 'perMinute':
+        return `${Math.abs(value) >= 1e4 ? formatNumber(value) : value.toFixed(digits)}/min`;
       default:
         return formatValue(value, unit);
     }

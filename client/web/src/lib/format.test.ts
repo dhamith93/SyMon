@@ -33,6 +33,8 @@ describe('formatValue', () => {
     expect(formatValue(512, 'mib')).toBe('512.0 MiB');
     expect(formatValue(48.25, 'celsius')).toBe('48.3 °C');
     expect(formatValue(850.4, 'ms')).toBe('850 ms');
+    expect(formatValue(120, 'perMinute')).toBe('120/min');
+    expect(formatValue(0.25, 'perMinute')).toBe('0.25/min');
     expect(formatMs(4.25)).toBe('4.3 ms');
     expect(formatMs(1250)).toBe('1.25 s');
     expect(formatPercent(12.345, 1)).toBe('12.3%');
@@ -80,6 +82,7 @@ describe('formatDays', () => {
 describe('formatAxis', () => {
   it('writes response times in ms, or seconds from a second up', () => {
     expect(formatAxis([0, 100, 200], 'ms')).toEqual(['0 ms', '100 ms', '200 ms']);
+    expect(formatAxis([0, 0.5, 1], 'perMinute')).toEqual(['0.0/min', '0.5/min', '1.0/min']);
     expect(formatAxis([0, 500, 1000, 1500], 'ms')).toEqual(['0.0 s', '0.5 s', '1.0 s', '1.5 s']);
     expect(formatAxis([0, 2000, 4000], 'ms')).toEqual(['0 s', '2 s', '4 s']);
   });

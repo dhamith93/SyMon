@@ -2,7 +2,7 @@
   import { untrack } from 'svelte';
   import type { Aligned, NamedSeries } from '../lib/align';
   import { api, diskFullSoonDays, type DiskForecast, type HostDetail, type HostSummary } from '../lib/api';
-  import { hostSections, loadChart, loadCores, type ChartSpec } from '../lib/charts';
+  import { hostSections, loadChart, loadCores, processActivityTitle, type ChartSpec } from '../lib/charts';
   import { appConfig } from '../lib/config.svelte';
   import { formatAgo, formatBytes, formatDate, formatDays, formatDuration, formatMiB, formatPercent } from '../lib/format';
   import { noForecastText, projectDisks } from '../lib/projection';
@@ -15,6 +15,7 @@
   import ChartCard from '../components/ChartCard.svelte';
   import ContainerTable from '../components/ContainerTable.svelte';
   import Heatmap from '../components/Heatmap.svelte';
+  import ProcessActivity from '../components/ProcessActivity.svelte';
   import ProcessTable from '../components/ProcessTable.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
   import TimeRangePicker from '../components/TimeRangePicker.svelte';
@@ -149,6 +150,11 @@
     return !!chart?.data && chart.data.labels.length > 0;
   }
 
+  // the tracer's charts sit with the process lists, not in the loop above
+  // them. The section shows once the host sends process activity.
+  const chartSections = hostSections.filter((section) => section.title !== processActivityTitle);
+  const activitySpecs = $derived((hostSections.find((section) => section.title === processActivityTitle)?.charts ?? []).filter(visible));
+
   // follows the disk space chart's series, so each disk keeps its color
   const projection = $derived(projectDisks(Object.values(forecasts), now, charts['disk_used']?.data?.labels ?? []));
 
@@ -219,30 +225,34 @@
     <span class="muted hint">Drag across a chart to zoom in</span>
   </div>
 
-  {#each hostSections as section (section.title)}
+  {#snippet chartCard(spec: ChartSpec)}
+    {@const chart = charts[spec.key]}
+    <ChartCard
+      title={spec.title}
+      unit={spec.unit}
+      yMax={spec.yMax}
+      area={spec.area}
+      note={spec.note}
+      data={chart?.data ?? null}
+      loading={chart?.loading ?? true}
+      error={chart?.error}
+      syncKey={host}
+      from={range.from}
+      to={range.to}
+      onzoom={zoom}
+      onpick={pickTime}
+      marker={processesAt}
+    />
+  {/snippet}
+
+  {#each chartSections as section (section.title)}
     {@const specs = section.charts.filter(visible)}
     {#if specs.length > 0 || (section.title === 'CPU' && showCores)}
       <section>
         <h2>{section.title}</h2>
         <div class="grid">
           {#each specs as spec (spec.key)}
-            {@const chart = charts[spec.key]}
-            <ChartCard
-              title={spec.title}
-              unit={spec.unit}
-              yMax={spec.yMax}
-              area={spec.area}
-              note={spec.note}
-              data={chart?.data ?? null}
-              loading={chart?.loading ?? true}
-              error={chart?.error}
-              syncKey={host}
-              from={range.from}
-              to={range.to}
-              onzoom={zoom}
-              onpick={pickTime}
-              marker={processesAt}
-            />
+            {@render chartCard(spec)}
             {#if spec.key === 'disk_used' && projection}
               <ChartCard
                 title="Disk space, projected"
@@ -319,6 +329,21 @@
       <BusiestProcesses {host} from={range.from} to={range.to} />
     </div>
   </section>
+
+  {#if activitySpecs.length > 0}
+    <section id="process-activity">
+      <h2>{processActivityTitle}</h2>
+      <ProcessActivity {host} from={range.from} to={range.to}>
+        {#snippet chartGrid()}
+          <div class="grid">
+            {#each activitySpecs as spec (spec.key)}
+              {@render chartCard(spec)}
+            {/each}
+          </div>
+        {/snippet}
+      </ProcessActivity>
+    </section>
+  {/if}
 
   {#if snapshot}
     <section>
