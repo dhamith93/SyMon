@@ -3,6 +3,7 @@ module github.com/dhamith93/SyMon
 go 1.26.0
 
 require (
+	github.com/cilium/ebpf v0.22.0
 	github.com/dhamith93/systats v0.5.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/handlers v1.5.2

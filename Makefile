@@ -1,4 +1,4 @@
-.PHONY: proto web signing-key clean build-all build-collector build-agent build-client pack-all pack-collector pack-agent pack-client
+.PHONY: proto bpf web signing-key clean build-all build-collector build-agent build-client pack-all pack-collector pack-agent pack-client
 
 # the version -version and the dashboard show, like v3.0.0-16-g2519821
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -14,6 +14,9 @@ proto:
 	cd internal && protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		api/api.proto
+
+bpf:
+	go generate ./internal/proctrace
 
 signing-key:
 	go run ./tools/sign keygen -key $(SIGNING_KEY)

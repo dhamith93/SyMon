@@ -10,6 +10,7 @@ import (
 
 	"github.com/dhamith93/SyMon/internal/config"
 	"github.com/dhamith93/SyMon/internal/logger"
+	"github.com/dhamith93/SyMon/internal/proctrace"
 	"github.com/dhamith93/SyMon/internal/version"
 	"github.com/dhamith93/systats"
 )
@@ -79,11 +80,12 @@ func IsDevice(metric string) bool {
 
 // optional collectors, SYMON_DISABLED_COLLECTORS can switch these off
 const (
-	CollectorDiskIO     string = "diskio"
-	CollectorTCP        string = "tcp"
-	CollectorPressure   string = "pressure"
-	CollectorTemps      string = "temps"
-	CollectorContainers string = "containers"
+	CollectorDiskIO       string = "diskio"
+	CollectorTCP          string = "tcp"
+	CollectorPressure     string = "pressure"
+	CollectorTemps        string = "temps"
+	CollectorContainers   string = "containers"
+	CollectorProcActivity string = "procactivity"
 )
 
 type Processes struct {
@@ -111,11 +113,12 @@ type MonitorData struct {
 
 	// optional sections, left out when disabled, unsupported on the host,
 	// or (for DiskIO) on the first tick before there is a previous sample
-	DiskIO       []DiskIO      `json:",omitempty"`
-	TCPStates    *TCPStates    `json:",omitempty"`
-	Pressure     *Pressure     `json:",omitempty"`
-	Temperatures []Temperature `json:",omitempty"`
-	Containers   []Container   `json:",omitempty"`
+	DiskIO          []DiskIO           `json:",omitempty"`
+	TCPStates       *TCPStates         `json:",omitempty"`
+	Pressure        *Pressure          `json:",omitempty"`
+	Temperatures    []Temperature      `json:",omitempty"`
+	Containers      []Container        `json:",omitempty"`
+	ProcessActivity *proctrace.Summary `json:",omitempty"`
 
 	// AgentVersion is the build of the agent that sent the snapshot, empty
 	// from agents older than it
@@ -143,6 +146,8 @@ type Collector struct {
 	// a pod UID. criFailed stops a broken socket logging every tick.
 	cri       *criClient
 	criFailed bool
+
+	tracer *proctrace.Tracer
 }
 
 func NewCollector(config *config.Agent) *Collector {
@@ -157,11 +162,12 @@ func NewCollector(config *config.Agent) *Collector {
 		config: config,
 		stats:  stats,
 		enabled: map[string]bool{
-			CollectorDiskIO:     true,
-			CollectorTCP:        true,
-			CollectorPressure:   true,
-			CollectorTemps:      true,
-			CollectorContainers: true,
+			CollectorDiskIO:       true,
+			CollectorTCP:          true,
+			CollectorPressure:     true,
+			CollectorTemps:        true,
+			CollectorContainers:   true,
+			CollectorProcActivity: true,
 		},
 	}
 	for _, name := range config.DisabledCollectors {
@@ -172,6 +178,24 @@ func NewCollector(config *config.Agent) *Collector {
 		c.enabled[name] = false
 	}
 	return c
+}
+
+// StartTracer loads the eBPF process tracer, unless procactivity is
+// switched off. A host that cannot run it, like a kernel without BTF,
+// carries on without process activity. The agent calls it once, apart from
+// NewCollector so tests do not load BPF programs.
+func (c *Collector) StartTracer() {
+	if !c.enabled[CollectorProcActivity] || c.tracer != nil {
+		return
+	}
+	tracer, err := proctrace.Start(proctrace.Options{})
+	if err != nil {
+		logger.Log("info", "process activity is off: "+err.Error())
+		c.enabled[CollectorProcActivity] = false
+		return
+	}
+	logger.Log("info", "process activity is on")
+	c.tracer = tracer
 }
 
 // CollectJSON returns a snapshot as the JSON string the collector expects
@@ -216,6 +240,9 @@ func (c *Collector) Collect(ctx context.Context) MonitorData {
 	}
 	if c.enabled[CollectorContainers] {
 		data.Containers = c.containers(ctx)
+	}
+	if c.tracer != nil {
+		data.ProcessActivity = c.tracer.Drain()
 	}
 	return data
 }

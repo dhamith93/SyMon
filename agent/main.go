@@ -104,6 +104,7 @@ func main() {
 	go newDevicePoller(&config, client).loop()
 	interval := time.Duration(config.MonitorIntervalSeconds) * time.Second
 	collector := monitor.NewCollector(&config)
+	collector.StartTracer()
 	ticker := time.NewTicker(interval)
 	tickerForPing := time.NewTicker(time.Minute)
 	quit := make(chan struct{})
