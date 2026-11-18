@@ -220,6 +220,19 @@ func TestAlertEscalatesAndResolves(t *testing.T) {
 	}
 }
 
+func TestDiskLatencyAlertTargetsTheDisk(t *testing.T) {
+	rule := cpuRule
+	rule.Name, rule.MetricName, rule.Disk = "Slow disk", monitor.DISK_WRITE_LATENCY, "/dev/nvme0n1"
+	rule.WarnThreshold, rule.CriticalThreshold = 20, 100
+	fake := runSteps(t, rule, []step{
+		{0, 150, -1},
+		{60 * time.Second, 150, int(alertstatus.Critical)},
+	})
+	if len(fake.alerts) != 1 || fake.alerts[0].Target != "/dev/nvme0n1" || fake.alerts[0].Metric != monitor.DISK_WRITE_LATENCY {
+		t.Errorf("expected an alert on /dev/nvme0n1, got %+v", fake.alerts)
+	}
+}
+
 func TestSameSampleIsOnlyUsedOnce(t *testing.T) {
 	// the agent sends every 30s but rules run every 15s, so the same sample
 	// is seen twice and must not count as time passing

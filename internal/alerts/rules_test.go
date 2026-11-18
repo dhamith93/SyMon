@@ -33,6 +33,8 @@ func TestParseRules(t *testing.T) {
 		{"no servers", `[{"Name": "x", "MetricName": "memory", "Op": ">"}]`, "needs Servers"},
 		{"bad op", `[{"Name": "x", "MetricName": "memory", "Servers": ["web1"], "Op": "=>"}]`, `unknown Op "=>"`},
 		{"disk without device", `[{"Name": "x", "MetricName": "disks", "Servers": ["web1"], "Op": ">"}]`, "needs Disk"},
+		{"latency without disk", `[{"Name": "x", "MetricName": "disk_write_latency", "Servers": ["web1"], "Op": ">"}]`, "latency rule needs Disk"},
+		{"latency op", `[{"Name": "x", "MetricName": "disk_read_latency", "Disk": "/dev/sda", "Servers": ["web1"], "Op": "=>"}]`, `unknown Op "=>"`},
 		{"service op", `[{"Name": "x", "MetricName": "services", "Service": "nginx", "Servers": ["web1"], "Op": ">"}]`, `Op "inactive"`},
 		{"endpoint url", `[{"Name": "x", "MetricName": "endpoint", "Endpoint": "shop.example.com"}]`, "http:// or https:// URL"},
 		{"custom without name", `[{"Name": "x", "IsCustom": true, "Servers": ["web1"], "Op": ">"}]`, "custom metric"},

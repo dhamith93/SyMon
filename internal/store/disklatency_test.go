@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"math"
 	"testing"
 	"time"
@@ -91,6 +92,20 @@ func TestDiskLatency(t *testing.T) {
 			check(t, "disk_read_latency", from, now, span.source, []wantSeries{{"/dev/sda", []float64{3}}})
 			check(t, "disk_write_latency", from, now, span.source, []wantSeries{{"/dev/sda", []float64{10}}})
 			check(t, "disk_queue", from, now, span.source, []wantSeries{{"/dev/sda", []float64{1}}, {"/dev/sdb", []float64{0}}})
+		}
+	})
+
+	t.Run("alert rules", func(t *testing.T) {
+		// the newest interval: 1000 ms over 100 reads, 500 ms over 50 writes
+		for metric, want := range map[string]float64{monitor.DISK_READ_LATENCY: 10, monitor.DISK_WRITE_LATENCY: 10} {
+			value, when, err := st.LatestValue(ctx, "web1", metric, "/dev/sda", false)
+			if err != nil || value != want || !when.Equal(at(3)) {
+				t.Errorf("%s: expected %v at %v, got %v at %v, %v", metric, want, at(3), value, when, err)
+			}
+		}
+		// an idle disk has no latency to alert on
+		if _, _, err := st.LatestValue(ctx, "web1", monitor.DISK_READ_LATENCY, "/dev/sdb", false); !errors.Is(err, ErrNotFound) {
+			t.Errorf("expected no data for an idle disk, got %v", err)
 		}
 	})
 }

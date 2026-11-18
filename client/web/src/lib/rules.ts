@@ -8,6 +8,8 @@ export type Kind =
   | 'swap'
   | 'disks'
   | 'disk_forecast'
+  | 'disk_read_latency'
+  | 'disk_write_latency'
   | 'services'
   | 'ping'
   | 'endpoint'
@@ -26,6 +28,8 @@ export const kinds: { value: Kind; label: string }[] = [
   { value: 'swap', label: 'Swap used, %' },
   { value: 'disks', label: 'Disk space used, %' },
   { value: 'disk_forecast', label: 'Days until a disk is full' },
+  { value: 'disk_read_latency', label: 'Disk read latency, ms' },
+  { value: 'disk_write_latency', label: 'Disk write latency, ms' },
   { value: 'services', label: 'A service stops or runs' },
   { value: 'ping', label: 'Host not reporting' },
   { value: 'endpoint', label: 'HTTP endpoint' },
@@ -40,7 +44,23 @@ export const kinds: { value: Kind; label: string }[] = [
 ];
 
 // kinds compared with a warning and a critical level
-export const thresholdKinds: Kind[] = ['procUsage', 'memory', 'swap', 'disks', 'disk_forecast', 'kube_restarts', 'device_metric', 'custom'];
+export const thresholdKinds: Kind[] = [
+  'procUsage',
+  'memory',
+  'swap',
+  'disks',
+  'disk_forecast',
+  'disk_read_latency',
+  'disk_write_latency',
+  'kube_restarts',
+  'device_metric',
+  'custom',
+];
+
+// kinds that watch one disk of a host. Space is per partition, latency per
+// whole disk.
+export const diskKinds: Kind[] = ['disks', 'disk_forecast', 'disk_read_latency', 'disk_write_latency'];
+export const isDiskLatency = (kind: Kind) => kind === 'disk_read_latency' || kind === 'disk_write_latency';
 
 // kinds that check a Kubernetes cluster instead of hosts
 export const kubeKinds: Kind[] = ['kube_node', 'kube_workload', 'kube_pending', 'kube_restarts'];
@@ -75,6 +95,7 @@ export function kindOf(rule: RuleConfig): Kind {
 
 function unit(kind: Kind): string {
   if (kind === 'disk_forecast') return ' days';
+  if (isDiskLatency(kind)) return ' ms';
   if (kind === 'kube_restarts') return ' restarts';
   return kind === 'custom' || kind === 'device_metric' ? '' : '%';
 }
@@ -92,6 +113,10 @@ export function describeWatch(rule: RuleConfig): string {
       return `Disk ${rule.Disk}`;
     case 'disk_forecast':
       return `${rule.Disk} filling up`;
+    case 'disk_read_latency':
+      return `Read latency of ${rule.Disk}`;
+    case 'disk_write_latency':
+      return `Write latency of ${rule.Disk}`;
     case 'services':
       return `Service ${rule.Service}`;
     case 'ping':
@@ -236,6 +261,8 @@ const defaults: Partial<Record<Kind, { op: string; warn: number; critical: numbe
   swap: { op: '>', warn: 50, critical: 80 },
   disks: { op: '>', warn: 80, critical: 90 },
   disk_forecast: { op: '<', warn: 14, critical: 3 },
+  disk_read_latency: { op: '>', warn: 50, critical: 200 },
+  disk_write_latency: { op: '>', warn: 50, critical: 200 },
   kube_restarts: { op: '>', warn: 3, critical: 10 },
   device_metric: { op: '>', warn: 80, critical: 90 },
   custom: { op: '>', warn: 0, critical: 0 },
@@ -370,7 +397,7 @@ export function ruleFromForm(form: RuleForm): RuleConfig {
     rule.WarnThreshold = Math.round(form.warn ?? 0);
     rule.CriticalThreshold = Math.round(form.critical ?? 0);
   }
-  if (kind === 'disks' || kind === 'disk_forecast') rule.Disk = form.disk.trim();
+  if (diskKinds.includes(kind)) rule.Disk = form.disk.trim();
   if (kind === 'services') {
     rule.Service = form.service.trim();
     rule.Op = form.op;

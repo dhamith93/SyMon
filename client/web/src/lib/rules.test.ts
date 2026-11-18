@@ -45,6 +45,9 @@ describe('describing rules', () => {
       'warning < 14 days, critical < 3 days',
     );
     expect(describeLevels({ Name: 'x', MetricName: 'ping', TriggerIntveral: 300 })).toBe('critical after 5m of silence');
+    const latency: RuleConfig = { Name: 'x', MetricName: 'disk_write_latency', Servers: ['db1'], Op: '>', WarnThreshold: 50, CriticalThreshold: 200, Disk: '/dev/nvme0n1' };
+    expect(describeWatch(latency)).toBe('Write latency of /dev/nvme0n1');
+    expect(describeLevels(latency)).toBe('warning > 50 ms, critical > 200 ms');
   });
 
   it('describes kubernetes rules by their cluster', () => {
@@ -181,5 +184,9 @@ describe('the rule form', () => {
     applyKindDefaults(custom, 'custom');
     custom.customName = 'queue';
     expect(ruleFromForm(custom)).toMatchObject({ MetricName: 'queue', IsCustom: true, Servers: ['*'] });
+    const latency = newForm();
+    applyKindDefaults(latency, 'disk_read_latency');
+    latency.disk = ' /dev/sda ';
+    expect(ruleFromForm(latency)).toMatchObject({ MetricName: 'disk_read_latency', Disk: '/dev/sda', Op: '>', WarnThreshold: 50, CriticalThreshold: 200 });
   });
 });

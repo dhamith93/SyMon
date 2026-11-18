@@ -5,8 +5,10 @@
   import {
     applyKindDefaults,
     deviceMetrics,
+    diskKinds,
     formFromRule,
     isDevice,
+    isDiskLatency,
     isKube,
     kinds,
     newForm,
@@ -139,7 +141,12 @@
             <input class="control" required bind:value={form.customName} placeholder="queue-length" />
           </label>
         {/if}
-        {#if form.kind === 'disks' || form.kind === 'disk_forecast'}
+        {#if isDiskLatency(form.kind)}
+          <label>
+            <span>Whole disk, as in the latency charts</span>
+            <input class="control" required bind:value={form.disk} placeholder="/dev/sda" />
+          </label>
+        {:else if diskKinds.includes(form.kind)}
           <label>
             <span>Disk device, as in the host's disk table</span>
             <input class="control" required bind:value={form.disk} placeholder="/dev/sda1" />

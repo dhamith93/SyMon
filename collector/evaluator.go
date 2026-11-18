@@ -74,7 +74,7 @@ func newEvaluator(st alertStore, notify func(context.Context, notice)) *evaluato
 // metrics
 func ruleTarget(rule *alerts.AlertConfig) string {
 	switch rule.MetricName {
-	case monitor.DISKS, monitor.DISK_FORECAST:
+	case monitor.DISKS, monitor.DISK_FORECAST, monitor.DISK_READ_LATENCY, monitor.DISK_WRITE_LATENCY:
 		return rule.Disk
 	case monitor.SERVICES:
 		return rule.Service

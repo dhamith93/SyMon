@@ -1,7 +1,7 @@
 <script lang="ts">
   import { api, type AlertRecord } from '../lib/api';
   import { appConfig } from '../lib/config.svelte';
-  import { formatDateTime, formatDays, formatDuration, formatNumber, formatPercent } from '../lib/format';
+  import { formatDateTime, formatDays, formatDuration, formatMs, formatNumber, formatPercent } from '../lib/format';
   import { poll } from '../lib/poll';
   import { devicePath, hostPath, location, navigate } from '../lib/router.svelte';
   import NoChannelsNotice from '../components/NoChannelsNotice.svelte';
@@ -80,6 +80,8 @@
         return 'Heartbeat';
       case 'disks':
       case 'disk_forecast':
+      case 'disk_read_latency':
+      case 'disk_write_latency':
       case 'services':
       case 'endpoint':
       case 'certificate':
@@ -114,6 +116,10 @@
         return alert.value ? `HTTP ${alert.value}` : 'no response';
       case 'certificate':
         return alert.value < 0 ? 'certificate expired' : `certificate expires in ${formatDays(alert.value)}`;
+      case 'disk_read_latency':
+        return `reads take ${formatMs(alert.value)}`;
+      case 'disk_write_latency':
+        return `writes take ${formatMs(alert.value)}`;
       case 'disk_forecast':
         // the collector reads a disk that is not filling up as 365 days
         return alert.value >= 365 ? 'not filling up' : `full in ${formatDays(alert.value)}`;

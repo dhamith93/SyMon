@@ -81,6 +81,11 @@ func (rule *AlertConfig) Validate() error {
 			return errors.New("a disk rule needs Disk, the device like /dev/sda1")
 		}
 		return firstError(rule.checkServers(), rule.checkOp())
+	case monitor.DISK_READ_LATENCY, monitor.DISK_WRITE_LATENCY:
+		if strings.TrimSpace(rule.Disk) == "" {
+			return errors.New("a disk latency rule needs Disk, the whole disk like /dev/sda or /dev/nvme0n1")
+		}
+		return firstError(rule.checkServers(), rule.checkOp())
 	case monitor.SERVICES:
 		if strings.TrimSpace(rule.Service) == "" {
 			return errors.New("a service rule needs Service, a name from the agent's service list")
@@ -115,7 +120,7 @@ func (rule *AlertConfig) Validate() error {
 	case "":
 		return errors.New("a rule needs MetricName")
 	}
-	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, services, ping, endpoint, kube_node, kube_workload, kube_pending, kube_restarts, device_down, device_port, device_metric, or a custom metric's name with IsCustom", rule.MetricName)
+	return fmt.Errorf("unknown MetricName %q, it can be procUsage, memory, swap, disks, disk_forecast, disk_read_latency, disk_write_latency, services, ping, endpoint, kube_node, kube_workload, kube_pending, kube_restarts, device_down, device_port, device_metric, or a custom metric's name with IsCustom", rule.MetricName)
 }
 
 // checkChannels only checks the names. Whether those channels exist is

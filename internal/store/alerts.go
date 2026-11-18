@@ -52,6 +52,13 @@ func (s *Store) LatestValue(ctx context.Context, host string, metric string, tar
 	case metric == monitor.DISKS:
 		sql = "SELECT time, used_pct FROM disk_metrics WHERE host_id = $1 AND device = $2 ORDER BY time DESC LIMIT 1"
 		args = append(args, target)
+	case metric == monitor.DISK_READ_LATENCY:
+		// an interval with no reads has no latency, which reads as no data
+		sql = "SELECT time, read_ms::float8 / nullif(reads, 0) FROM disk_latency WHERE host_id = $1 AND device = $2 ORDER BY time DESC LIMIT 1"
+		args = append(args, target)
+	case metric == monitor.DISK_WRITE_LATENCY:
+		sql = "SELECT time, write_ms::float8 / nullif(writes, 0) FROM disk_latency WHERE host_id = $1 AND device = $2 ORDER BY time DESC LIMIT 1"
+		args = append(args, target)
 	case metric == monitor.SERVICES:
 		sql = "SELECT time, CASE WHEN running THEN 1.0 ELSE 0.0 END FROM service_status WHERE host_id = $1 AND name = $2 ORDER BY time DESC LIMIT 1"
 		args = append(args, target)

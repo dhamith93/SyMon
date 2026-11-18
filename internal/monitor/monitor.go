@@ -36,10 +36,14 @@ const (
 // alert metrics that are not in a snapshot. DISK_FORECAST is the days until
 // a disk is full, ENDPOINT an HTTP check the collector runs, and
 // CERTIFICATE the days until an HTTPS endpoint's certificate expires.
+// DISK_READ_LATENCY and DISK_WRITE_LATENCY are a disk's average time per
+// read or write over the newest agent interval, in ms.
 const (
-	DISK_FORECAST string = "disk_forecast"
-	ENDPOINT      string = "endpoint"
-	CERTIFICATE   string = "certificate"
+	DISK_FORECAST      string = "disk_forecast"
+	ENDPOINT           string = "endpoint"
+	CERTIFICATE        string = "certificate"
+	DISK_READ_LATENCY  string = "disk_read_latency"
+	DISK_WRITE_LATENCY string = "disk_write_latency"
 )
 
 // alert metrics of a Kubernetes cluster, from the state one agent in it
