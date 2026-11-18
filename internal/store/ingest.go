@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/proctrace"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -80,6 +81,9 @@ func (s *Store) SaveSnapshot(ctx context.Context, data *monitor.MonitorData) err
 			container.Memory.Used, container.Memory.PercentageUsed, rxBps, txBps, readBps, writeBps, float64(container.Pids.Current))
 	}
 	batch.Queue("INSERT INTO process_snapshots (time, host_id, processes) VALUES ($1, $2, $3)", at, hostID, processes)
+	if data.ProcessActivity != nil {
+		queueProcessActivity(batch, at, hostID, data.ProcessActivity)
+	}
 
 	// keep the newest snapshot even if an older one arrives late
 	batch.Queue(`INSERT INTO host_latest (host_id, time, snapshot) VALUES ($1, $2, $3)
@@ -118,6 +122,44 @@ func queueHostMetrics(batch *pgx.Batch, at time.Time, hostID int64, data *monito
 		data.Swap.PercentageUsed, float64(data.Swap.Used), float64(data.Swap.Total), data.System.UpTimeSeconds,
 		psiCPU, psiMemory, psiMemoryFull, psiIO, psiIOFull,
 		established, timeWait, closeWait, listen, total)
+}
+
+// queueProcessActivity adds the tracer's counts for one interval, and the
+// processes that ended badly in it as one insert
+func queueProcessActivity(batch *pgx.Batch, at time.Time, hostID int64, activity *proctrace.Summary) {
+	seconds := max(activity.To-activity.From, 1)
+	batch.Queue(`INSERT INTO process_activity (time, host_id, seconds, execs, failed_execs, exits, nonzero_exits, signaled, dropped)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		at, hostID, float32(seconds), activity.Execs, activity.FailedExecs, activity.Exits, activity.NonZeroExits, activity.Signaled, activity.Dropped)
+	if len(activity.Abnormal) == 0 {
+		return
+	}
+
+	n := len(activity.Abnormal)
+	times := make([]time.Time, n)
+	names, parents := make([]string, n), make([]string, n)
+	pids, ppids := make([]int32, n), make([]int32, n)
+	uids := make([]int64, n)
+	statuses, signals := make([]int16, n), make([]int16, n)
+	cores, ooms := make([]bool, n), make([]bool, n)
+	lifetimes := make([]float32, n)
+	for i, exit := range activity.Abnormal {
+		times[i] = at
+		if exit.Time > 0 {
+			times[i] = time.Unix(exit.Time, 0)
+		}
+		names[i], parents[i] = exit.Name, exit.Parent
+		pids[i], ppids[i] = int32(exit.Pid), int32(exit.Ppid)
+		uids[i] = int64(exit.Uid)
+		statuses[i], signals[i] = int16(exit.Status), int16(exit.Signal)
+		cores[i], ooms[i] = exit.CoreDumped, exit.OOM
+		lifetimes[i] = float32(exit.LifetimeSeconds)
+	}
+	batch.Queue(`INSERT INTO process_exits (time, host_id, name, parent, pid, ppid, uid, status, signal, core_dumped, oom, lifetime_seconds)
+		SELECT t, $2, name, parent, pid, ppid, uid, status, signal, core, oom, lifetime
+		FROM unnest($1::timestamptz[], $3::text[], $4::text[], $5::int[], $6::int[], $7::bigint[], $8::smallint[], $9::smallint[], $10::bool[], $11::bool[], $12::real[])
+			AS e(t, name, parent, pid, ppid, uid, status, signal, core, oom, lifetime)`,
+		times, hostID, names, parents, pids, ppids, uids, statuses, signals, cores, ooms, lifetimes)
 }
 
 func floatPtr(v int) *float64 {

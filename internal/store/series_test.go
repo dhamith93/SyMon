@@ -53,3 +53,22 @@ func TestSeriesSQL(t *testing.T) {
 		t.Errorf("unexpected args: %v", args)
 	}
 }
+
+// event counts are added up over the seconds they cover, so a rate stays
+// right in rollups and across intervals the agent missed
+func TestPerMinuteSeriesSQL(t *testing.T) {
+	from := time.Unix(1700000000, 0)
+	for _, source := range []string{"raw", "1m", "1h"} {
+		q := SeriesQuery{Metric: "proc_started", From: from, To: from.Add(time.Hour)}
+		sql, _ := seriesSQL(seriesDefs["proc_started"], source, time.Minute, 7, q)
+		table := "FROM process_activity"
+		if source != "raw" {
+			table += "_" + source
+		}
+		for _, want := range []string{table + "\n", "sum(execs)::float8 * 60 / nullif(sum(seconds)::float8, 0)"} {
+			if !strings.Contains(sql, want) {
+				t.Errorf("%s: expected %q in sql:\n%s", source, want, sql)
+			}
+		}
+	}
+}

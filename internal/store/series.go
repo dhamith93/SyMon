@@ -21,6 +21,9 @@ type seriesDef struct {
 	hasMax bool
 	// rawOnly metrics have no rollups
 	rawOnly bool
+	// perMinute columns count events over the table's seconds column, at
+	// every resolution, and read as events per minute
+	perMinute bool
 }
 
 var seriesDefs = map[string]seriesDef{
@@ -58,6 +61,11 @@ var seriesDefs = map[string]seriesDef{
 	"container_tx":       {table: "container_metrics", column: "tx_bps", label: "name", hasMax: true},
 	"container_io_read":  {table: "container_metrics", column: "read_bps", label: "name"},
 	"container_io_write": {table: "container_metrics", column: "write_bps", label: "name"},
+	"proc_started":       {table: "process_activity", column: "execs", perMinute: true},
+	"proc_ended":         {table: "process_activity", column: "exits", perMinute: true},
+	"proc_failed":        {table: "process_activity", column: "nonzero_exits", perMinute: true},
+	"proc_signaled":      {table: "process_activity", column: "signaled", perMinute: true},
+	"proc_failed_execs":  {table: "process_activity", column: "failed_execs", perMinute: true},
 }
 
 // SeriesMetrics lists the metric names QuerySeries accepts
@@ -189,6 +197,9 @@ func seriesSQL(def seriesDef, source string, step time.Duration, hostID int64, q
 	table, timeColumn, value := def.table, "time", "avg("+def.column+")"
 	if source != "raw" {
 		table, timeColumn = def.table+"_"+source, "bucket"
+	}
+	if def.perMinute {
+		value = "sum(" + def.column + ")::float8 * 60 / nullif(sum(seconds)::float8, 0)"
 	}
 	if q.Max {
 		value = "max(" + def.column + ")"
