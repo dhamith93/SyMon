@@ -73,6 +73,9 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 <a href="png/host-dark.png"><img src="png/host-dark.png" width="400" alt="A host's charts in the dark theme"></a>
 <a href="png/containers.png"><img src="png/containers.png" width="400" alt="Containers on a host"></a>
 <a href="png/alerts.png"><img src="png/alerts.png" width="400" alt="The alerts page"></a>
+<a href="png/process-activity.png"><img src="png/process-activity.png" width="400" alt="Process activity: processes started, ended, killed for memory or crashed, from eBPF"></a>
+<a href="png/process-network.png"><img src="png/process-network.png" width="400" alt="Network traffic per program, from eBPF"></a>
+<a href="png/disk-latency.png"><img src="png/disk-latency.png" width="400" alt="Disk latency: p50 to p99 of a disk's reads and a heatmap of where they fell, from eBPF"></a>
 
 ## Getting started
 
@@ -90,7 +93,7 @@ In short:
 ![SyMon components](png/symon_components.svg)
 
 ### Agent
-Runs on every monitored host as root and sends a snapshot to the Collector every 15 seconds when installed with the script (`SYMON_MONITOR_INTERVAL_SECONDS`). With a devices file it also polls SNMP devices, see [Devices](docs/install.md#devices-snmp). It also sends custom metrics:
+Runs on every monitored host as root and sends a snapshot to the Collector every 15 seconds when installed with the script (`SYMON_MONITOR_INTERVAL_SECONDS`). With a devices file it also polls SNMP devices, see [Devices](docs/install.md#devices-snmp). On kernels with BTF it uses eBPF to watch processes start and end, count network traffic per program and measure how long disk IOs take, see [eBPF in the agent](docs/install.md#ebpf-in-the-agent). It also sends custom metrics:
 
 `sudo /opt/symon/agent/agent -custom -name=queue-length -unit=jobs -value=42`
 

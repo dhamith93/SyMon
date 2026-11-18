@@ -183,6 +183,18 @@ Out of the box: CPU (overall and per core), load, memory and swap, disks, disk I
   sudo /opt/symon/agent/agent -custom -name=queue-length -unit=jobs -value=42
   ```
 
+### eBPF in the agent
+
+Three collectors use eBPF, small programs the agent loads into the kernel. They are built into the agent, so there is nothing else to install, and each one is on where the kernel allows it:
+
+| Collector | Shows | Needs, besides root |
+|---|---|---|
+| `procactivity` | [Process activity](#process-activity): processes that start, end, crash or run out of memory | Linux 5.8 or newer with BTF |
+| `procnet` | [Process network](#process-network): traffic per program | BTF and fentry: x86_64 from 5.5, arm64 from 6.0, not 32-bit ARM |
+| `disklatency` | [Disk latency](#disk-latency): p50 to p99 and a heatmap per disk | Linux 5.5 or newer with BTF, and the `diskio` collector |
+
+BTF is there when `/sys/kernel/btf/vmlinux` exists, as on Debian 11, Ubuntu 22.04, RHEL 9 and newer. Each collector logs on start whether it is on, and why not: `journalctl -u symon_agent | grep -E "process activity|process network|disk latency"`. One that cannot start does not stop the others or the agent. To switch one off, add its name to `SYMON_DISABLED_COLLECTORS`.
+
 ### Process activity
 
 The agent watches every process start and end with eBPF, and the host page shows it after the process lists:
