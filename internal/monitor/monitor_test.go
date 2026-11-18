@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dhamith93/SyMon/internal/config"
+	"github.com/dhamith93/SyMon/internal/proctrace"
 	"github.com/dhamith93/systats"
 )
 
@@ -190,10 +192,11 @@ func TestDiskIO(t *testing.T) {
 	c := testCollector(t, config.Agent{DisksToIgnore: "/dev/sdb"})
 	writeFile(t, c.stats.DiskStatsPath, `
    8       0 sda 1000 0 20000 500 2000 0 40000 800 0 1200 1300
+   8       1 sda1 1000 0 20000 500 2000 0 40000 800 0 1200 1300
    8      16 sdb 1000 0 20000 500 2000 0 40000 800 0 1200 1300
    7       0 loop0 10 0 20 1 0 0 0 0 0 1 1
 `)
-	if rates, latency := c.diskIO(); rates != nil || latency != nil {
+	if rates, latency := c.diskIO(nil); rates != nil || latency != nil {
 		t.Fatalf("expected nothing on the first sample, got %+v and %+v", rates, latency)
 	}
 
@@ -201,11 +204,17 @@ func TestDiskIO(t *testing.T) {
 	c.prevDiskIOTime = c.prevDiskIOTime.Add(-10 * time.Second)
 	writeFile(t, c.stats.DiskStatsPath, `
    8       0 sda 1100 0 40000 600 2500 0 60000 900 0 6200 6300
+   8       1 sda1 1000 0 20000 500 2000 0 40000 800 0 1200 1300
    8      16 sdb 1100 0 40000 600 2500 0 60000 900 0 6200 6300
 `)
-	rates, latency := c.diskIO()
-	if len(rates) != 1 || rates[0].Device != "sda" {
-		t.Fatalf("expected rates for sda only, got %+v", rates)
+	// the tracer saw reads on sda and sdb, and no writes
+	buckets := map[proctrace.DiskOp][]uint64{
+		{Major: 8, Minor: 0}:  {0, 60, 40},
+		{Major: 8, Minor: 16}: {1, 2, 3},
+	}
+	rates, latency := c.diskIO(buckets)
+	if len(rates) != 2 || rates[0].Device != "sda" || rates[1].Device != "sda1" {
+		t.Fatalf("expected rates for sda and sda1, got %+v", rates)
 	}
 	// 20000 sectors of 512 bytes over about 10 seconds
 	if !near(rates[0].ReadBytesPerSec, 1024000) || !near(rates[0].ReadsPerSec, 10) || !near(rates[0].UtilPercent, 50) {
@@ -214,19 +223,26 @@ func TestDiskIO(t *testing.T) {
 
 	// 100 reads took 100 ms and 500 writes 100 ms, with 5 seconds of IO
 	// time added up over all IOs in flight
-	if latency == nil || !near(latency.Seconds, 10) || len(latency.Disks) != 1 {
-		t.Fatalf("expected latency for sda only, got %+v", latency)
+	if latency == nil || !near(latency.Seconds, 10) || len(latency.Disks) != 2 {
+		t.Fatalf("expected latency for sda and sda1, got %+v", latency)
 	}
-	want := DiskLatencyCounts{Device: "sda", Reads: 100, ReadMs: 100, Writes: 500, WriteMs: 100, QueueMs: 5000}
-	if latency.Disks[0] != want {
-		t.Errorf("expected %+v, got %+v", want, latency.Disks[0])
+	sda := latency.Disks[0]
+	if sda.Device != "sda" || sda.Reads != 100 || sda.ReadMs != 100 || sda.Writes != 500 || sda.WriteMs != 100 || sda.QueueMs != 5000 {
+		t.Errorf("unexpected counts for sda %+v", sda)
+	}
+	if fmt.Sprint(sda.ReadBuckets) != "[0 60 40]" || sda.WriteBuckets != nil {
+		t.Errorf("expected the tracer's reads on sda, got %v and %v", sda.ReadBuckets, sda.WriteBuckets)
+	}
+	// an idle partition, and the tracer only counts whole disks
+	if part := latency.Disks[1]; part.Device != "sda1" || part.Reads != 0 || part.ReadBuckets != nil {
+		t.Errorf("unexpected counts for sda1 %+v", part)
 	}
 
 	// sda was removed and added back, so its counters start again
 	writeFile(t, c.stats.DiskStatsPath, `
    8       0 sda 10 0 400 6 25 0 600 9 0 62 63
 `)
-	if _, latency := c.diskIO(); latency != nil {
+	if _, latency := c.diskIO(nil); latency != nil {
 		t.Errorf("expected no latency after a counter went down, got %+v", latency)
 	}
 }

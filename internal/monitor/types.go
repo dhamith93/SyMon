@@ -178,6 +178,12 @@ type DiskLatencyCounts struct {
 	Writes  uint64
 	WriteMs uint64
 	QueueMs uint64
+
+	// how many reads and writes took each bucket's time, in the eBPF
+	// tracer's proctrace.LatencyBuckets. Only whole disks have them, and
+	// only with the tracer on and IO in the interval.
+	ReadBuckets  []uint64 `json:",omitempty"`
+	WriteBuckets []uint64 `json:",omitempty"`
 }
 
 type TCPStates struct {

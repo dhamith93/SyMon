@@ -91,6 +91,7 @@ const (
 	CollectorContainers   string = "containers"
 	CollectorProcActivity string = "procactivity"
 	CollectorProcNet      string = "procnet"
+	CollectorDiskLatency  string = "disklatency"
 )
 
 type Processes struct {
@@ -154,8 +155,9 @@ type Collector struct {
 	cri       *criClient
 	criFailed bool
 
-	tracer    *proctrace.Tracer
-	netTracer *proctrace.NetTracer
+	tracer     *proctrace.Tracer
+	netTracer  *proctrace.NetTracer
+	diskTracer *proctrace.DiskTracer
 }
 
 func NewCollector(config *config.Agent) *Collector {
@@ -177,6 +179,7 @@ func NewCollector(config *config.Agent) *Collector {
 			CollectorContainers:   true,
 			CollectorProcActivity: true,
 			CollectorProcNet:      true,
+			CollectorDiskLatency:  true,
 		},
 	}
 	for _, name := range config.DisabledCollectors {
@@ -189,10 +192,11 @@ func NewCollector(config *config.Agent) *Collector {
 	return c
 }
 
-// StartTracer loads the eBPF process tracer and the network counters,
-// unless procactivity or procnet is switched off. A host that cannot run
-// one, like a kernel without BTF, carries on without it. The agent calls it
-// once, apart from NewCollector so tests do not load BPF programs.
+// StartTracer loads the eBPF process tracer, the network counters and the
+// disk latency counters, unless procactivity, procnet or disklatency is
+// switched off. A host that cannot run one, like a kernel without BTF,
+// carries on without it. The agent calls it once, apart from NewCollector
+// so tests do not load BPF programs.
 func (c *Collector) StartTracer() {
 	if c.enabled[CollectorProcActivity] && c.tracer == nil {
 		tracer, err := proctrace.Start(proctrace.Options{})
@@ -212,6 +216,21 @@ func (c *Collector) StartTracer() {
 		} else {
 			logger.Log("info", "process network is on")
 			c.netTracer = tracer
+		}
+	}
+	// the buckets go with the diskstats counts, so they need diskio
+	if c.enabled[CollectorDiskLatency] && !c.enabled[CollectorDiskIO] {
+		logger.Log("info", "disk latency tracing is off: it needs the diskio collector")
+		c.enabled[CollectorDiskLatency] = false
+	}
+	if c.enabled[CollectorDiskLatency] && c.diskTracer == nil {
+		tracer, err := proctrace.StartDiskLatency()
+		if err != nil {
+			logger.Log("info", "disk latency tracing is off: "+err.Error())
+			c.enabled[CollectorDiskLatency] = false
+		} else {
+			logger.Log("info", "disk latency tracing is on")
+			c.diskTracer = tracer
 		}
 	}
 }
@@ -245,7 +264,11 @@ func (c *Collector) Collect(ctx context.Context) MonitorData {
 	}
 
 	if c.enabled[CollectorDiskIO] {
-		data.DiskIO, data.DiskLatency = c.diskIO()
+		var buckets map[proctrace.DiskOp][]uint64
+		if c.diskTracer != nil {
+			buckets = c.diskTracer.Drain()
+		}
+		data.DiskIO, data.DiskLatency = c.diskIO(buckets)
 	}
 	if c.enabled[CollectorTCP] {
 		data.TCPStates = c.tcpStates()
@@ -427,8 +450,10 @@ func (c *Collector) services(ctx context.Context, unixTime string) []Service {
 	return services
 }
 
-// diskIO returns nil on the first call, rates and latency need two samples
-func (c *Collector) diskIO() ([]DiskIO, *DiskLatency) {
+// diskIO returns nil on the first call, rates and latency need two samples.
+// buckets are the eBPF tracer's latency buckets since the last call, nil
+// without it.
+func (c *Collector) diskIO(buckets map[proctrace.DiskOp][]uint64) ([]DiskIO, *DiskLatency) {
 	samples, err := c.stats.GetDiskIO()
 	if err != nil {
 		logger.Log("error", err.Error())
@@ -447,6 +472,11 @@ func (c *Collector) diskIO() ([]DiskIO, *DiskLatency) {
 		if prev, ok := c.prevDiskIO[sample.Device]; ok {
 			rates = append(rates, fromSystatsDiskIORates(sample.RatesSince(prev, elapsed)))
 			if counts, ok := diskLatencyCounts(prev, sample); ok {
+				// the tracer counts whole disks by number, so a partition finds nothing
+				op := proctrace.DiskOp{Major: uint32(sample.Major), Minor: uint32(sample.Minor)}
+				counts.ReadBuckets = buckets[op]
+				op.Write = true
+				counts.WriteBuckets = buckets[op]
 				latency = append(latency, counts)
 			}
 		}

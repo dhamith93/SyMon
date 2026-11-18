@@ -1,5 +1,8 @@
-// Package proctrace watches processes start and exit with eBPF.
+// Package proctrace holds the agent's eBPF tracers: process activity here,
+// network traffic per program (net*.go) and disk latency (disklat*.go), each
+// its own BPF object so a host that cannot run one keeps the others.
 //
+// The process tracer watches processes start and exit.
 // The kernel side counts every exec and exit, and sends only the exits that
 // went wrong to user space: a non-zero status, a signal, or the OOM killer.
 // Drain hands the counts and those exits over once per agent tick.
@@ -11,6 +14,6 @@
 // the agent can carry on without it.
 //
 // The BPF program is compiled with bpf2go and the results are committed, so
-// building the agent needs no clang. After changing bpf/proctrace.bpf.c run
-// make bpf, which needs clang, llvm and libbpf headers.
+// building the agent needs no clang. After changing a program in bpf/ run
+// make bpf, which needs clang, llvm, libbpf headers and bpftool.
 package proctrace
