@@ -149,6 +149,26 @@ export interface ProcessExit extends ExitKind {
   lifetimeSeconds: number;
 }
 
+// what one program received and sent over a range, loopback left out. The
+// peaks are its fastest agent interval in bytes per second.
+export interface ProgramTraffic {
+  name: string;
+  rxBytes: number;
+  txBytes: number;
+  rxPeak: number;
+  txPeak: number;
+}
+
+export interface ProcessNetworkReport {
+  // every program, the ones not listed too
+  rxBytes: number;
+  txBytes: number;
+  // how much of the range the counters covered
+  seconds: number;
+  // the most bytes first
+  programs: ProgramTraffic[];
+}
+
 // A host's process activity over a range, from the agent's eBPF tracer.
 // seconds is how much of the range the tracer covered. listed, oom and
 // crashes count the kept exits since exitsFrom.
@@ -242,6 +262,7 @@ export interface Snapshot {
   Containers?: Container[];
   // from agents with the eBPF process tracer, the last interval's counts
   ProcessActivity?: { From: number; To: number; Execs: number; Exits: number };
+  ProcessNetwork?: { From: number; To: number; RxBytes: number; TxBytes: number };
   // missing from agents older than it
   AgentVersion?: string;
 }
@@ -657,6 +678,7 @@ export const api = {
   processUsage: (name: string, from: number, to: number) =>
     get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
   processActivity: (name: string, from: number, to: number) => get<ProcessActivityReport>(`${host(name)}/process-activity`, { from, to }),
+  processNetwork: (name: string, from: number, to: number) => get<ProcessNetworkReport>(`${host(name)}/process-network`, { from, to }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
   channels: () => get<{ channels: Channel[] }>('/api/v1/notifications/channels'),
   createChannel: (channel: ChannelInput) => post<Channel>('/api/v1/notifications/channels', channel),

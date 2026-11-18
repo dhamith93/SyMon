@@ -114,6 +114,29 @@ test('process activity shows on a host with the eBPF tracer', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
+test('network by program shows on a host with the eBPF counters', async ({ page }) => {
+  const errors = watchErrors(page);
+  const fleet = await (await page.request.get('/api/v1/fleet')).json();
+  const to = Math.floor(Date.now() / 1000);
+  let host: string | undefined;
+  for (const h of fleet.hosts.filter((h: { up: boolean }) => h.up)) {
+    const network = await (await page.request.get(`/api/v1/hosts/${encodeURIComponent(h.name)}/process-network?from=${to - 3600}&to=${to}`)).json();
+    if (network.seconds > 0) {
+      host = h.name;
+      break;
+    }
+  }
+  test.skip(!host, 'no reporting host sends process network');
+
+  await page.goto(`/hosts/${encodeURIComponent(host ?? '')}?range=1h`);
+  await expect(page.getByRole('heading', { name: 'Received by program' })).toBeVisible();
+  const busiest = page.locator('.busiest');
+  await busiest.getByRole('button', { name: 'By network' }).click();
+  await expect(busiest.getByRole('button', { name: 'By network' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(busiest.getByText('sent by all programs')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 // only looks: starting a task would run a command on a real host
 test('a host has a tasks page', async ({ page }) => {
   const errors = watchErrors(page);

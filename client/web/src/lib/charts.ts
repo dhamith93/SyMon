@@ -82,6 +82,23 @@ export const hostSections: Section[] = [
     charts: [
       { key: 'net_rx', title: 'Received', unit: 'rate', metrics: [{ metric: 'net_rx' }] },
       { key: 'net_tx', title: 'Sent', unit: 'rate', metrics: [{ metric: 'net_tx' }] },
+      // the busiest programs, the rest added up, from the eBPF counters
+      {
+        key: 'proc_net_rx',
+        title: 'Received by program',
+        unit: 'rate',
+        optional: true,
+        note: 'Loopback is left out',
+        metrics: [{ metric: 'proc_net_rx' }],
+      },
+      {
+        key: 'proc_net_tx',
+        title: 'Sent by program',
+        unit: 'rate',
+        optional: true,
+        note: 'Loopback is left out',
+        metrics: [{ metric: 'proc_net_tx' }],
+      },
       {
         key: 'tcp',
         title: 'TCP connections',

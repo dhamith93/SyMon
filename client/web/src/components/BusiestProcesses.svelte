@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { api, type ProcessUsage } from '../lib/api';
-  import { formatDateTime, formatPercent } from '../lib/format';
+  import { api, type ProcessNetworkReport, type ProcessUsage } from '../lib/api';
+  import { formatBytes, formatDateTime, formatPercent, formatRate } from '../lib/format';
 
-  // the programs that used the most CPU or memory over the chosen range
+  // the programs that used the most CPU, memory or network over the range
   let { host, from, to }: { host: string; from: number; to: number } = $props();
 
   const limit = 15;
@@ -10,7 +10,7 @@
   const maxSpan = 24 * 3600;
   const start = $derived(Math.max(from, to - maxSpan));
 
-  let view = $state<'CPU' | 'Memory'>('CPU');
+  let view = $state<'CPU' | 'Memory' | 'Network'>('CPU');
   let snapshots = $state(0);
   let firstTime = $state(0);
   let processes = $state<ProcessUsage[]>([]);
@@ -42,8 +42,29 @@
       });
   });
 
+  // network traffic comes from rollups, so it covers the whole range. A
+  // collector or agent without it leaves the tab out.
+  let network = $state<ProcessNetworkReport | null>(null);
+  let networkId = 0;
+
+  $effect(() => {
+    const request = { host, from, to, id: ++networkId };
+    api
+      .processNetwork(request.host, request.from, request.to)
+      .then((response) => {
+        if (request.id === networkId) network = response;
+      })
+      .catch(() => {
+        if (request.id === networkId) network = null;
+      });
+  });
+
+  const hasNetwork = $derived(network !== null && network.seconds > 0);
+  const shown = $derived(view === 'Network' && !hasNetwork ? 'CPU' : view);
+  const networkRows = $derived(network?.programs.slice(0, limit) ?? []);
+
   const rows = $derived.by(() => {
-    const average = view === 'CPU' ? (p: ProcessUsage) => p.cpuAvg : (p: ProcessUsage) => p.memAvg;
+    const average = shown === 'CPU' ? (p: ProcessUsage) => p.cpuAvg : (p: ProcessUsage) => p.memAvg;
     return [...processes].sort((a, b) => average(b) - average(a)).slice(0, limit);
   });
 </script>
@@ -52,12 +73,19 @@
   <div class="heading">
     <h3>Busiest over this range</h3>
     <div class="tabs" role="group" aria-label="Rank programs by">
-      <button aria-pressed={view === 'CPU'} class:selected={view === 'CPU'} onclick={() => (view = 'CPU')}>By CPU</button>
-      <button aria-pressed={view === 'Memory'} class:selected={view === 'Memory'} onclick={() => (view = 'Memory')}>By memory</button>
+      <button aria-pressed={shown === 'CPU'} class:selected={shown === 'CPU'} onclick={() => (view = 'CPU')}>By CPU</button>
+      <button aria-pressed={shown === 'Memory'} class:selected={shown === 'Memory'} onclick={() => (view = 'Memory')}>By memory</button>
+      {#if hasNetwork}
+        <button aria-pressed={shown === 'Network'} class:selected={shown === 'Network'} onclick={() => (view = 'Network')}>
+          By network
+        </button>
+      {/if}
     </div>
   </div>
   <p class="when muted">
-    {#if snapshots > 0}
+    {#if shown === 'Network' && network}
+      {formatBytes(network.rxBytes)} received and {formatBytes(network.txBytes)} sent by all programs, loopback left out.
+    {:else if snapshots > 0}
       {start > from ? 'The last 24 hours of this range, from' : 'From'}
       {snapshots.toLocaleString()} snapshots since {formatDateTime(firstTime)}. Each keeps only the top 10 processes, so averages
       are a lower bound.
@@ -66,7 +94,36 @@
     {/if}
   </p>
 
-  {#if error}
+  {#if shown === 'Network'}
+    {#if networkRows.length > 0}
+      <div class="table-scroll">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Program</th>
+              <th class="right">Received</th>
+              <th class="right">Sent</th>
+              <th class="right" title="The fastest agent interval">Peak in</th>
+              <th class="right" title="The fastest agent interval">Peak out</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each networkRows as program (program.name)}
+              <tr>
+                <td class="name" title={program.name}>{program.name}</td>
+                <td class="right num">{formatBytes(program.rxBytes)}</td>
+                <td class="right num">{formatBytes(program.txBytes)}</td>
+                <td class="right num">{formatRate(program.rxPeak)}</td>
+                <td class="right num">{formatRate(program.txPeak)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <p class="secondary">No program used the network in this range.</p>
+    {/if}
+  {:else if error}
     <p class="secondary">{error}</p>
   {:else if rows.length > 0}
     <div class="table-scroll">
@@ -83,8 +140,8 @@
           {#each rows as process (process.name)}
             <tr>
               <td class="name" title={process.name}>{process.name}</td>
-              <td class="right num">{formatPercent(view === 'CPU' ? process.cpuAvg : process.memAvg, 1)}</td>
-              <td class="right num">{formatPercent(view === 'CPU' ? process.cpuPeak : process.memPeak, 1)}</td>
+              <td class="right num">{formatPercent(shown === 'CPU' ? process.cpuAvg : process.memAvg, 1)}</td>
+              <td class="right num">{formatPercent(shown === 'CPU' ? process.cpuPeak : process.memPeak, 1)}</td>
               <td class="right num" title="Share of snapshots with this program in the top lists">{formatPercent(process.seenPct)}</td>
             </tr>
           {/each}
