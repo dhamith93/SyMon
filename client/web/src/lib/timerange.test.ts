@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rangeQuery, resolveRange } from './timerange';
+import { rangeOnly, rangeQuery, resolveRange } from './timerange';
 
 const now = 1_700_000_000;
 
@@ -33,5 +33,13 @@ describe('rangeQuery', () => {
 
   it('writes a window as whole seconds', () => {
     expect(rangeQuery(new URLSearchParams('range=6h'), { from: 100.7, to: 200.2 })).toBe('?from=100&to=201');
+  });
+});
+
+describe('rangeOnly', () => {
+  it('keeps only the keys of the time range', () => {
+    expect(rangeOnly(new URLSearchParams('range=6h&disk=/dev/sdb&op=write')).toString()).toBe('range=6h');
+    expect(rangeOnly(new URLSearchParams('op=write&from=100&to=200')).toString()).toBe('from=100&to=200');
+    expect(rangeOnly(new URLSearchParams('port=eth0')).toString()).toBe('');
   });
 });

@@ -159,6 +159,28 @@ export interface ProgramTraffic {
   txPeak: number;
 }
 
+// One step of a disk's latency histogram: how many IOs took each bucket's
+// time, and the quantiles in ms, zero for a step without IOs
+export interface LatencyStep {
+  time: number;
+  buckets: number[];
+  p50: number;
+  p95: number;
+  p99: number;
+}
+
+export interface DiskLatencyReport {
+  // the disks with a histogram in the range, the most IOs first
+  devices: string[];
+  // the disk and op the steps are for, empty without disks
+  device: string;
+  op: 'read' | 'write';
+  stepSeconds: number;
+  steps: LatencyStep[];
+  // where each bucket starts, in ms. The last one has no end.
+  bucketStarts: number[];
+}
+
 export interface ProcessNetworkReport {
   // every program, the ones not listed too
   rxBytes: number;
@@ -679,6 +701,8 @@ export const api = {
     get<{ snapshots: number; firstTime: number; processes: ProcessUsage[] }>(`${host(name)}/process-usage`, { from, to }),
   processActivity: (name: string, from: number, to: number) => get<ProcessActivityReport>(`${host(name)}/process-activity`, { from, to }),
   processNetwork: (name: string, from: number, to: number) => get<ProcessNetworkReport>(`${host(name)}/process-network`, { from, to }),
+  diskLatency: (name: string, from: number, to: number, device: string, op: 'read' | 'write') =>
+    get<DiskLatencyReport>(`${host(name)}/disk-latency`, { from, to, device, op }),
   customMetrics: (name: string) => get<{ names: string[] }>(`${host(name)}/custom-metrics`),
   channels: () => get<{ channels: Channel[] }>('/api/v1/notifications/channels'),
   createChannel: (channel: ChannelInput) => post<Channel>('/api/v1/notifications/channels', channel),

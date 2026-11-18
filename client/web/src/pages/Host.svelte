@@ -10,10 +10,11 @@
   import { agentOutdated, agentState } from '../lib/versions';
   import { poll } from '../lib/poll';
   import { hostPath, location, navigate } from '../lib/router.svelte';
-  import { rangeQuery, resolveRange } from '../lib/timerange';
+  import { rangeOnly, rangeQuery, resolveRange } from '../lib/timerange';
   import BusiestProcesses from '../components/BusiestProcesses.svelte';
   import ChartCard from '../components/ChartCard.svelte';
   import ContainerTable from '../components/ContainerTable.svelte';
+  import DiskLatency from '../components/DiskLatency.svelte';
   import Heatmap from '../components/Heatmap.svelte';
   import ProcessActivity from '../components/ProcessActivity.svelte';
   import ProcessTable from '../components/ProcessTable.svelte';
@@ -22,9 +23,11 @@
 
   let { host }: { host: string } = $props();
 
-  // resolved again on every refresh, so live ranges move with the clock
+  // resolved again on every refresh, so live ranges move with the clock.
+  // Only the range keys count, so picking a disk below reloads nothing else.
   let now = $state(Math.floor(Date.now() / 1000));
-  const range = $derived(resolveRange(location.query, now));
+  const rangeKey = $derived(rangeOnly(location.query).toString());
+  const range = $derived(resolveRange(new URLSearchParams(rangeKey), now));
 
   let detail = $state<HostDetail | null>(null);
   // the fleet's view of this host, for the state of its agent
@@ -42,6 +45,8 @@
   let forecasts = $state<Record<string, DiskForecast>>({});
   let processesAt = $state(0);
   let tick = $state(0);
+  // whether the host has a disk latency histogram in the range
+  let diskLatencyFound = $state(false);
 
   async function loadDetail() {
     try {
@@ -106,8 +111,7 @@
   // also reload every refresh interval, fixed ones load once.
   $effect(() => {
     void host;
-    const query = location.query.toString();
-    const live = resolveRange(new URLSearchParams(query)).live;
+    const live = resolveRange(new URLSearchParams(rangeKey)).live;
     return untrack(() => {
       if (live) return poll(loadAll, appConfig.refreshSeconds);
       loadAll();
@@ -311,6 +315,13 @@
             </ChartCard>
           {/if}
         </div>
+      </section>
+    {/if}
+    {#if section.title === 'Disks'}
+      <!-- mounted while hidden, so it can tell when the host has a histogram -->
+      <section id="disk-latency" hidden={!diskLatencyFound}>
+        <h2>Disk latency</h2>
+        <DiskLatency {host} from={range.from} to={range.to} onzoom={zoom} bind:found={diskLatencyFound} />
       </section>
     {/if}
   {/each}

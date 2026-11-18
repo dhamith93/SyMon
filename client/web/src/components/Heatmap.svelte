@@ -5,15 +5,34 @@
   import { cssVar, theme } from '../lib/theme.svelte';
 
   // one row per series, colored by value from 0 to 100. from and to set
-  // the time span, so columns line up with the line charts beside it.
-  let { series, from, to }: { series: NamedSeries[]; from?: number; to?: number } = $props();
+  // the time span, so columns line up with the line charts beside it. The
+  // defaults are for CPU cores, labeled by their number.
+  interface Props {
+    series: NamedSeries[];
+    from?: number;
+    to?: number;
+    // a row's name from its series label
+    rowName?: (label: string) => string;
+    ariaLabel?: string;
+    labelWidth?: number;
+    // more for the tooltip, like how many IOs a share is
+    detail?: (label: string, time: number) => string;
+  }
+  let {
+    series,
+    from,
+    to,
+    rowName = (label: string) => `cpu ${label}`,
+    ariaLabel = 'CPU usage per core over time',
+    labelWidth = 44,
+    detail,
+  }: Props = $props();
 
   let wrapper: HTMLDivElement;
   let canvas: HTMLCanvasElement;
   let hover = $state<{ left: number; top: number; label: string; time: number; value: number } | null>(null);
   let resizeObserver: ResizeObserver | null = null;
 
-  const labelWidth = 44;
   const axisHeight = 20;
 
   const grid = $derived.by(() => {
@@ -87,7 +106,7 @@
     ctx.textBaseline = 'middle';
     const labelEvery = Math.ceil(12 / rowHeight);
     labels.forEach((label, r) => {
-      if (r % labelEvery === 0) ctx.fillText(`cpu ${label}`, 0, r * rowHeight + rowHeight / 2);
+      if (r % labelEvery === 0) ctx.fillText(rowName(label), 0, r * rowHeight + rowHeight / 2);
     });
 
     const span = end - start;
@@ -135,14 +154,15 @@
 </script>
 
 <div class="heatmap" bind:this={wrapper}>
-  <canvas bind:this={canvas} onmousemove={onMove} onmouseleave={() => (hover = null)} aria-label="CPU usage per core over time"></canvas>
+  <canvas bind:this={canvas} onmousemove={onMove} onmouseleave={() => (hover = null)} aria-label={ariaLabel}></canvas>
   {#if hover}
     <div class="tooltip" style:left="{hover.left + 14}px" style:top="{hover.top}px">
       <div class="muted">{formatDateTime(hover.time)}</div>
-      <strong class="num">{formatPercent(hover.value)}</strong> <span class="secondary">cpu {hover.label}</span>
+      <strong class="num">{formatPercent(hover.value)}</strong> <span class="secondary">{rowName(hover.label)}</span>
+      {#if detail}<div class="secondary">{detail(hover.label, hover.time)}</div>{/if}
     </div>
   {/if}
-  <div class="scale">
+  <div class="scale" style:margin-left="{labelWidth}px">
     <span>0%</span>
     <span class="bar"></span>
     <span>100%</span>
@@ -176,7 +196,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 6px 0 4px 44px;
+    margin: 6px 0 4px;
     font-size: 11px;
     color: var(--ink-muted);
   }

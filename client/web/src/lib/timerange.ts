@@ -38,6 +38,17 @@ export function resolveRange(query: URLSearchParams, now = Math.floor(Date.now()
 }
 
 // the query string for a range, keeping any other parameters
+// the keys of a query that make the time range, so other picks kept in
+// the URL do not read as a new range
+export function rangeOnly(query: URLSearchParams): URLSearchParams {
+  const range = new URLSearchParams();
+  for (const key of ['range', 'from', 'to']) {
+    const value = query.get(key);
+    if (value !== null) range.set(key, value);
+  }
+  return range;
+}
+
 export function rangeQuery(query: URLSearchParams, range: { preset: string } | { from: number; to: number }): string {
   const next = new URLSearchParams(query);
   next.delete('range');

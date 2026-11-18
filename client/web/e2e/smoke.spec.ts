@@ -137,6 +137,30 @@ test('network by program shows on a host with the eBPF counters', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('disk latency shows on a host with the eBPF histogram', async ({ page }) => {
+  const errors = watchErrors(page);
+  const fleet = await (await page.request.get('/api/v1/fleet')).json();
+  const to = Math.floor(Date.now() / 1000);
+  let host: string | undefined;
+  for (const h of fleet.hosts.filter((h: { up: boolean }) => h.up)) {
+    const latency = await (await page.request.get(`/api/v1/hosts/${encodeURIComponent(h.name)}/disk-latency?from=${to - 3600}&to=${to}`)).json();
+    if (latency.devices?.length > 0) {
+      host = h.name;
+      break;
+    }
+  }
+  test.skip(!host, 'no reporting host sends disk latency buckets');
+
+  await page.goto(`/hosts/${encodeURIComponent(host ?? '')}?range=1h`);
+  const panel = page.locator('#disk-latency');
+  await expect(panel.getByRole('heading', { name: 'Disk latency' })).toBeVisible();
+  await expect(panel.getByRole('heading', { name: /p50 to p99/ })).toBeVisible();
+  await panel.getByRole('button', { name: 'Writes' }).click();
+  await expect(page).toHaveURL(/op=write/);
+  await expect(panel.getByRole('heading', { name: 'Where the writes fell' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 // only looks: starting a task would run a command on a real host
 test('a host has a tasks page', async ({ page }) => {
   const errors = watchErrors(page);
