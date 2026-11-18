@@ -37,6 +37,8 @@ func TestProcessActivity(t *testing.T) {
 	backup.Status = 1
 	orphan := backup
 	orphan.Parent = ""
+	again := backup
+	again.Time = at(2).Unix()
 	java := exit(at(1), "java", "systemd")
 	java.Signal, java.OOM, java.LifetimeSeconds = 9, true, 86400
 	node := exit(at(1), "node", "bash")
@@ -50,7 +52,7 @@ func TestProcessActivity(t *testing.T) {
 	snapshots := []*proctrace.Summary{
 		activitySnapshot(at(0), 0, backup, orphan),
 		activitySnapshot(at(1), 0, java, node),
-		activitySnapshot(at(2), 0, sleep, backup),
+		activitySnapshot(at(2), 0, sleep, again),
 		activitySnapshot(at(3), 3, nginx),
 	}
 	for i, activity := range snapshots {
@@ -99,11 +101,16 @@ func TestProcessActivity(t *testing.T) {
 		if len(result.Latest) != 7 || result.Latest[0].Name != "nginx" || !result.Latest[0].Time.Equal(at(3)) || result.Latest[0].Signal != 15 {
 			t.Fatalf("unexpected latest exits %+v", result.Latest)
 		}
-		node := result.Latest[3]
-		if node.Name != "node" && result.Latest[4].Name == "node" {
-			node = result.Latest[4]
+		var node ProcessExit
+		for i, e := range result.Latest {
+			if i > 0 && e.Time.After(result.Latest[i-1].Time) {
+				t.Errorf("latest exits should be newest first, got %+v", result.Latest)
+			}
+			if e.Name == "node" {
+				node = e
+			}
 		}
-		if node.Name != "node" || !node.CoreDumped || node.Pid != 4000 || node.Ppid != 1 || node.LifetimeSeconds != 2.5 {
+		if !node.CoreDumped || node.Signal != 11 || node.Pid != 4000 || node.Ppid != 1 || node.LifetimeSeconds != 2.5 || !node.Time.Equal(at(1)) {
 			t.Errorf("unexpected crash %+v", node)
 		}
 	})
