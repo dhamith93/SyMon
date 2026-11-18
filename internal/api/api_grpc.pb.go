@@ -34,6 +34,7 @@ const (
 	MonitorDataService_ProcessUsage_FullMethodName            = "/api.MonitorDataService/ProcessUsage"
 	MonitorDataService_ProcessActivity_FullMethodName         = "/api.MonitorDataService/ProcessActivity"
 	MonitorDataService_ProcessNetwork_FullMethodName          = "/api.MonitorDataService/ProcessNetwork"
+	MonitorDataService_DiskLatency_FullMethodName             = "/api.MonitorDataService/DiskLatency"
 	MonitorDataService_Snapshots_FullMethodName               = "/api.MonitorDataService/Snapshots"
 	MonitorDataService_Endpoints_FullMethodName               = "/api.MonitorDataService/Endpoints"
 	MonitorDataService_EndpointSeries_FullMethodName          = "/api.MonitorDataService/EndpointSeries"
@@ -92,6 +93,7 @@ type MonitorDataServiceClient interface {
 	ProcessUsage(ctx context.Context, in *ProcessUsageRequest, opts ...grpc.CallOption) (*ProcessUsageList, error)
 	ProcessActivity(ctx context.Context, in *ProcessActivityRequest, opts ...grpc.CallOption) (*ProcessActivityReport, error)
 	ProcessNetwork(ctx context.Context, in *ProcessNetworkRequest, opts ...grpc.CallOption) (*ProcessNetworkReport, error)
+	DiskLatency(ctx context.Context, in *DiskLatencyRequest, opts ...grpc.CallOption) (*DiskLatencyReport, error)
 	// every host's latest snapshot, for the metrics endpoint
 	Snapshots(ctx context.Context, in *Void, opts ...grpc.CallOption) (*SnapshotList, error)
 	Endpoints(ctx context.Context, in *EndpointsRequest, opts ...grpc.CallOption) (*EndpointList, error)
@@ -300,6 +302,16 @@ func (c *monitorDataServiceClient) ProcessNetwork(ctx context.Context, in *Proce
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessNetworkReport)
 	err := c.cc.Invoke(ctx, MonitorDataService_ProcessNetwork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) DiskLatency(ctx context.Context, in *DiskLatencyRequest, opts ...grpc.CallOption) (*DiskLatencyReport, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DiskLatencyReport)
+	err := c.cc.Invoke(ctx, MonitorDataService_DiskLatency_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -677,6 +689,7 @@ type MonitorDataServiceServer interface {
 	ProcessUsage(context.Context, *ProcessUsageRequest) (*ProcessUsageList, error)
 	ProcessActivity(context.Context, *ProcessActivityRequest) (*ProcessActivityReport, error)
 	ProcessNetwork(context.Context, *ProcessNetworkRequest) (*ProcessNetworkReport, error)
+	DiskLatency(context.Context, *DiskLatencyRequest) (*DiskLatencyReport, error)
 	// every host's latest snapshot, for the metrics endpoint
 	Snapshots(context.Context, *Void) (*SnapshotList, error)
 	Endpoints(context.Context, *EndpointsRequest) (*EndpointList, error)
@@ -785,6 +798,9 @@ func (UnimplementedMonitorDataServiceServer) ProcessActivity(context.Context, *P
 }
 func (UnimplementedMonitorDataServiceServer) ProcessNetwork(context.Context, *ProcessNetworkRequest) (*ProcessNetworkReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessNetwork not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) DiskLatency(context.Context, *DiskLatencyRequest) (*DiskLatencyReport, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DiskLatency not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) Snapshots(context.Context, *Void) (*SnapshotList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Snapshots not implemented")
@@ -1178,6 +1194,24 @@ func _MonitorDataService_ProcessNetwork_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MonitorDataServiceServer).ProcessNetwork(ctx, req.(*ProcessNetworkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_DiskLatency_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiskLatencyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).DiskLatency(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_DiskLatency_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).DiskLatency(ctx, req.(*DiskLatencyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1878,6 +1912,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessNetwork",
 			Handler:    _MonitorDataService_ProcessNetwork_Handler,
+		},
+		{
+			MethodName: "DiskLatency",
+			Handler:    _MonitorDataService_DiskLatency_Handler,
 		},
 		{
 			MethodName: "Snapshots",

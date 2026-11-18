@@ -12,6 +12,7 @@ import (
 
 	"github.com/dhamith93/SyMon/internal/logger"
 	"github.com/dhamith93/SyMon/internal/monitor"
+	"github.com/dhamith93/SyMon/internal/proctrace"
 	"github.com/dhamith93/SyMon/internal/store"
 	"github.com/dhamith93/SyMon/internal/version"
 	"google.golang.org/grpc/codes"
@@ -436,6 +437,27 @@ func (s *Server) ProcessNetwork(ctx context.Context, in *ProcessNetworkRequest) 
 	report := &ProcessNetworkReport{RxBytes: result.RxBytes, TxBytes: result.TxBytes, Seconds: result.Seconds}
 	for _, p := range result.Programs {
 		report.Programs = append(report.Programs, &ProgramTraffic{Name: p.Name, RxBytes: p.RxBytes, TxBytes: p.TxBytes, RxPeak: p.RxPeak, TxPeak: p.TxPeak})
+	}
+	return report, nil
+}
+
+func (s *Server) DiskLatency(ctx context.Context, in *DiskLatencyRequest) (*DiskLatencyReport, error) {
+	result, err := s.Store.DiskLatency(ctx, in.Host, in.Device, in.Op, time.Unix(in.From, 0), time.Unix(in.To, 0))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	report := &DiskLatencyReport{
+		Devices:     result.Devices,
+		Device:      result.Device,
+		Op:          result.Op,
+		StepSeconds: int64(result.Step.Seconds()),
+	}
+	for _, step := range result.Steps {
+		report.Steps = append(report.Steps, &LatencyStep{Time: step.Time.Unix(), Buckets: step.Buckets, P50: step.P50, P95: step.P95, P99: step.P99})
+	}
+	for i := range proctrace.LatencyBuckets {
+		start, _ := proctrace.BucketBounds(i)
+		report.BucketStarts = append(report.BucketStarts, start)
 	}
 	return report, nil
 }

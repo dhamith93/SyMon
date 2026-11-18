@@ -479,6 +479,38 @@ message ProcessNetworkReport {
     repeated ProgramTraffic programs = 4;
 }
 
+message DiskLatencyRequest {
+    string host = 1;
+    // a whole disk like /dev/sda, empty for the busiest
+    string device = 2;
+    // read or write
+    string op = 3;
+    int64 from = 4;
+    int64 to = 5;
+}
+
+// One step of a disk's latency histogram: how many IOs took each bucket's
+// time, and the quantiles in ms, zero for a step without IOs
+message LatencyStep {
+    int64 time = 1;
+    repeated int64 buckets = 2;
+    double p50 = 3;
+    double p95 = 4;
+    double p99 = 5;
+}
+
+message DiskLatencyReport {
+    // the disks with a histogram in the range, the most IOs first
+    repeated string devices = 1;
+    // the disk and op the steps are for
+    string device = 2;
+    string op = 3;
+    int64 stepSeconds = 4;
+    repeated LatencyStep steps = 5;
+    // where each bucket starts, in ms. The last one has no end.
+    repeated double bucketStarts = 6;
+}
+
 // The newest value of one of a host's custom metrics
 message CustomValue {
     string host = 1;
@@ -607,6 +639,7 @@ service MonitorDataService {
     rpc ProcessUsage(ProcessUsageRequest) returns (ProcessUsageList) {}
     rpc ProcessActivity(ProcessActivityRequest) returns (ProcessActivityReport) {}
     rpc ProcessNetwork(ProcessNetworkRequest) returns (ProcessNetworkReport) {}
+    rpc DiskLatency(DiskLatencyRequest) returns (DiskLatencyReport) {}
     // every host's latest snapshot, for the metrics endpoint
     rpc Snapshots(Void) returns (SnapshotList) {}
     rpc Endpoints(EndpointsRequest) returns (EndpointList) {}
