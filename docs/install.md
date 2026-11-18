@@ -172,11 +172,11 @@ The script downloads the agent for the host's CPU, enrolls it, and starts it as 
 
 ### What the agent collects
 
-Out of the box: CPU (overall and per core), load, memory and swap, disks, disk IO, network, TCP connections, pressure stall, temperatures, the top processes, running containers, processes that start and end (see [Process activity](#process-activity)), and network traffic per program (see [Process network](#process-network)).
+Out of the box: CPU (overall and per core), load, memory and swap, disks, disk IO, network, TCP connections, pressure stall, temperatures, the top processes, running containers, processes that start and end (see [Process activity](#process-activity)), network traffic per program (see [Process network](#process-network)), and how long disk reads and writes take (see [Disk latency](#disk-latency)).
 
 - **Services.** Point `SYMON_SERVICE_LIST_PATH` at a JSON file listing systemd services to watch, like [agent/services.json](../agent/services.json).
 - **Containers.** Docker, Podman, containerd, LXC and systemd-nspawn containers are found from the cgroup tree. Names and images come from the Docker socket. For Podman, set `SYMON_CONTAINER_SOCKET=/run/podman/podman.sock`. Kubernetes pods are named from the container runtime, see [Kubernetes](#kubernetes).
-- **Switching collectors off.** `SYMON_DISABLED_COLLECTORS=diskio,tcp,pressure,temps,containers,procactivity,procnet` turns off any of those.
+- **Switching collectors off.** `SYMON_DISABLED_COLLECTORS=diskio,tcp,pressure,temps,containers,procactivity,procnet,disklatency` turns off any of those.
 - **Custom metrics.** Send any number from a script or cron job, and it gets its own chart:
 
   ```sh
@@ -211,6 +211,23 @@ What it counts:
 The 20 busiest programs of each agent interval are kept by name and the rest as one sum, like other metrics: raw for `SYMON_RETENTION_RAW_DAYS`, then as minute and hourly sums.
 
 It needs a kernel with BTF that can attach fentry programs: x86_64 from 5.5, arm64 from 6.0, not 32-bit ARM, and an agent running as root. On start the agent logs `process network is on`, or `process network is off:` and why. To switch it off, add `procnet` to `SYMON_DISABLED_COLLECTORS`.
+
+### Disk latency
+
+The host page shows how long each disk takes to answer:
+
+- **Read latency, Write latency and Disk queue depth** in the Disks section: the average time a read or write took over each agent interval, and how many IOs were in flight on average. These are iostat's `r_await`, `w_await` and `aqu-sz`, from `/proc/diskstats`, so every host has them, for disks and partitions.
+- **Disk latency**, a section of its own on hosts where eBPF runs: one disk's reads or writes as p50, p95 and p99 lines, and a heatmap of where the IOs fell, from under 16 µs to over 2 seconds. An average of 2 ms can hide 1% of IOs that take 80 ms, and this shows them. The disk and reads or writes are picked above the charts.
+
+Both count from when an IO entered the disk's queue until it finished, so waiting in the queue is included, as in iostat. The histogram reads the same kernel timestamps as `/proc/diskstats`, so its counts and averages match the charts above it.
+
+Only whole disks have a histogram, like `sda`, `nvme0n1` or `vda`, with a partition's IOs counted on its disk. LVM volumes, dm-crypt and md RAID hand their IOs to the disks under them, so they have none, but those disks do.
+
+Over longer ranges the averages and quantiles are worked out from summed counts, not averages of averages, so they stay exact. Both are kept like other metrics: raw for `SYMON_RETENTION_RAW_DAYS`, then as minute and hourly sums.
+
+The histogram needs Linux 5.5 or newer with BTF, arm64 included, and an agent running as root. It costs about 0.2 µs per IO, which did not show in a benchmark at 37,000 IOs a second. On start the agent logs `disk latency tracing is on`, or `disk latency tracing is off:` and why. It reads the disk IO counters, so switching off `diskio` switches it off too. To switch only the histogram off, add `disklatency` to `SYMON_DISABLED_COLLECTORS`.
+
+To alert on slow disks, see `disk_read_latency` and `disk_write_latency` in [Alerts](#rules-as-a-file).
 
 ### Adding a host by hand
 
@@ -261,6 +278,7 @@ A rule looks like this:
 | `swap` | swap used, % | |
 | `disks` | disk space used, % | `Disk`, the device |
 | `disk_forecast` | days until the disk is full, at its growth over the last week | `Disk`, the device |
+| `disk_read_latency`, `disk_write_latency` | average time per read or write over each agent interval, ms | `Disk`, the whole disk, like `/dev/sda` |
 | `services` | a service from the service list. `Op` `inactive` alerts when it stops, `active` when it runs | `Service`, the name from the service list |
 | `ping` | host silent for longer than `TriggerIntveral` seconds | |
 | `endpoint` | an HTTP check from the collector, no `Servers` | `Endpoint`, `Method`, `ExpectedHTTPCode`, `POSTBody`, `POSTContentType`, `CustomCACert`, `CertWarnDays`, `CertCriticalDays` |
@@ -275,6 +293,8 @@ The collector requests each `endpoint` rule's URL every `SYMON_ENDPOINT_CHECK_IN
 HTTPS endpoints also alert on their certificate: a warning when it expires in under `CertWarnDays` days (14 if left out) and critical under `CertCriticalDays` (3). 0 switches a level off. The Endpoints page shows when each certificate expires.
 
 `disk_forecast` rules use `Op` `<`, for example a warning under 14 days and critical under 3. A forecast needs a day of history and steady growth, so a disk that fills and empties, like one with rotating logs, gets none. A disk that is not filling up counts as 365 days. The dashboard shows the forecast in the host's disk table and on a chart of where each filling disk is headed, and on the hosts page when a disk fills up within 30 days.
+
+`disk_read_latency` and `disk_write_latency` thresholds are in ms, with `Op` `>`. The rule editor starts at 50 and 200, which suits spinning disks. SSDs usually answer in well under a millisecond, so lower thresholds find trouble sooner there. Each agent interval's average is checked once. An interval without reads (or writes) has no value, so an open alert stays as it is until the disk is used again. Every host has these, with or without the [histogram](#disk-latency).
 
 ### Notifications
 
@@ -674,6 +694,8 @@ sudo -u postgres dropuser symon
 **A host has no Process activity section.** Its agent logs why on start, `journalctl -u symon_agent | grep "process activity"`. Usually the kernel has no BTF or is older than 5.8, or the agent does not run as root. See [Process activity](#process-activity).
 
 **A host has no Received by program chart.** Its agent logs why on start, `journalctl -u symon_agent | grep "process network"`. Usually the kernel has no BTF, it is an arm64 kernel older than 6.0, or the agent does not run as root. See [Process network](#process-network).
+
+**A host has no Disk latency section.** The Read latency and Write latency charts in Disks work on every host, the section needs the eBPF histogram. Its agent logs why on start, `journalctl -u symon_agent | grep "disk latency"`. Usually the kernel has no BTF or is older than 5.5, the agent does not run as root, or `diskio` is switched off. See [Disk latency](#disk-latency).
 
 **A container shows "host network".** It shares the host's network, so its traffic is already counted in the host's own network charts.
 

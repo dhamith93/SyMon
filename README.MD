@@ -11,6 +11,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 **Hosts**
 - CPU, overall and per core, load average, memory and swap
 - Disk space, disk IO and busy time, network traffic, TCP connections
+- How long disk reads and writes take and how many wait, and with eBPF each disk's p50 to p99 and a heatmap of where its IOs fell
 - When each disk will be full, at the rate it grew over the last week, with a chart of where it is headed
 - Pressure stall information and temperature sensors
 - The top processes by CPU and memory at any point in time, and the programs that used the most over any range
@@ -44,7 +45,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 - Output shows while a task runs, and every run is kept: who asked, when, and how it ended
 
 **Alerts**
-- Rules for CPU, memory, swap, disks, disks filling up, services, custom metrics, silent hosts, HTTP endpoints and certificates
+- Rules for CPU, memory, swap, disks, disks filling up, slow disks, services, custom metrics, silent hosts, HTTP endpoints and certificates
 - Rules for Kubernetes nodes that are not ready, workloads missing replicas, pods stuck pending and containers that keep restarting
 - Rules for network devices that stop answering, ports that lose their link, and any value a device reports
 - Rules are edited on the dashboard and apply right away. They can watch every host, including ones added later
@@ -143,7 +144,7 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * The host's latest snapshot as the agent sent it, with `up` and `lastSeen`
 * `GET /api/v1/hosts/{host}/series?metric=cpu&from=&to=`
     * A metric over time. `from` and `to` default to the last hour. `label` keeps one series (a mount point, interface, sensor, container or custom metric name), `maxPoints` sets the most points per series (default 1000) and `max=1` returns the peak of each bucket instead of the average
-    * Metrics: `cpu`, `cpu_core`, `load1`, `load5`, `load15`, `memory`, `memory_used`, `swap`, `swap_used`, `psi_cpu`, `psi_memory`, `psi_memory_full`, `psi_io`, `psi_io_full`, `tcp_established`, `tcp_time_wait`, `tcp_close_wait`, `tcp_listen`, `tcp_total`, `disk_used`, `disk_inodes`, `disk_read`, `disk_write`, `disk_util`, `net_rx`, `net_tx`, `temperature`, `custom`, `container_cpu`, `container_memory`, `container_rx`, `container_tx`, `container_io_read`, `container_io_write`, per minute from the process tracer `proc_started`, `proc_ended`, `proc_failed`, `proc_signaled`, `proc_failed_execs`, and in bytes per second per program `proc_net_rx`, `proc_net_tx` (the 7 busiest and `All other programs`)
+    * Metrics: `cpu`, `cpu_core`, `load1`, `load5`, `load15`, `memory`, `memory_used`, `swap`, `swap_used`, `psi_cpu`, `psi_memory`, `psi_memory_full`, `psi_io`, `psi_io_full`, `tcp_established`, `tcp_time_wait`, `tcp_close_wait`, `tcp_listen`, `tcp_total`, `disk_used`, `disk_inodes`, `disk_read`, `disk_write`, `disk_util`, `disk_read_latency`, `disk_write_latency` (average ms per IO), `disk_queue` (IOs in flight), `net_rx`, `net_tx`, `temperature`, `custom`, `container_cpu`, `container_memory`, `container_rx`, `container_tx`, `container_io_read`, `container_io_write`, per minute from the process tracer `proc_started`, `proc_ended`, `proc_failed`, `proc_signaled`, `proc_failed_execs`, and in bytes per second per program `proc_net_rx`, `proc_net_tx` (the 7 busiest and `All other programs`)
 * `GET /api/v1/hosts/{host}/processes?at=`
     * Top processes by CPU and by memory at or before `at`, or the latest
 * `GET /api/v1/hosts/{host}/process-usage?from=&to=`
@@ -152,6 +153,8 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * From hosts with the eBPF process tracer: the counts over the range (`execs`, `exits`, `nonZeroExits`, `signaled`, `failedExecs`, and the `oom` kills and `crashes`), the processes that ended badly grouped by program and how, worst first, and the newest 100. They are kept for the raw retention, so they are listed from `exitsFrom`
 * `GET /api/v1/hosts/{host}/process-network?from=&to=`
     * From hosts with the eBPF network counters: what every program received and sent together (`rxBytes`, `txBytes`, loopback left out), how much of the range was covered (`seconds`), and the 50 busiest `programs` with their bytes and fastest interval (`rxPeak`, `txPeak`, bytes per second)
+* `GET /api/v1/hosts/{host}/disk-latency?from=&to=&device=&op=`
+    * From hosts with the eBPF disk tracer: one disk's reads or writes (`op`, `read` by default, or `write`) as latency histograms over the range, at most 300 `steps` of `stepSeconds` each, with the `buckets` counts and `p50`, `p95` and `p99` in ms. `bucketStarts` says where each bucket starts, in ms. `devices` lists the disks with a histogram in the range, the busiest first. Without `device`, or with one that is not listed, the busiest is used, and `device` says which
 * `GET /api/v1/hosts/{host}/disk-forecasts`
     * Each disk's growth per day over the last week, and `daysToFull`, or null when the disk is not filling up
 * `GET /api/v1/hosts/{host}/custom-metrics`
