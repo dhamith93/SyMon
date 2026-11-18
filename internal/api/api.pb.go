@@ -3254,6 +3254,497 @@ func (x *ProcessUsageList) GetProcesses() []*ProcessUsage {
 	return nil
 }
 
+type ProcessActivityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Host          string                 `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	From          int64                  `protobuf:"varint,2,opt,name=from,proto3" json:"from,omitempty"`
+	To            int64                  `protobuf:"varint,3,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessActivityRequest) Reset() {
+	*x = ProcessActivityRequest{}
+	mi := &file_api_api_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessActivityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessActivityRequest) ProtoMessage() {}
+
+func (x *ProcessActivityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessActivityRequest.ProtoReflect.Descriptor instead.
+func (*ProcessActivityRequest) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ProcessActivityRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *ProcessActivityRequest) GetFrom() int64 {
+	if x != nil {
+		return x.From
+	}
+	return 0
+}
+
+func (x *ProcessActivityRequest) GetTo() int64 {
+	if x != nil {
+		return x.To
+	}
+	return 0
+}
+
+// The tracer's counts added up over a range. seconds is how much of it
+// they cover. listed, oom and crashes count the kept exits since exitsFrom.
+type ProcessActivityTotals struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Seconds       float64                `protobuf:"fixed64,1,opt,name=seconds,proto3" json:"seconds,omitempty"`
+	Execs         int64                  `protobuf:"varint,2,opt,name=execs,proto3" json:"execs,omitempty"`
+	FailedExecs   int64                  `protobuf:"varint,3,opt,name=failedExecs,proto3" json:"failedExecs,omitempty"`
+	Exits         int64                  `protobuf:"varint,4,opt,name=exits,proto3" json:"exits,omitempty"`
+	NonZeroExits  int64                  `protobuf:"varint,5,opt,name=nonZeroExits,proto3" json:"nonZeroExits,omitempty"`
+	Signaled      int64                  `protobuf:"varint,6,opt,name=signaled,proto3" json:"signaled,omitempty"`
+	Dropped       int64                  `protobuf:"varint,7,opt,name=dropped,proto3" json:"dropped,omitempty"`
+	Listed        int64                  `protobuf:"varint,8,opt,name=listed,proto3" json:"listed,omitempty"`
+	Oom           int64                  `protobuf:"varint,9,opt,name=oom,proto3" json:"oom,omitempty"`
+	Crashes       int64                  `protobuf:"varint,10,opt,name=crashes,proto3" json:"crashes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessActivityTotals) Reset() {
+	*x = ProcessActivityTotals{}
+	mi := &file_api_api_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessActivityTotals) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessActivityTotals) ProtoMessage() {}
+
+func (x *ProcessActivityTotals) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessActivityTotals.ProtoReflect.Descriptor instead.
+func (*ProcessActivityTotals) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *ProcessActivityTotals) GetSeconds() float64 {
+	if x != nil {
+		return x.Seconds
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetExecs() int64 {
+	if x != nil {
+		return x.Execs
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetFailedExecs() int64 {
+	if x != nil {
+		return x.FailedExecs
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetExits() int64 {
+	if x != nil {
+		return x.Exits
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetNonZeroExits() int64 {
+	if x != nil {
+		return x.NonZeroExits
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetSignaled() int64 {
+	if x != nil {
+		return x.Signaled
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetDropped() int64 {
+	if x != nil {
+		return x.Dropped
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetListed() int64 {
+	if x != nil {
+		return x.Listed
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetOom() int64 {
+	if x != nil {
+		return x.Oom
+	}
+	return 0
+}
+
+func (x *ProcessActivityTotals) GetCrashes() int64 {
+	if x != nil {
+		return x.Crashes
+	}
+	return 0
+}
+
+// One program that ended the same way: status is 0 when a signal ended it
+type ExitGroup struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Status     int32                  `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
+	Signal     int32                  `protobuf:"varint,3,opt,name=signal,proto3" json:"signal,omitempty"`
+	CoreDumped bool                   `protobuf:"varint,4,opt,name=coreDumped,proto3" json:"coreDumped,omitempty"`
+	Oom        bool                   `protobuf:"varint,5,opt,name=oom,proto3" json:"oom,omitempty"`
+	Count      int64                  `protobuf:"varint,6,opt,name=count,proto3" json:"count,omitempty"`
+	First      int64                  `protobuf:"varint,7,opt,name=first,proto3" json:"first,omitempty"`
+	Last       int64                  `protobuf:"varint,8,opt,name=last,proto3" json:"last,omitempty"`
+	// the parent seen most, and the median lifetime
+	Parent          string  `protobuf:"bytes,9,opt,name=parent,proto3" json:"parent,omitempty"`
+	LifetimeSeconds float64 `protobuf:"fixed64,10,opt,name=lifetimeSeconds,proto3" json:"lifetimeSeconds,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ExitGroup) Reset() {
+	*x = ExitGroup{}
+	mi := &file_api_api_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExitGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExitGroup) ProtoMessage() {}
+
+func (x *ExitGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExitGroup.ProtoReflect.Descriptor instead.
+func (*ExitGroup) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *ExitGroup) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ExitGroup) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *ExitGroup) GetSignal() int32 {
+	if x != nil {
+		return x.Signal
+	}
+	return 0
+}
+
+func (x *ExitGroup) GetCoreDumped() bool {
+	if x != nil {
+		return x.CoreDumped
+	}
+	return false
+}
+
+func (x *ExitGroup) GetOom() bool {
+	if x != nil {
+		return x.Oom
+	}
+	return false
+}
+
+func (x *ExitGroup) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *ExitGroup) GetFirst() int64 {
+	if x != nil {
+		return x.First
+	}
+	return 0
+}
+
+func (x *ExitGroup) GetLast() int64 {
+	if x != nil {
+		return x.Last
+	}
+	return 0
+}
+
+func (x *ExitGroup) GetParent() string {
+	if x != nil {
+		return x.Parent
+	}
+	return ""
+}
+
+func (x *ExitGroup) GetLifetimeSeconds() float64 {
+	if x != nil {
+		return x.LifetimeSeconds
+	}
+	return 0
+}
+
+type ProcessExit struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Time            int64                  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Parent          string                 `protobuf:"bytes,3,opt,name=parent,proto3" json:"parent,omitempty"`
+	Pid             int32                  `protobuf:"varint,4,opt,name=pid,proto3" json:"pid,omitempty"`
+	Ppid            int32                  `protobuf:"varint,5,opt,name=ppid,proto3" json:"ppid,omitempty"`
+	Uid             int64                  `protobuf:"varint,6,opt,name=uid,proto3" json:"uid,omitempty"`
+	Status          int32                  `protobuf:"varint,7,opt,name=status,proto3" json:"status,omitempty"`
+	Signal          int32                  `protobuf:"varint,8,opt,name=signal,proto3" json:"signal,omitempty"`
+	CoreDumped      bool                   `protobuf:"varint,9,opt,name=coreDumped,proto3" json:"coreDumped,omitempty"`
+	Oom             bool                   `protobuf:"varint,10,opt,name=oom,proto3" json:"oom,omitempty"`
+	LifetimeSeconds float64                `protobuf:"fixed64,11,opt,name=lifetimeSeconds,proto3" json:"lifetimeSeconds,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ProcessExit) Reset() {
+	*x = ProcessExit{}
+	mi := &file_api_api_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessExit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessExit) ProtoMessage() {}
+
+func (x *ProcessExit) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessExit.ProtoReflect.Descriptor instead.
+func (*ProcessExit) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *ProcessExit) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *ProcessExit) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProcessExit) GetParent() string {
+	if x != nil {
+		return x.Parent
+	}
+	return ""
+}
+
+func (x *ProcessExit) GetPid() int32 {
+	if x != nil {
+		return x.Pid
+	}
+	return 0
+}
+
+func (x *ProcessExit) GetPpid() int32 {
+	if x != nil {
+		return x.Ppid
+	}
+	return 0
+}
+
+func (x *ProcessExit) GetUid() int64 {
+	if x != nil {
+		return x.Uid
+	}
+	return 0
+}
+
+func (x *ProcessExit) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *ProcessExit) GetSignal() int32 {
+	if x != nil {
+		return x.Signal
+	}
+	return 0
+}
+
+func (x *ProcessExit) GetCoreDumped() bool {
+	if x != nil {
+		return x.CoreDumped
+	}
+	return false
+}
+
+func (x *ProcessExit) GetOom() bool {
+	if x != nil {
+		return x.Oom
+	}
+	return false
+}
+
+func (x *ProcessExit) GetLifetimeSeconds() float64 {
+	if x != nil {
+		return x.LifetimeSeconds
+	}
+	return 0
+}
+
+type ProcessActivityReport struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Totals *ProcessActivityTotals `protobuf:"bytes,1,opt,name=totals,proto3" json:"totals,omitempty"`
+	// the worst first, then the most frequent
+	Groups []*ExitGroup `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty"`
+	// newest first
+	Latest []*ProcessExit `protobuf:"bytes,3,rep,name=latest,proto3" json:"latest,omitempty"`
+	// exits are kept like raw data, so they are listed from here on
+	ExitsFrom     int64 `protobuf:"varint,4,opt,name=exitsFrom,proto3" json:"exitsFrom,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessActivityReport) Reset() {
+	*x = ProcessActivityReport{}
+	mi := &file_api_api_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessActivityReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessActivityReport) ProtoMessage() {}
+
+func (x *ProcessActivityReport) ProtoReflect() protoreflect.Message {
+	mi := &file_api_api_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessActivityReport.ProtoReflect.Descriptor instead.
+func (*ProcessActivityReport) Descriptor() ([]byte, []int) {
+	return file_api_api_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *ProcessActivityReport) GetTotals() *ProcessActivityTotals {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+func (x *ProcessActivityReport) GetGroups() []*ExitGroup {
+	if x != nil {
+		return x.Groups
+	}
+	return nil
+}
+
+func (x *ProcessActivityReport) GetLatest() []*ProcessExit {
+	if x != nil {
+		return x.Latest
+	}
+	return nil
+}
+
+func (x *ProcessActivityReport) GetExitsFrom() int64 {
+	if x != nil {
+		return x.ExitsFrom
+	}
+	return 0
+}
+
 // The newest value of one of a host's custom metrics
 type CustomValue struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -3268,7 +3759,7 @@ type CustomValue struct {
 
 func (x *CustomValue) Reset() {
 	*x = CustomValue{}
-	mi := &file_api_api_proto_msgTypes[47]
+	mi := &file_api_api_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3280,7 +3771,7 @@ func (x *CustomValue) String() string {
 func (*CustomValue) ProtoMessage() {}
 
 func (x *CustomValue) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[47]
+	mi := &file_api_api_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3293,7 +3784,7 @@ func (x *CustomValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CustomValue.ProtoReflect.Descriptor instead.
 func (*CustomValue) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{47}
+	return file_api_api_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *CustomValue) GetHost() string {
@@ -3342,7 +3833,7 @@ type SnapshotList struct {
 
 func (x *SnapshotList) Reset() {
 	*x = SnapshotList{}
-	mi := &file_api_api_proto_msgTypes[48]
+	mi := &file_api_api_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3354,7 +3845,7 @@ func (x *SnapshotList) String() string {
 func (*SnapshotList) ProtoMessage() {}
 
 func (x *SnapshotList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[48]
+	mi := &file_api_api_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3367,7 +3858,7 @@ func (x *SnapshotList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SnapshotList.ProtoReflect.Descriptor instead.
 func (*SnapshotList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{48}
+	return file_api_api_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *SnapshotList) GetHosts() []*HostSnapshot {
@@ -3394,7 +3885,7 @@ type EndpointsRequest struct {
 
 func (x *EndpointsRequest) Reset() {
 	*x = EndpointsRequest{}
-	mi := &file_api_api_proto_msgTypes[49]
+	mi := &file_api_api_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3406,7 +3897,7 @@ func (x *EndpointsRequest) String() string {
 func (*EndpointsRequest) ProtoMessage() {}
 
 func (x *EndpointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[49]
+	mi := &file_api_api_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3419,7 +3910,7 @@ func (x *EndpointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointsRequest.ProtoReflect.Descriptor instead.
 func (*EndpointsRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{49}
+	return file_api_api_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *EndpointsRequest) GetFrom() int64 {
@@ -3461,7 +3952,7 @@ type EndpointStatus struct {
 
 func (x *EndpointStatus) Reset() {
 	*x = EndpointStatus{}
-	mi := &file_api_api_proto_msgTypes[50]
+	mi := &file_api_api_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3473,7 +3964,7 @@ func (x *EndpointStatus) String() string {
 func (*EndpointStatus) ProtoMessage() {}
 
 func (x *EndpointStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[50]
+	mi := &file_api_api_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3486,7 +3977,7 @@ func (x *EndpointStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointStatus.ProtoReflect.Descriptor instead.
 func (*EndpointStatus) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{50}
+	return file_api_api_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *EndpointStatus) GetName() string {
@@ -3582,7 +4073,7 @@ type EndpointList struct {
 
 func (x *EndpointList) Reset() {
 	*x = EndpointList{}
-	mi := &file_api_api_proto_msgTypes[51]
+	mi := &file_api_api_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3594,7 +4085,7 @@ func (x *EndpointList) String() string {
 func (*EndpointList) ProtoMessage() {}
 
 func (x *EndpointList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[51]
+	mi := &file_api_api_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3607,7 +4098,7 @@ func (x *EndpointList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointList.ProtoReflect.Descriptor instead.
 func (*EndpointList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{51}
+	return file_api_api_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *EndpointList) GetEndpoints() []*EndpointStatus {
@@ -3631,7 +4122,7 @@ type EndpointSeriesRequest struct {
 
 func (x *EndpointSeriesRequest) Reset() {
 	*x = EndpointSeriesRequest{}
-	mi := &file_api_api_proto_msgTypes[52]
+	mi := &file_api_api_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3643,7 +4134,7 @@ func (x *EndpointSeriesRequest) String() string {
 func (*EndpointSeriesRequest) ProtoMessage() {}
 
 func (x *EndpointSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[52]
+	mi := &file_api_api_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3656,7 +4147,7 @@ func (x *EndpointSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndpointSeriesRequest.ProtoReflect.Descriptor instead.
 func (*EndpointSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{52}
+	return file_api_api_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *EndpointSeriesRequest) GetName() string {
@@ -3704,7 +4195,7 @@ type Credentials struct {
 
 func (x *Credentials) Reset() {
 	*x = Credentials{}
-	mi := &file_api_api_proto_msgTypes[53]
+	mi := &file_api_api_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3716,7 +4207,7 @@ func (x *Credentials) String() string {
 func (*Credentials) ProtoMessage() {}
 
 func (x *Credentials) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[53]
+	mi := &file_api_api_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3729,7 +4220,7 @@ func (x *Credentials) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Credentials.ProtoReflect.Descriptor instead.
 func (*Credentials) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{53}
+	return file_api_api_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *Credentials) GetUser() string {
@@ -3759,7 +4250,7 @@ type SessionInfo struct {
 
 func (x *SessionInfo) Reset() {
 	*x = SessionInfo{}
-	mi := &file_api_api_proto_msgTypes[54]
+	mi := &file_api_api_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3771,7 +4262,7 @@ func (x *SessionInfo) String() string {
 func (*SessionInfo) ProtoMessage() {}
 
 func (x *SessionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[54]
+	mi := &file_api_api_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3784,7 +4275,7 @@ func (x *SessionInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionInfo.ProtoReflect.Descriptor instead.
 func (*SessionInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{54}
+	return file_api_api_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *SessionInfo) GetToken() string {
@@ -3826,7 +4317,7 @@ type ChangePasswordRequest struct {
 
 func (x *ChangePasswordRequest) Reset() {
 	*x = ChangePasswordRequest{}
-	mi := &file_api_api_proto_msgTypes[55]
+	mi := &file_api_api_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3838,7 +4329,7 @@ func (x *ChangePasswordRequest) String() string {
 func (*ChangePasswordRequest) ProtoMessage() {}
 
 func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[55]
+	mi := &file_api_api_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3851,7 +4342,7 @@ func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangePasswordRequest.ProtoReflect.Descriptor instead.
 func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{55}
+	return file_api_api_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *ChangePasswordRequest) GetToken() string {
@@ -3884,7 +4375,7 @@ type SessionRequest struct {
 
 func (x *SessionRequest) Reset() {
 	*x = SessionRequest{}
-	mi := &file_api_api_proto_msgTypes[56]
+	mi := &file_api_api_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3896,7 +4387,7 @@ func (x *SessionRequest) String() string {
 func (*SessionRequest) ProtoMessage() {}
 
 func (x *SessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[56]
+	mi := &file_api_api_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3909,7 +4400,7 @@ func (x *SessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionRequest.ProtoReflect.Descriptor instead.
 func (*SessionRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{56}
+	return file_api_api_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *SessionRequest) GetToken() string {
@@ -3928,7 +4419,7 @@ type UserStatus struct {
 
 func (x *UserStatus) Reset() {
 	*x = UserStatus{}
-	mi := &file_api_api_proto_msgTypes[57]
+	mi := &file_api_api_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3940,7 +4431,7 @@ func (x *UserStatus) String() string {
 func (*UserStatus) ProtoMessage() {}
 
 func (x *UserStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[57]
+	mi := &file_api_api_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3953,7 +4444,7 @@ func (x *UserStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserStatus.ProtoReflect.Descriptor instead.
 func (*UserStatus) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{57}
+	return file_api_api_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *UserStatus) GetHasUsers() bool {
@@ -3978,7 +4469,7 @@ type AlertRuleInfo struct {
 
 func (x *AlertRuleInfo) Reset() {
 	*x = AlertRuleInfo{}
-	mi := &file_api_api_proto_msgTypes[58]
+	mi := &file_api_api_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3990,7 +4481,7 @@ func (x *AlertRuleInfo) String() string {
 func (*AlertRuleInfo) ProtoMessage() {}
 
 func (x *AlertRuleInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[58]
+	mi := &file_api_api_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4003,7 +4494,7 @@ func (x *AlertRuleInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertRuleInfo.ProtoReflect.Descriptor instead.
 func (*AlertRuleInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{58}
+	return file_api_api_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *AlertRuleInfo) GetId() int64 {
@@ -4050,7 +4541,7 @@ type AlertRuleList struct {
 
 func (x *AlertRuleList) Reset() {
 	*x = AlertRuleList{}
-	mi := &file_api_api_proto_msgTypes[59]
+	mi := &file_api_api_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4062,7 +4553,7 @@ func (x *AlertRuleList) String() string {
 func (*AlertRuleList) ProtoMessage() {}
 
 func (x *AlertRuleList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[59]
+	mi := &file_api_api_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4075,7 +4566,7 @@ func (x *AlertRuleList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertRuleList.ProtoReflect.Descriptor instead.
 func (*AlertRuleList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{59}
+	return file_api_api_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *AlertRuleList) GetRules() []*AlertRuleInfo {
@@ -4098,7 +4589,7 @@ type SaveRuleRequest struct {
 
 func (x *SaveRuleRequest) Reset() {
 	*x = SaveRuleRequest{}
-	mi := &file_api_api_proto_msgTypes[60]
+	mi := &file_api_api_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4110,7 +4601,7 @@ func (x *SaveRuleRequest) String() string {
 func (*SaveRuleRequest) ProtoMessage() {}
 
 func (x *SaveRuleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[60]
+	mi := &file_api_api_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4123,7 +4614,7 @@ func (x *SaveRuleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveRuleRequest.ProtoReflect.Descriptor instead.
 func (*SaveRuleRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{60}
+	return file_api_api_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *SaveRuleRequest) GetId() int64 {
@@ -4164,7 +4655,7 @@ type RuleRequest struct {
 
 func (x *RuleRequest) Reset() {
 	*x = RuleRequest{}
-	mi := &file_api_api_proto_msgTypes[61]
+	mi := &file_api_api_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4176,7 +4667,7 @@ func (x *RuleRequest) String() string {
 func (*RuleRequest) ProtoMessage() {}
 
 func (x *RuleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[61]
+	mi := &file_api_api_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4189,7 +4680,7 @@ func (x *RuleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuleRequest.ProtoReflect.Descriptor instead.
 func (*RuleRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{61}
+	return file_api_api_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *RuleRequest) GetId() int64 {
@@ -4217,7 +4708,7 @@ type ClusterReport struct {
 
 func (x *ClusterReport) Reset() {
 	*x = ClusterReport{}
-	mi := &file_api_api_proto_msgTypes[62]
+	mi := &file_api_api_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4229,7 +4720,7 @@ func (x *ClusterReport) String() string {
 func (*ClusterReport) ProtoMessage() {}
 
 func (x *ClusterReport) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[62]
+	mi := &file_api_api_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4242,7 +4733,7 @@ func (x *ClusterReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterReport.ProtoReflect.Descriptor instead.
 func (*ClusterReport) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{62}
+	return file_api_api_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ClusterReport) GetHost() string {
@@ -4268,7 +4759,7 @@ type ClusterRequest struct {
 
 func (x *ClusterRequest) Reset() {
 	*x = ClusterRequest{}
-	mi := &file_api_api_proto_msgTypes[63]
+	mi := &file_api_api_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4280,7 +4771,7 @@ func (x *ClusterRequest) String() string {
 func (*ClusterRequest) ProtoMessage() {}
 
 func (x *ClusterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[63]
+	mi := &file_api_api_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4293,7 +4784,7 @@ func (x *ClusterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterRequest.ProtoReflect.Descriptor instead.
 func (*ClusterRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{63}
+	return file_api_api_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *ClusterRequest) GetName() string {
@@ -4330,7 +4821,7 @@ type ClusterSummary struct {
 
 func (x *ClusterSummary) Reset() {
 	*x = ClusterSummary{}
-	mi := &file_api_api_proto_msgTypes[64]
+	mi := &file_api_api_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4342,7 +4833,7 @@ func (x *ClusterSummary) String() string {
 func (*ClusterSummary) ProtoMessage() {}
 
 func (x *ClusterSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[64]
+	mi := &file_api_api_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4355,7 +4846,7 @@ func (x *ClusterSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterSummary.ProtoReflect.Descriptor instead.
 func (*ClusterSummary) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{64}
+	return file_api_api_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *ClusterSummary) GetName() string {
@@ -4479,7 +4970,7 @@ type ClusterList struct {
 
 func (x *ClusterList) Reset() {
 	*x = ClusterList{}
-	mi := &file_api_api_proto_msgTypes[65]
+	mi := &file_api_api_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4491,7 +4982,7 @@ func (x *ClusterList) String() string {
 func (*ClusterList) ProtoMessage() {}
 
 func (x *ClusterList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[65]
+	mi := &file_api_api_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4504,7 +4995,7 @@ func (x *ClusterList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterList.ProtoReflect.Descriptor instead.
 func (*ClusterList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{65}
+	return file_api_api_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *ClusterList) GetClusters() []*ClusterSummary {
@@ -4531,7 +5022,7 @@ type ClusterInfo struct {
 
 func (x *ClusterInfo) Reset() {
 	*x = ClusterInfo{}
-	mi := &file_api_api_proto_msgTypes[66]
+	mi := &file_api_api_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4543,7 +5034,7 @@ func (x *ClusterInfo) String() string {
 func (*ClusterInfo) ProtoMessage() {}
 
 func (x *ClusterInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[66]
+	mi := &file_api_api_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4556,7 +5047,7 @@ func (x *ClusterInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterInfo.ProtoReflect.Descriptor instead.
 func (*ClusterInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{66}
+	return file_api_api_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *ClusterInfo) GetSummary() *ClusterSummary {
@@ -4609,7 +5100,7 @@ type ContainerUsage struct {
 
 func (x *ContainerUsage) Reset() {
 	*x = ContainerUsage{}
-	mi := &file_api_api_proto_msgTypes[67]
+	mi := &file_api_api_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4621,7 +5112,7 @@ func (x *ContainerUsage) String() string {
 func (*ContainerUsage) ProtoMessage() {}
 
 func (x *ContainerUsage) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[67]
+	mi := &file_api_api_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4634,7 +5125,7 @@ func (x *ContainerUsage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerUsage.ProtoReflect.Descriptor instead.
 func (*ContainerUsage) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{67}
+	return file_api_api_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ContainerUsage) GetId() string {
@@ -4695,7 +5186,7 @@ type KubeRestart struct {
 
 func (x *KubeRestart) Reset() {
 	*x = KubeRestart{}
-	mi := &file_api_api_proto_msgTypes[68]
+	mi := &file_api_api_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4707,7 +5198,7 @@ func (x *KubeRestart) String() string {
 func (*KubeRestart) ProtoMessage() {}
 
 func (x *KubeRestart) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[68]
+	mi := &file_api_api_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4720,7 +5211,7 @@ func (x *KubeRestart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KubeRestart.ProtoReflect.Descriptor instead.
 func (*KubeRestart) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{68}
+	return file_api_api_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *KubeRestart) GetTime() int64 {
@@ -4786,7 +5277,7 @@ type ClusterSeriesRequest struct {
 
 func (x *ClusterSeriesRequest) Reset() {
 	*x = ClusterSeriesRequest{}
-	mi := &file_api_api_proto_msgTypes[69]
+	mi := &file_api_api_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4798,7 +5289,7 @@ func (x *ClusterSeriesRequest) String() string {
 func (*ClusterSeriesRequest) ProtoMessage() {}
 
 func (x *ClusterSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[69]
+	mi := &file_api_api_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4811,7 +5302,7 @@ func (x *ClusterSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterSeriesRequest.ProtoReflect.Descriptor instead.
 func (*ClusterSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{69}
+	return file_api_api_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *ClusterSeriesRequest) GetName() string {
@@ -4860,7 +5351,7 @@ type DeviceReport struct {
 
 func (x *DeviceReport) Reset() {
 	*x = DeviceReport{}
-	mi := &file_api_api_proto_msgTypes[70]
+	mi := &file_api_api_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4872,7 +5363,7 @@ func (x *DeviceReport) String() string {
 func (*DeviceReport) ProtoMessage() {}
 
 func (x *DeviceReport) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[70]
+	mi := &file_api_api_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4885,7 +5376,7 @@ func (x *DeviceReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceReport.ProtoReflect.Descriptor instead.
 func (*DeviceReport) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{70}
+	return file_api_api_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *DeviceReport) GetHost() string {
@@ -4911,7 +5402,7 @@ type DeviceRequest struct {
 
 func (x *DeviceRequest) Reset() {
 	*x = DeviceRequest{}
-	mi := &file_api_api_proto_msgTypes[71]
+	mi := &file_api_api_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4923,7 +5414,7 @@ func (x *DeviceRequest) String() string {
 func (*DeviceRequest) ProtoMessage() {}
 
 func (x *DeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[71]
+	mi := &file_api_api_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4936,7 +5427,7 @@ func (x *DeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceRequest.ProtoReflect.Descriptor instead.
 func (*DeviceRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{71}
+	return file_api_api_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *DeviceRequest) GetName() string {
@@ -4976,7 +5467,7 @@ type DeviceSummary struct {
 
 func (x *DeviceSummary) Reset() {
 	*x = DeviceSummary{}
-	mi := &file_api_api_proto_msgTypes[72]
+	mi := &file_api_api_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4988,7 +5479,7 @@ func (x *DeviceSummary) String() string {
 func (*DeviceSummary) ProtoMessage() {}
 
 func (x *DeviceSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[72]
+	mi := &file_api_api_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5001,7 +5492,7 @@ func (x *DeviceSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceSummary.ProtoReflect.Descriptor instead.
 func (*DeviceSummary) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{72}
+	return file_api_api_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *DeviceSummary) GetName() string {
@@ -5146,7 +5637,7 @@ type DeviceList struct {
 
 func (x *DeviceList) Reset() {
 	*x = DeviceList{}
-	mi := &file_api_api_proto_msgTypes[73]
+	mi := &file_api_api_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5158,7 +5649,7 @@ func (x *DeviceList) String() string {
 func (*DeviceList) ProtoMessage() {}
 
 func (x *DeviceList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[73]
+	mi := &file_api_api_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5171,7 +5662,7 @@ func (x *DeviceList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceList.ProtoReflect.Descriptor instead.
 func (*DeviceList) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{73}
+	return file_api_api_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *DeviceList) GetDevices() []*DeviceSummary {
@@ -5192,7 +5683,7 @@ type DeviceInfo struct {
 
 func (x *DeviceInfo) Reset() {
 	*x = DeviceInfo{}
-	mi := &file_api_api_proto_msgTypes[74]
+	mi := &file_api_api_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5204,7 +5695,7 @@ func (x *DeviceInfo) String() string {
 func (*DeviceInfo) ProtoMessage() {}
 
 func (x *DeviceInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[74]
+	mi := &file_api_api_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5217,7 +5708,7 @@ func (x *DeviceInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceInfo.ProtoReflect.Descriptor instead.
 func (*DeviceInfo) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{74}
+	return file_api_api_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *DeviceInfo) GetSummary() *DeviceSummary {
@@ -5250,7 +5741,7 @@ type DeviceSeriesRequest struct {
 
 func (x *DeviceSeriesRequest) Reset() {
 	*x = DeviceSeriesRequest{}
-	mi := &file_api_api_proto_msgTypes[75]
+	mi := &file_api_api_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5262,7 +5753,7 @@ func (x *DeviceSeriesRequest) String() string {
 func (*DeviceSeriesRequest) ProtoMessage() {}
 
 func (x *DeviceSeriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_api_proto_msgTypes[75]
+	mi := &file_api_api_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5275,7 +5766,7 @@ func (x *DeviceSeriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceSeriesRequest.ProtoReflect.Descriptor instead.
 func (*DeviceSeriesRequest) Descriptor() ([]byte, []int) {
-	return file_api_api_proto_rawDescGZIP(), []int{75}
+	return file_api_api_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *DeviceSeriesRequest) GetName() string {
@@ -5589,7 +6080,57 @@ const file_api_api_proto_rawDesc = "" +
 	"\x10ProcessUsageList\x12\x1c\n" +
 	"\tsnapshots\x18\x01 \x01(\x05R\tsnapshots\x12\x1c\n" +
 	"\tfirstTime\x18\x02 \x01(\x03R\tfirstTime\x12/\n" +
-	"\tprocesses\x18\x03 \x03(\v2\x11.api.ProcessUsageR\tprocesses\"s\n" +
+	"\tprocesses\x18\x03 \x03(\v2\x11.api.ProcessUsageR\tprocesses\"P\n" +
+	"\x16ProcessActivityRequest\x12\x12\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
+	"\x04from\x18\x02 \x01(\x03R\x04from\x12\x0e\n" +
+	"\x02to\x18\x03 \x01(\x03R\x02to\"\x9d\x02\n" +
+	"\x15ProcessActivityTotals\x12\x18\n" +
+	"\aseconds\x18\x01 \x01(\x01R\aseconds\x12\x14\n" +
+	"\x05execs\x18\x02 \x01(\x03R\x05execs\x12 \n" +
+	"\vfailedExecs\x18\x03 \x01(\x03R\vfailedExecs\x12\x14\n" +
+	"\x05exits\x18\x04 \x01(\x03R\x05exits\x12\"\n" +
+	"\fnonZeroExits\x18\x05 \x01(\x03R\fnonZeroExits\x12\x1a\n" +
+	"\bsignaled\x18\x06 \x01(\x03R\bsignaled\x12\x18\n" +
+	"\adropped\x18\a \x01(\x03R\adropped\x12\x16\n" +
+	"\x06listed\x18\b \x01(\x03R\x06listed\x12\x10\n" +
+	"\x03oom\x18\t \x01(\x03R\x03oom\x12\x18\n" +
+	"\acrashes\x18\n" +
+	" \x01(\x03R\acrashes\"\x83\x02\n" +
+	"\tExitGroup\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\x12\x16\n" +
+	"\x06signal\x18\x03 \x01(\x05R\x06signal\x12\x1e\n" +
+	"\n" +
+	"coreDumped\x18\x04 \x01(\bR\n" +
+	"coreDumped\x12\x10\n" +
+	"\x03oom\x18\x05 \x01(\bR\x03oom\x12\x14\n" +
+	"\x05count\x18\x06 \x01(\x03R\x05count\x12\x14\n" +
+	"\x05first\x18\a \x01(\x03R\x05first\x12\x12\n" +
+	"\x04last\x18\b \x01(\x03R\x04last\x12\x16\n" +
+	"\x06parent\x18\t \x01(\tR\x06parent\x12(\n" +
+	"\x0flifetimeSeconds\x18\n" +
+	" \x01(\x01R\x0flifetimeSeconds\"\x91\x02\n" +
+	"\vProcessExit\x12\x12\n" +
+	"\x04time\x18\x01 \x01(\x03R\x04time\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
+	"\x06parent\x18\x03 \x01(\tR\x06parent\x12\x10\n" +
+	"\x03pid\x18\x04 \x01(\x05R\x03pid\x12\x12\n" +
+	"\x04ppid\x18\x05 \x01(\x05R\x04ppid\x12\x10\n" +
+	"\x03uid\x18\x06 \x01(\x03R\x03uid\x12\x16\n" +
+	"\x06status\x18\a \x01(\x05R\x06status\x12\x16\n" +
+	"\x06signal\x18\b \x01(\x05R\x06signal\x12\x1e\n" +
+	"\n" +
+	"coreDumped\x18\t \x01(\bR\n" +
+	"coreDumped\x12\x10\n" +
+	"\x03oom\x18\n" +
+	" \x01(\bR\x03oom\x12(\n" +
+	"\x0flifetimeSeconds\x18\v \x01(\x01R\x0flifetimeSeconds\"\xbb\x01\n" +
+	"\x15ProcessActivityReport\x122\n" +
+	"\x06totals\x18\x01 \x01(\v2\x1a.api.ProcessActivityTotalsR\x06totals\x12&\n" +
+	"\x06groups\x18\x02 \x03(\v2\x0e.api.ExitGroupR\x06groups\x12(\n" +
+	"\x06latest\x18\x03 \x03(\v2\x10.api.ProcessExitR\x06latest\x12\x1c\n" +
+	"\texitsFrom\x18\x04 \x01(\x03R\texitsFrom\"s\n" +
 	"\vCustomValue\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -5772,7 +6313,7 @@ const file_api_api_proto_rawDesc = "" +
 	"\x04from\x18\x03 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x04 \x01(\x03R\x02to\x12\x1c\n" +
 	"\tmaxPoints\x18\x05 \x01(\x05R\tmaxPoints\x12\x16\n" +
-	"\x06labels\x18\x06 \x03(\tR\x06labels2\xad\x14\n" +
+	"\x06labels\x18\x06 \x03(\tR\x06labels2\xfb\x14\n" +
 	"\x12MonitorDataService\x123\n" +
 	"\x06Enroll\x12\x12.api.EnrollRequest\x1a\x13.api.EnrollResponse\"\x00\x122\n" +
 	"\n" +
@@ -5787,7 +6328,8 @@ const file_api_api_proto_rawDesc = "" +
 	"\x11CustomMetricNames\x12\x10.api.HostRequest\x1a\r.api.NameList\"\x00\x12.\n" +
 	"\x06Alerts\x12\x12.api.AlertsRequest\x1a\x0e.api.AlertList\"\x00\x12:\n" +
 	"\rDiskForecasts\x12\x10.api.HostRequest\x1a\x15.api.DiskForecastList\"\x00\x12A\n" +
-	"\fProcessUsage\x12\x18.api.ProcessUsageRequest\x1a\x15.api.ProcessUsageList\"\x00\x12+\n" +
+	"\fProcessUsage\x12\x18.api.ProcessUsageRequest\x1a\x15.api.ProcessUsageList\"\x00\x12L\n" +
+	"\x0fProcessActivity\x12\x1b.api.ProcessActivityRequest\x1a\x1a.api.ProcessActivityReport\"\x00\x12+\n" +
 	"\tSnapshots\x12\t.api.Void\x1a\x11.api.SnapshotList\"\x00\x127\n" +
 	"\tEndpoints\x12\x15.api.EndpointsRequest\x1a\x11.api.EndpointList\"\x00\x12C\n" +
 	"\x0eEndpointSeries\x12\x1a.api.EndpointSeriesRequest\x1a\x13.api.SeriesResponse\"\x00\x12$\n" +
@@ -5839,84 +6381,89 @@ func file_api_api_proto_rawDescGZIP() []byte {
 	return file_api_api_proto_rawDescData
 }
 
-var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 76)
+var file_api_api_proto_msgTypes = make([]protoimpl.MessageInfo, 81)
 var file_api_api_proto_goTypes = []any{
-	(*Void)(nil),                  // 0: api.Void
-	(*Message)(nil),               // 1: api.Message
-	(*ServerInfo)(nil),            // 2: api.ServerInfo
-	(*AgentUpdate)(nil),           // 3: api.AgentUpdate
-	(*PingResponse)(nil),          // 4: api.PingResponse
-	(*AgentUpdateRequest)(nil),    // 5: api.AgentUpdateRequest
-	(*AgentUpdateResult)(nil),     // 6: api.AgentUpdateResult
-	(*TaskInfo)(nil),              // 7: api.TaskInfo
-	(*TaskList)(nil),              // 8: api.TaskList
-	(*TaskWait)(nil),              // 9: api.TaskWait
-	(*TaskAssignment)(nil),        // 10: api.TaskAssignment
-	(*TaskProgress)(nil),          // 11: api.TaskProgress
-	(*TaskRunRequest)(nil),        // 12: api.TaskRunRequest
-	(*TaskRunInfo)(nil),           // 13: api.TaskRunInfo
-	(*TaskRunsRequest)(nil),       // 14: api.TaskRunsRequest
-	(*TaskRunList)(nil),           // 15: api.TaskRunList
-	(*TaskRunQuery)(nil),          // 16: api.TaskRunQuery
-	(*ChannelInfo)(nil),           // 17: api.ChannelInfo
-	(*ChannelList)(nil),           // 18: api.ChannelList
-	(*SaveChannelRequest)(nil),    // 19: api.SaveChannelRequest
-	(*ChannelRequest)(nil),        // 20: api.ChannelRequest
-	(*TestResult)(nil),            // 21: api.TestResult
-	(*NotificationInfo)(nil),      // 22: api.NotificationInfo
-	(*NotificationsRequest)(nil),  // 23: api.NotificationsRequest
-	(*NotificationList)(nil),      // 24: api.NotificationList
-	(*MonitorData)(nil),           // 25: api.MonitorData
-	(*EnrollRequest)(nil),         // 26: api.EnrollRequest
-	(*EnrollResponse)(nil),        // 27: api.EnrollResponse
-	(*HostSummary)(nil),           // 28: api.HostSummary
-	(*FleetSummary)(nil),          // 29: api.FleetSummary
-	(*HostRequest)(nil),           // 30: api.HostRequest
-	(*HostSnapshot)(nil),          // 31: api.HostSnapshot
-	(*SeriesRequest)(nil),         // 32: api.SeriesRequest
-	(*Point)(nil),                 // 33: api.Point
-	(*Series)(nil),                // 34: api.Series
-	(*SeriesResponse)(nil),        // 35: api.SeriesResponse
-	(*ProcessesRequest)(nil),      // 36: api.ProcessesRequest
-	(*ProcessesResponse)(nil),     // 37: api.ProcessesResponse
-	(*NameList)(nil),              // 38: api.NameList
-	(*AlertsRequest)(nil),         // 39: api.AlertsRequest
-	(*AlertRecord)(nil),           // 40: api.AlertRecord
-	(*AlertList)(nil),             // 41: api.AlertList
-	(*DiskForecast)(nil),          // 42: api.DiskForecast
-	(*DiskForecastList)(nil),      // 43: api.DiskForecastList
-	(*ProcessUsageRequest)(nil),   // 44: api.ProcessUsageRequest
-	(*ProcessUsage)(nil),          // 45: api.ProcessUsage
-	(*ProcessUsageList)(nil),      // 46: api.ProcessUsageList
-	(*CustomValue)(nil),           // 47: api.CustomValue
-	(*SnapshotList)(nil),          // 48: api.SnapshotList
-	(*EndpointsRequest)(nil),      // 49: api.EndpointsRequest
-	(*EndpointStatus)(nil),        // 50: api.EndpointStatus
-	(*EndpointList)(nil),          // 51: api.EndpointList
-	(*EndpointSeriesRequest)(nil), // 52: api.EndpointSeriesRequest
-	(*Credentials)(nil),           // 53: api.Credentials
-	(*SessionInfo)(nil),           // 54: api.SessionInfo
-	(*ChangePasswordRequest)(nil), // 55: api.ChangePasswordRequest
-	(*SessionRequest)(nil),        // 56: api.SessionRequest
-	(*UserStatus)(nil),            // 57: api.UserStatus
-	(*AlertRuleInfo)(nil),         // 58: api.AlertRuleInfo
-	(*AlertRuleList)(nil),         // 59: api.AlertRuleList
-	(*SaveRuleRequest)(nil),       // 60: api.SaveRuleRequest
-	(*RuleRequest)(nil),           // 61: api.RuleRequest
-	(*ClusterReport)(nil),         // 62: api.ClusterReport
-	(*ClusterRequest)(nil),        // 63: api.ClusterRequest
-	(*ClusterSummary)(nil),        // 64: api.ClusterSummary
-	(*ClusterList)(nil),           // 65: api.ClusterList
-	(*ClusterInfo)(nil),           // 66: api.ClusterInfo
-	(*ContainerUsage)(nil),        // 67: api.ContainerUsage
-	(*KubeRestart)(nil),           // 68: api.KubeRestart
-	(*ClusterSeriesRequest)(nil),  // 69: api.ClusterSeriesRequest
-	(*DeviceReport)(nil),          // 70: api.DeviceReport
-	(*DeviceRequest)(nil),         // 71: api.DeviceRequest
-	(*DeviceSummary)(nil),         // 72: api.DeviceSummary
-	(*DeviceList)(nil),            // 73: api.DeviceList
-	(*DeviceInfo)(nil),            // 74: api.DeviceInfo
-	(*DeviceSeriesRequest)(nil),   // 75: api.DeviceSeriesRequest
+	(*Void)(nil),                   // 0: api.Void
+	(*Message)(nil),                // 1: api.Message
+	(*ServerInfo)(nil),             // 2: api.ServerInfo
+	(*AgentUpdate)(nil),            // 3: api.AgentUpdate
+	(*PingResponse)(nil),           // 4: api.PingResponse
+	(*AgentUpdateRequest)(nil),     // 5: api.AgentUpdateRequest
+	(*AgentUpdateResult)(nil),      // 6: api.AgentUpdateResult
+	(*TaskInfo)(nil),               // 7: api.TaskInfo
+	(*TaskList)(nil),               // 8: api.TaskList
+	(*TaskWait)(nil),               // 9: api.TaskWait
+	(*TaskAssignment)(nil),         // 10: api.TaskAssignment
+	(*TaskProgress)(nil),           // 11: api.TaskProgress
+	(*TaskRunRequest)(nil),         // 12: api.TaskRunRequest
+	(*TaskRunInfo)(nil),            // 13: api.TaskRunInfo
+	(*TaskRunsRequest)(nil),        // 14: api.TaskRunsRequest
+	(*TaskRunList)(nil),            // 15: api.TaskRunList
+	(*TaskRunQuery)(nil),           // 16: api.TaskRunQuery
+	(*ChannelInfo)(nil),            // 17: api.ChannelInfo
+	(*ChannelList)(nil),            // 18: api.ChannelList
+	(*SaveChannelRequest)(nil),     // 19: api.SaveChannelRequest
+	(*ChannelRequest)(nil),         // 20: api.ChannelRequest
+	(*TestResult)(nil),             // 21: api.TestResult
+	(*NotificationInfo)(nil),       // 22: api.NotificationInfo
+	(*NotificationsRequest)(nil),   // 23: api.NotificationsRequest
+	(*NotificationList)(nil),       // 24: api.NotificationList
+	(*MonitorData)(nil),            // 25: api.MonitorData
+	(*EnrollRequest)(nil),          // 26: api.EnrollRequest
+	(*EnrollResponse)(nil),         // 27: api.EnrollResponse
+	(*HostSummary)(nil),            // 28: api.HostSummary
+	(*FleetSummary)(nil),           // 29: api.FleetSummary
+	(*HostRequest)(nil),            // 30: api.HostRequest
+	(*HostSnapshot)(nil),           // 31: api.HostSnapshot
+	(*SeriesRequest)(nil),          // 32: api.SeriesRequest
+	(*Point)(nil),                  // 33: api.Point
+	(*Series)(nil),                 // 34: api.Series
+	(*SeriesResponse)(nil),         // 35: api.SeriesResponse
+	(*ProcessesRequest)(nil),       // 36: api.ProcessesRequest
+	(*ProcessesResponse)(nil),      // 37: api.ProcessesResponse
+	(*NameList)(nil),               // 38: api.NameList
+	(*AlertsRequest)(nil),          // 39: api.AlertsRequest
+	(*AlertRecord)(nil),            // 40: api.AlertRecord
+	(*AlertList)(nil),              // 41: api.AlertList
+	(*DiskForecast)(nil),           // 42: api.DiskForecast
+	(*DiskForecastList)(nil),       // 43: api.DiskForecastList
+	(*ProcessUsageRequest)(nil),    // 44: api.ProcessUsageRequest
+	(*ProcessUsage)(nil),           // 45: api.ProcessUsage
+	(*ProcessUsageList)(nil),       // 46: api.ProcessUsageList
+	(*ProcessActivityRequest)(nil), // 47: api.ProcessActivityRequest
+	(*ProcessActivityTotals)(nil),  // 48: api.ProcessActivityTotals
+	(*ExitGroup)(nil),              // 49: api.ExitGroup
+	(*ProcessExit)(nil),            // 50: api.ProcessExit
+	(*ProcessActivityReport)(nil),  // 51: api.ProcessActivityReport
+	(*CustomValue)(nil),            // 52: api.CustomValue
+	(*SnapshotList)(nil),           // 53: api.SnapshotList
+	(*EndpointsRequest)(nil),       // 54: api.EndpointsRequest
+	(*EndpointStatus)(nil),         // 55: api.EndpointStatus
+	(*EndpointList)(nil),           // 56: api.EndpointList
+	(*EndpointSeriesRequest)(nil),  // 57: api.EndpointSeriesRequest
+	(*Credentials)(nil),            // 58: api.Credentials
+	(*SessionInfo)(nil),            // 59: api.SessionInfo
+	(*ChangePasswordRequest)(nil),  // 60: api.ChangePasswordRequest
+	(*SessionRequest)(nil),         // 61: api.SessionRequest
+	(*UserStatus)(nil),             // 62: api.UserStatus
+	(*AlertRuleInfo)(nil),          // 63: api.AlertRuleInfo
+	(*AlertRuleList)(nil),          // 64: api.AlertRuleList
+	(*SaveRuleRequest)(nil),        // 65: api.SaveRuleRequest
+	(*RuleRequest)(nil),            // 66: api.RuleRequest
+	(*ClusterReport)(nil),          // 67: api.ClusterReport
+	(*ClusterRequest)(nil),         // 68: api.ClusterRequest
+	(*ClusterSummary)(nil),         // 69: api.ClusterSummary
+	(*ClusterList)(nil),            // 70: api.ClusterList
+	(*ClusterInfo)(nil),            // 71: api.ClusterInfo
+	(*ContainerUsage)(nil),         // 72: api.ContainerUsage
+	(*KubeRestart)(nil),            // 73: api.KubeRestart
+	(*ClusterSeriesRequest)(nil),   // 74: api.ClusterSeriesRequest
+	(*DeviceReport)(nil),           // 75: api.DeviceReport
+	(*DeviceRequest)(nil),          // 76: api.DeviceRequest
+	(*DeviceSummary)(nil),          // 77: api.DeviceSummary
+	(*DeviceList)(nil),             // 78: api.DeviceList
+	(*DeviceInfo)(nil),             // 79: api.DeviceInfo
+	(*DeviceSeriesRequest)(nil),    // 80: api.DeviceSeriesRequest
 }
 var file_api_api_proto_depIdxs = []int32{
 	7,  // 0: api.ServerInfo.tasks:type_name -> api.TaskInfo
@@ -5931,117 +6478,122 @@ var file_api_api_proto_depIdxs = []int32{
 	40, // 9: api.AlertList.alerts:type_name -> api.AlertRecord
 	42, // 10: api.DiskForecastList.disks:type_name -> api.DiskForecast
 	45, // 11: api.ProcessUsageList.processes:type_name -> api.ProcessUsage
-	31, // 12: api.SnapshotList.hosts:type_name -> api.HostSnapshot
-	47, // 13: api.SnapshotList.customMetrics:type_name -> api.CustomValue
-	50, // 14: api.EndpointList.endpoints:type_name -> api.EndpointStatus
-	58, // 15: api.AlertRuleList.rules:type_name -> api.AlertRuleInfo
-	64, // 16: api.ClusterList.clusters:type_name -> api.ClusterSummary
-	64, // 17: api.ClusterInfo.summary:type_name -> api.ClusterSummary
-	67, // 18: api.ClusterInfo.usage:type_name -> api.ContainerUsage
-	68, // 19: api.ClusterInfo.restarts:type_name -> api.KubeRestart
-	72, // 20: api.DeviceList.devices:type_name -> api.DeviceSummary
-	72, // 21: api.DeviceInfo.summary:type_name -> api.DeviceSummary
-	26, // 22: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
-	2,  // 23: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
-	2,  // 24: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
-	25, // 25: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
-	25, // 26: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
-	0,  // 27: api.MonitorDataService.Fleet:input_type -> api.Void
-	30, // 28: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
-	32, // 29: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
-	36, // 30: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
-	30, // 31: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
-	39, // 32: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
-	30, // 33: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
-	44, // 34: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
-	0,  // 35: api.MonitorDataService.Snapshots:input_type -> api.Void
-	49, // 36: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
-	52, // 37: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
-	0,  // 38: api.MonitorDataService.Version:input_type -> api.Void
-	53, // 39: api.MonitorDataService.Login:input_type -> api.Credentials
-	56, // 40: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
-	56, // 41: api.MonitorDataService.Logout:input_type -> api.SessionRequest
-	55, // 42: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
-	53, // 43: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
-	0,  // 44: api.MonitorDataService.HasUsers:input_type -> api.Void
-	0,  // 45: api.MonitorDataService.AlertRules:input_type -> api.Void
-	60, // 46: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
-	61, // 47: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
-	5,  // 48: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
-	9,  // 49: api.MonitorDataService.NextTask:input_type -> api.TaskWait
-	11, // 50: api.MonitorDataService.ReportTask:input_type -> api.TaskProgress
-	30, // 51: api.MonitorDataService.HostTasks:input_type -> api.HostRequest
-	12, // 52: api.MonitorDataService.RequestTaskRun:input_type -> api.TaskRunRequest
-	14, // 53: api.MonitorDataService.TaskRuns:input_type -> api.TaskRunsRequest
-	16, // 54: api.MonitorDataService.TaskRun:input_type -> api.TaskRunQuery
-	0,  // 55: api.MonitorDataService.NotificationChannels:input_type -> api.Void
-	19, // 56: api.MonitorDataService.SaveChannel:input_type -> api.SaveChannelRequest
-	20, // 57: api.MonitorDataService.DeleteChannel:input_type -> api.ChannelRequest
-	20, // 58: api.MonitorDataService.TestChannel:input_type -> api.ChannelRequest
-	23, // 59: api.MonitorDataService.RecentNotifications:input_type -> api.NotificationsRequest
-	62, // 60: api.MonitorDataService.ReportCluster:input_type -> api.ClusterReport
-	0,  // 61: api.MonitorDataService.Clusters:input_type -> api.Void
-	63, // 62: api.MonitorDataService.Cluster:input_type -> api.ClusterRequest
-	69, // 63: api.MonitorDataService.ClusterSeries:input_type -> api.ClusterSeriesRequest
-	63, // 64: api.MonitorDataService.RemoveCluster:input_type -> api.ClusterRequest
-	70, // 65: api.MonitorDataService.ReportDevice:input_type -> api.DeviceReport
-	0,  // 66: api.MonitorDataService.Devices:input_type -> api.Void
-	71, // 67: api.MonitorDataService.Device:input_type -> api.DeviceRequest
-	75, // 68: api.MonitorDataService.DeviceSeries:input_type -> api.DeviceSeriesRequest
-	71, // 69: api.MonitorDataService.RemoveDevice:input_type -> api.DeviceRequest
-	27, // 70: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
-	4,  // 71: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
-	1,  // 72: api.MonitorDataService.InitAgent:output_type -> api.Message
-	1,  // 73: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
-	1,  // 74: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
-	29, // 75: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
-	31, // 76: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
-	35, // 77: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
-	37, // 78: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
-	38, // 79: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
-	41, // 80: api.MonitorDataService.Alerts:output_type -> api.AlertList
-	43, // 81: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
-	46, // 82: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
-	48, // 83: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
-	51, // 84: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
-	35, // 85: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
-	1,  // 86: api.MonitorDataService.Version:output_type -> api.Message
-	54, // 87: api.MonitorDataService.Login:output_type -> api.SessionInfo
-	54, // 88: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
-	1,  // 89: api.MonitorDataService.Logout:output_type -> api.Message
-	1,  // 90: api.MonitorDataService.ChangePassword:output_type -> api.Message
-	1,  // 91: api.MonitorDataService.CheckPassword:output_type -> api.Message
-	57, // 92: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
-	59, // 93: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
-	58, // 94: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
-	1,  // 95: api.MonitorDataService.DeleteRule:output_type -> api.Message
-	6,  // 96: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
-	10, // 97: api.MonitorDataService.NextTask:output_type -> api.TaskAssignment
-	1,  // 98: api.MonitorDataService.ReportTask:output_type -> api.Message
-	8,  // 99: api.MonitorDataService.HostTasks:output_type -> api.TaskList
-	13, // 100: api.MonitorDataService.RequestTaskRun:output_type -> api.TaskRunInfo
-	15, // 101: api.MonitorDataService.TaskRuns:output_type -> api.TaskRunList
-	13, // 102: api.MonitorDataService.TaskRun:output_type -> api.TaskRunInfo
-	18, // 103: api.MonitorDataService.NotificationChannels:output_type -> api.ChannelList
-	17, // 104: api.MonitorDataService.SaveChannel:output_type -> api.ChannelInfo
-	1,  // 105: api.MonitorDataService.DeleteChannel:output_type -> api.Message
-	21, // 106: api.MonitorDataService.TestChannel:output_type -> api.TestResult
-	24, // 107: api.MonitorDataService.RecentNotifications:output_type -> api.NotificationList
-	1,  // 108: api.MonitorDataService.ReportCluster:output_type -> api.Message
-	65, // 109: api.MonitorDataService.Clusters:output_type -> api.ClusterList
-	66, // 110: api.MonitorDataService.Cluster:output_type -> api.ClusterInfo
-	35, // 111: api.MonitorDataService.ClusterSeries:output_type -> api.SeriesResponse
-	1,  // 112: api.MonitorDataService.RemoveCluster:output_type -> api.Message
-	1,  // 113: api.MonitorDataService.ReportDevice:output_type -> api.Message
-	73, // 114: api.MonitorDataService.Devices:output_type -> api.DeviceList
-	74, // 115: api.MonitorDataService.Device:output_type -> api.DeviceInfo
-	35, // 116: api.MonitorDataService.DeviceSeries:output_type -> api.SeriesResponse
-	1,  // 117: api.MonitorDataService.RemoveDevice:output_type -> api.Message
-	70, // [70:118] is the sub-list for method output_type
-	22, // [22:70] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	48, // 12: api.ProcessActivityReport.totals:type_name -> api.ProcessActivityTotals
+	49, // 13: api.ProcessActivityReport.groups:type_name -> api.ExitGroup
+	50, // 14: api.ProcessActivityReport.latest:type_name -> api.ProcessExit
+	31, // 15: api.SnapshotList.hosts:type_name -> api.HostSnapshot
+	52, // 16: api.SnapshotList.customMetrics:type_name -> api.CustomValue
+	55, // 17: api.EndpointList.endpoints:type_name -> api.EndpointStatus
+	63, // 18: api.AlertRuleList.rules:type_name -> api.AlertRuleInfo
+	69, // 19: api.ClusterList.clusters:type_name -> api.ClusterSummary
+	69, // 20: api.ClusterInfo.summary:type_name -> api.ClusterSummary
+	72, // 21: api.ClusterInfo.usage:type_name -> api.ContainerUsage
+	73, // 22: api.ClusterInfo.restarts:type_name -> api.KubeRestart
+	77, // 23: api.DeviceList.devices:type_name -> api.DeviceSummary
+	77, // 24: api.DeviceInfo.summary:type_name -> api.DeviceSummary
+	26, // 25: api.MonitorDataService.Enroll:input_type -> api.EnrollRequest
+	2,  // 26: api.MonitorDataService.HandlePing:input_type -> api.ServerInfo
+	2,  // 27: api.MonitorDataService.InitAgent:input_type -> api.ServerInfo
+	25, // 28: api.MonitorDataService.HandleMonitorData:input_type -> api.MonitorData
+	25, // 29: api.MonitorDataService.HandleCustomMonitorData:input_type -> api.MonitorData
+	0,  // 30: api.MonitorDataService.Fleet:input_type -> api.Void
+	30, // 31: api.MonitorDataService.Snapshot:input_type -> api.HostRequest
+	32, // 32: api.MonitorDataService.QuerySeries:input_type -> api.SeriesRequest
+	36, // 33: api.MonitorDataService.Processes:input_type -> api.ProcessesRequest
+	30, // 34: api.MonitorDataService.CustomMetricNames:input_type -> api.HostRequest
+	39, // 35: api.MonitorDataService.Alerts:input_type -> api.AlertsRequest
+	30, // 36: api.MonitorDataService.DiskForecasts:input_type -> api.HostRequest
+	44, // 37: api.MonitorDataService.ProcessUsage:input_type -> api.ProcessUsageRequest
+	47, // 38: api.MonitorDataService.ProcessActivity:input_type -> api.ProcessActivityRequest
+	0,  // 39: api.MonitorDataService.Snapshots:input_type -> api.Void
+	54, // 40: api.MonitorDataService.Endpoints:input_type -> api.EndpointsRequest
+	57, // 41: api.MonitorDataService.EndpointSeries:input_type -> api.EndpointSeriesRequest
+	0,  // 42: api.MonitorDataService.Version:input_type -> api.Void
+	58, // 43: api.MonitorDataService.Login:input_type -> api.Credentials
+	61, // 44: api.MonitorDataService.CheckSession:input_type -> api.SessionRequest
+	61, // 45: api.MonitorDataService.Logout:input_type -> api.SessionRequest
+	60, // 46: api.MonitorDataService.ChangePassword:input_type -> api.ChangePasswordRequest
+	58, // 47: api.MonitorDataService.CheckPassword:input_type -> api.Credentials
+	0,  // 48: api.MonitorDataService.HasUsers:input_type -> api.Void
+	0,  // 49: api.MonitorDataService.AlertRules:input_type -> api.Void
+	65, // 50: api.MonitorDataService.SaveRule:input_type -> api.SaveRuleRequest
+	66, // 51: api.MonitorDataService.DeleteRule:input_type -> api.RuleRequest
+	5,  // 52: api.MonitorDataService.RequestAgentUpdate:input_type -> api.AgentUpdateRequest
+	9,  // 53: api.MonitorDataService.NextTask:input_type -> api.TaskWait
+	11, // 54: api.MonitorDataService.ReportTask:input_type -> api.TaskProgress
+	30, // 55: api.MonitorDataService.HostTasks:input_type -> api.HostRequest
+	12, // 56: api.MonitorDataService.RequestTaskRun:input_type -> api.TaskRunRequest
+	14, // 57: api.MonitorDataService.TaskRuns:input_type -> api.TaskRunsRequest
+	16, // 58: api.MonitorDataService.TaskRun:input_type -> api.TaskRunQuery
+	0,  // 59: api.MonitorDataService.NotificationChannels:input_type -> api.Void
+	19, // 60: api.MonitorDataService.SaveChannel:input_type -> api.SaveChannelRequest
+	20, // 61: api.MonitorDataService.DeleteChannel:input_type -> api.ChannelRequest
+	20, // 62: api.MonitorDataService.TestChannel:input_type -> api.ChannelRequest
+	23, // 63: api.MonitorDataService.RecentNotifications:input_type -> api.NotificationsRequest
+	67, // 64: api.MonitorDataService.ReportCluster:input_type -> api.ClusterReport
+	0,  // 65: api.MonitorDataService.Clusters:input_type -> api.Void
+	68, // 66: api.MonitorDataService.Cluster:input_type -> api.ClusterRequest
+	74, // 67: api.MonitorDataService.ClusterSeries:input_type -> api.ClusterSeriesRequest
+	68, // 68: api.MonitorDataService.RemoveCluster:input_type -> api.ClusterRequest
+	75, // 69: api.MonitorDataService.ReportDevice:input_type -> api.DeviceReport
+	0,  // 70: api.MonitorDataService.Devices:input_type -> api.Void
+	76, // 71: api.MonitorDataService.Device:input_type -> api.DeviceRequest
+	80, // 72: api.MonitorDataService.DeviceSeries:input_type -> api.DeviceSeriesRequest
+	76, // 73: api.MonitorDataService.RemoveDevice:input_type -> api.DeviceRequest
+	27, // 74: api.MonitorDataService.Enroll:output_type -> api.EnrollResponse
+	4,  // 75: api.MonitorDataService.HandlePing:output_type -> api.PingResponse
+	1,  // 76: api.MonitorDataService.InitAgent:output_type -> api.Message
+	1,  // 77: api.MonitorDataService.HandleMonitorData:output_type -> api.Message
+	1,  // 78: api.MonitorDataService.HandleCustomMonitorData:output_type -> api.Message
+	29, // 79: api.MonitorDataService.Fleet:output_type -> api.FleetSummary
+	31, // 80: api.MonitorDataService.Snapshot:output_type -> api.HostSnapshot
+	35, // 81: api.MonitorDataService.QuerySeries:output_type -> api.SeriesResponse
+	37, // 82: api.MonitorDataService.Processes:output_type -> api.ProcessesResponse
+	38, // 83: api.MonitorDataService.CustomMetricNames:output_type -> api.NameList
+	41, // 84: api.MonitorDataService.Alerts:output_type -> api.AlertList
+	43, // 85: api.MonitorDataService.DiskForecasts:output_type -> api.DiskForecastList
+	46, // 86: api.MonitorDataService.ProcessUsage:output_type -> api.ProcessUsageList
+	51, // 87: api.MonitorDataService.ProcessActivity:output_type -> api.ProcessActivityReport
+	53, // 88: api.MonitorDataService.Snapshots:output_type -> api.SnapshotList
+	56, // 89: api.MonitorDataService.Endpoints:output_type -> api.EndpointList
+	35, // 90: api.MonitorDataService.EndpointSeries:output_type -> api.SeriesResponse
+	1,  // 91: api.MonitorDataService.Version:output_type -> api.Message
+	59, // 92: api.MonitorDataService.Login:output_type -> api.SessionInfo
+	59, // 93: api.MonitorDataService.CheckSession:output_type -> api.SessionInfo
+	1,  // 94: api.MonitorDataService.Logout:output_type -> api.Message
+	1,  // 95: api.MonitorDataService.ChangePassword:output_type -> api.Message
+	1,  // 96: api.MonitorDataService.CheckPassword:output_type -> api.Message
+	62, // 97: api.MonitorDataService.HasUsers:output_type -> api.UserStatus
+	64, // 98: api.MonitorDataService.AlertRules:output_type -> api.AlertRuleList
+	63, // 99: api.MonitorDataService.SaveRule:output_type -> api.AlertRuleInfo
+	1,  // 100: api.MonitorDataService.DeleteRule:output_type -> api.Message
+	6,  // 101: api.MonitorDataService.RequestAgentUpdate:output_type -> api.AgentUpdateResult
+	10, // 102: api.MonitorDataService.NextTask:output_type -> api.TaskAssignment
+	1,  // 103: api.MonitorDataService.ReportTask:output_type -> api.Message
+	8,  // 104: api.MonitorDataService.HostTasks:output_type -> api.TaskList
+	13, // 105: api.MonitorDataService.RequestTaskRun:output_type -> api.TaskRunInfo
+	15, // 106: api.MonitorDataService.TaskRuns:output_type -> api.TaskRunList
+	13, // 107: api.MonitorDataService.TaskRun:output_type -> api.TaskRunInfo
+	18, // 108: api.MonitorDataService.NotificationChannels:output_type -> api.ChannelList
+	17, // 109: api.MonitorDataService.SaveChannel:output_type -> api.ChannelInfo
+	1,  // 110: api.MonitorDataService.DeleteChannel:output_type -> api.Message
+	21, // 111: api.MonitorDataService.TestChannel:output_type -> api.TestResult
+	24, // 112: api.MonitorDataService.RecentNotifications:output_type -> api.NotificationList
+	1,  // 113: api.MonitorDataService.ReportCluster:output_type -> api.Message
+	70, // 114: api.MonitorDataService.Clusters:output_type -> api.ClusterList
+	71, // 115: api.MonitorDataService.Cluster:output_type -> api.ClusterInfo
+	35, // 116: api.MonitorDataService.ClusterSeries:output_type -> api.SeriesResponse
+	1,  // 117: api.MonitorDataService.RemoveCluster:output_type -> api.Message
+	1,  // 118: api.MonitorDataService.ReportDevice:output_type -> api.Message
+	78, // 119: api.MonitorDataService.Devices:output_type -> api.DeviceList
+	79, // 120: api.MonitorDataService.Device:output_type -> api.DeviceInfo
+	35, // 121: api.MonitorDataService.DeviceSeries:output_type -> api.SeriesResponse
+	1,  // 122: api.MonitorDataService.RemoveDevice:output_type -> api.Message
+	74, // [74:123] is the sub-list for method output_type
+	25, // [25:74] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_api_api_proto_init() }
@@ -6051,14 +6603,14 @@ func file_api_api_proto_init() {
 	}
 	file_api_api_proto_msgTypes[28].OneofWrappers = []any{}
 	file_api_api_proto_msgTypes[42].OneofWrappers = []any{}
-	file_api_api_proto_msgTypes[72].OneofWrappers = []any{}
+	file_api_api_proto_msgTypes[77].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_api_proto_rawDesc), len(file_api_api_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   76,
+			NumMessages:   81,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

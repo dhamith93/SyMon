@@ -393,6 +393,66 @@ message ProcessUsageList {
     repeated ProcessUsage processes = 3;
 }
 
+message ProcessActivityRequest {
+    string host = 1;
+    int64 from = 2;
+    int64 to = 3;
+}
+
+// The tracer's counts added up over a range. seconds is how much of it
+// they cover. listed, oom and crashes count the kept exits since exitsFrom.
+message ProcessActivityTotals {
+    double seconds = 1;
+    int64 execs = 2;
+    int64 failedExecs = 3;
+    int64 exits = 4;
+    int64 nonZeroExits = 5;
+    int64 signaled = 6;
+    int64 dropped = 7;
+    int64 listed = 8;
+    int64 oom = 9;
+    int64 crashes = 10;
+}
+
+// One program that ended the same way: status is 0 when a signal ended it
+message ExitGroup {
+    string name = 1;
+    int32 status = 2;
+    int32 signal = 3;
+    bool coreDumped = 4;
+    bool oom = 5;
+    int64 count = 6;
+    int64 first = 7;
+    int64 last = 8;
+    // the parent seen most, and the median lifetime
+    string parent = 9;
+    double lifetimeSeconds = 10;
+}
+
+message ProcessExit {
+    int64 time = 1;
+    string name = 2;
+    string parent = 3;
+    int32 pid = 4;
+    int32 ppid = 5;
+    int64 uid = 6;
+    int32 status = 7;
+    int32 signal = 8;
+    bool coreDumped = 9;
+    bool oom = 10;
+    double lifetimeSeconds = 11;
+}
+
+message ProcessActivityReport {
+    ProcessActivityTotals totals = 1;
+    // the worst first, then the most frequent
+    repeated ExitGroup groups = 2;
+    // newest first
+    repeated ProcessExit latest = 3;
+    // exits are kept like raw data, so they are listed from here on
+    int64 exitsFrom = 4;
+}
+
 // The newest value of one of a host's custom metrics
 message CustomValue {
     string host = 1;
@@ -519,6 +579,7 @@ service MonitorDataService {
     rpc Alerts(AlertsRequest) returns (AlertList) {}
     rpc DiskForecasts(HostRequest) returns (DiskForecastList) {}
     rpc ProcessUsage(ProcessUsageRequest) returns (ProcessUsageList) {}
+    rpc ProcessActivity(ProcessActivityRequest) returns (ProcessActivityReport) {}
     // every host's latest snapshot, for the metrics endpoint
     rpc Snapshots(Void) returns (SnapshotList) {}
     rpc Endpoints(EndpointsRequest) returns (EndpointList) {}

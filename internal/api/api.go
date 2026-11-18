@@ -399,6 +399,34 @@ func (s *Server) ProcessUsage(ctx context.Context, in *ProcessUsageRequest) (*Pr
 	return list, nil
 }
 
+func (s *Server) ProcessActivity(ctx context.Context, in *ProcessActivityRequest) (*ProcessActivityReport, error) {
+	result, err := s.Store.ProcessActivity(ctx, in.Host, time.Unix(in.From, 0), time.Unix(in.To, 0))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	t := result.Totals
+	report := &ProcessActivityReport{
+		Totals: &ProcessActivityTotals{
+			Seconds: t.Seconds, Execs: t.Execs, FailedExecs: t.FailedExecs, Exits: t.Exits, NonZeroExits: t.NonZeroExits,
+			Signaled: t.Signaled, Dropped: t.Dropped, Listed: t.Listed, Oom: t.OOM, Crashes: t.Crashes,
+		},
+		ExitsFrom: unix(result.ExitsFrom),
+	}
+	for _, g := range result.Groups {
+		report.Groups = append(report.Groups, &ExitGroup{
+			Name: g.Name, Status: int32(g.Status), Signal: int32(g.Signal), CoreDumped: g.CoreDumped, Oom: g.OOM,
+			Count: g.Count, First: unix(g.First), Last: unix(g.Last), Parent: g.Parent, LifetimeSeconds: g.LifetimeSeconds,
+		})
+	}
+	for _, e := range result.Latest {
+		report.Latest = append(report.Latest, &ProcessExit{
+			Time: unix(e.Time), Name: e.Name, Parent: e.Parent, Pid: int32(e.Pid), Ppid: int32(e.Ppid), Uid: e.Uid,
+			Status: int32(e.Status), Signal: int32(e.Signal), CoreDumped: e.CoreDumped, Oom: e.OOM, LifetimeSeconds: e.LifetimeSeconds,
+		})
+	}
+	return report, nil
+}
+
 func (s *Server) CustomMetricNames(ctx context.Context, in *HostRequest) (*NameList, error) {
 	names, err := s.Store.CustomMetricNames(ctx, in.Host)
 	if err != nil {

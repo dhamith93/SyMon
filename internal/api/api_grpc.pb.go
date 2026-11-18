@@ -32,6 +32,7 @@ const (
 	MonitorDataService_Alerts_FullMethodName                  = "/api.MonitorDataService/Alerts"
 	MonitorDataService_DiskForecasts_FullMethodName           = "/api.MonitorDataService/DiskForecasts"
 	MonitorDataService_ProcessUsage_FullMethodName            = "/api.MonitorDataService/ProcessUsage"
+	MonitorDataService_ProcessActivity_FullMethodName         = "/api.MonitorDataService/ProcessActivity"
 	MonitorDataService_Snapshots_FullMethodName               = "/api.MonitorDataService/Snapshots"
 	MonitorDataService_Endpoints_FullMethodName               = "/api.MonitorDataService/Endpoints"
 	MonitorDataService_EndpointSeries_FullMethodName          = "/api.MonitorDataService/EndpointSeries"
@@ -88,6 +89,7 @@ type MonitorDataServiceClient interface {
 	Alerts(ctx context.Context, in *AlertsRequest, opts ...grpc.CallOption) (*AlertList, error)
 	DiskForecasts(ctx context.Context, in *HostRequest, opts ...grpc.CallOption) (*DiskForecastList, error)
 	ProcessUsage(ctx context.Context, in *ProcessUsageRequest, opts ...grpc.CallOption) (*ProcessUsageList, error)
+	ProcessActivity(ctx context.Context, in *ProcessActivityRequest, opts ...grpc.CallOption) (*ProcessActivityReport, error)
 	// every host's latest snapshot, for the metrics endpoint
 	Snapshots(ctx context.Context, in *Void, opts ...grpc.CallOption) (*SnapshotList, error)
 	Endpoints(ctx context.Context, in *EndpointsRequest, opts ...grpc.CallOption) (*EndpointList, error)
@@ -276,6 +278,16 @@ func (c *monitorDataServiceClient) ProcessUsage(ctx context.Context, in *Process
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessUsageList)
 	err := c.cc.Invoke(ctx, MonitorDataService_ProcessUsage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitorDataServiceClient) ProcessActivity(ctx context.Context, in *ProcessActivityRequest, opts ...grpc.CallOption) (*ProcessActivityReport, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProcessActivityReport)
+	err := c.cc.Invoke(ctx, MonitorDataService_ProcessActivity_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -651,6 +663,7 @@ type MonitorDataServiceServer interface {
 	Alerts(context.Context, *AlertsRequest) (*AlertList, error)
 	DiskForecasts(context.Context, *HostRequest) (*DiskForecastList, error)
 	ProcessUsage(context.Context, *ProcessUsageRequest) (*ProcessUsageList, error)
+	ProcessActivity(context.Context, *ProcessActivityRequest) (*ProcessActivityReport, error)
 	// every host's latest snapshot, for the metrics endpoint
 	Snapshots(context.Context, *Void) (*SnapshotList, error)
 	Endpoints(context.Context, *EndpointsRequest) (*EndpointList, error)
@@ -753,6 +766,9 @@ func (UnimplementedMonitorDataServiceServer) DiskForecasts(context.Context, *Hos
 }
 func (UnimplementedMonitorDataServiceServer) ProcessUsage(context.Context, *ProcessUsageRequest) (*ProcessUsageList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessUsage not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) ProcessActivity(context.Context, *ProcessActivityRequest) (*ProcessActivityReport, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessActivity not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) Snapshots(context.Context, *Void) (*SnapshotList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Snapshots not implemented")
@@ -1110,6 +1126,24 @@ func _MonitorDataService_ProcessUsage_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MonitorDataServiceServer).ProcessUsage(ctx, req.(*ProcessUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitorDataService_ProcessActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).ProcessActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_ProcessActivity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).ProcessActivity(ctx, req.(*ProcessActivityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1802,6 +1836,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessUsage",
 			Handler:    _MonitorDataService_ProcessUsage_Handler,
+		},
+		{
+			MethodName: "ProcessActivity",
+			Handler:    _MonitorDataService_ProcessActivity_Handler,
 		},
 		{
 			MethodName: "Snapshots",
