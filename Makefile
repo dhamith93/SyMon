@@ -15,8 +15,13 @@ proto:
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		api/api.proto
 
-bpf:
+bpf: internal/proctrace/bpf/vmlinux.h
 	go generate ./internal/proctrace
+
+# the kernel's types for CO-RE, which adjusts the programs to each host's
+# kernel when they load. Made once on a Linux box with bpftool, not committed.
+internal/proctrace/bpf/vmlinux.h:
+	bpftool btf dump file /sys/kernel/btf/vmlinux format c > $@
 
 signing-key:
 	go run ./tools/sign keygen -key $(SIGNING_KEY)

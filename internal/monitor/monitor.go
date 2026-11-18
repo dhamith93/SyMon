@@ -86,6 +86,7 @@ const (
 	CollectorTemps        string = "temps"
 	CollectorContainers   string = "containers"
 	CollectorProcActivity string = "procactivity"
+	CollectorProcNet      string = "procnet"
 )
 
 type Processes struct {
@@ -113,12 +114,13 @@ type MonitorData struct {
 
 	// optional sections, left out when disabled, unsupported on the host,
 	// or (for DiskIO) on the first tick before there is a previous sample
-	DiskIO          []DiskIO           `json:",omitempty"`
-	TCPStates       *TCPStates         `json:",omitempty"`
-	Pressure        *Pressure          `json:",omitempty"`
-	Temperatures    []Temperature      `json:",omitempty"`
-	Containers      []Container        `json:",omitempty"`
-	ProcessActivity *proctrace.Summary `json:",omitempty"`
+	DiskIO          []DiskIO              `json:",omitempty"`
+	TCPStates       *TCPStates            `json:",omitempty"`
+	Pressure        *Pressure             `json:",omitempty"`
+	Temperatures    []Temperature         `json:",omitempty"`
+	Containers      []Container           `json:",omitempty"`
+	ProcessActivity *proctrace.Summary    `json:",omitempty"`
+	ProcessNetwork  *proctrace.NetSummary `json:",omitempty"`
 
 	// AgentVersion is the build of the agent that sent the snapshot, empty
 	// from agents older than it
@@ -147,7 +149,8 @@ type Collector struct {
 	cri       *criClient
 	criFailed bool
 
-	tracer *proctrace.Tracer
+	tracer    *proctrace.Tracer
+	netTracer *proctrace.NetTracer
 }
 
 func NewCollector(config *config.Agent) *Collector {
@@ -168,6 +171,7 @@ func NewCollector(config *config.Agent) *Collector {
 			CollectorTemps:        true,
 			CollectorContainers:   true,
 			CollectorProcActivity: true,
+			CollectorProcNet:      true,
 		},
 	}
 	for _, name := range config.DisabledCollectors {
@@ -180,22 +184,31 @@ func NewCollector(config *config.Agent) *Collector {
 	return c
 }
 
-// StartTracer loads the eBPF process tracer, unless procactivity is
-// switched off. A host that cannot run it, like a kernel without BTF,
-// carries on without process activity. The agent calls it once, apart from
-// NewCollector so tests do not load BPF programs.
+// StartTracer loads the eBPF process tracer and the network counters,
+// unless procactivity or procnet is switched off. A host that cannot run
+// one, like a kernel without BTF, carries on without it. The agent calls it
+// once, apart from NewCollector so tests do not load BPF programs.
 func (c *Collector) StartTracer() {
-	if !c.enabled[CollectorProcActivity] || c.tracer != nil {
-		return
+	if c.enabled[CollectorProcActivity] && c.tracer == nil {
+		tracer, err := proctrace.Start(proctrace.Options{})
+		if err != nil {
+			logger.Log("info", "process activity is off: "+err.Error())
+			c.enabled[CollectorProcActivity] = false
+		} else {
+			logger.Log("info", "process activity is on")
+			c.tracer = tracer
+		}
 	}
-	tracer, err := proctrace.Start(proctrace.Options{})
-	if err != nil {
-		logger.Log("info", "process activity is off: "+err.Error())
-		c.enabled[CollectorProcActivity] = false
-		return
+	if c.enabled[CollectorProcNet] && c.netTracer == nil {
+		tracer, err := proctrace.StartNet()
+		if err != nil {
+			logger.Log("info", "process network is off: "+err.Error())
+			c.enabled[CollectorProcNet] = false
+		} else {
+			logger.Log("info", "process network is on")
+			c.netTracer = tracer
+		}
 	}
-	logger.Log("info", "process activity is on")
-	c.tracer = tracer
 }
 
 // CollectJSON returns a snapshot as the JSON string the collector expects
@@ -243,6 +256,9 @@ func (c *Collector) Collect(ctx context.Context) MonitorData {
 	}
 	if c.tracer != nil {
 		data.ProcessActivity = c.tracer.Drain()
+	}
+	if c.netTracer != nil {
+		data.ProcessNetwork = c.netTracer.Drain()
 	}
 	return data
 }

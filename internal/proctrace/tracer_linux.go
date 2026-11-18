@@ -52,7 +52,7 @@ func Start(opts Options) (*Tracer, error) {
 
 	t := &Tracer{window: newWindow(opts.MaxExits, time.Now())}
 	if err := spec.LoadAndAssign(&t.objs, nil); err != nil {
-		return nil, loadError(err)
+		return nil, loadError("process tracing", err)
 	}
 
 	// exits and execs are what the summary is about, so they must attach.
