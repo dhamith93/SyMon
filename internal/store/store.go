@@ -64,6 +64,14 @@ func (s *Store) Close() {
 // Migrate applies the embedded migrations that have not run yet, each in
 // its own transaction
 func (s *Store) Migrate(ctx context.Context) error {
+	var license *string
+	if err := s.pool.QueryRow(ctx, "SELECT current_setting('timescaledb.license', true)").Scan(&license); err != nil {
+		return fmt.Errorf("cannot read the timescaledb edition: %w", err)
+	}
+	if err := checkEdition(license); err != nil {
+		return err
+	}
+
 	_, err := s.pool.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version    text PRIMARY KEY,
 		applied_at timestamptz NOT NULL DEFAULT now()
@@ -82,6 +90,20 @@ func (s *Store) Migrate(ctx context.Context) error {
 		if err := s.applyMigration(ctx, file); err != nil {
 			return fmt.Errorf("migration %s: %w", file, err)
 		}
+	}
+	return nil
+}
+
+// checkEdition stops on the Apache-only build of TimescaleDB, which some
+// managed PostgreSQL services ship. It lacks the continuous aggregates,
+// compression and retention policies the migrations set up, and fails
+// halfway through them with a less helpful error. Without the setting the
+// extension is not loaded, which the first migration reports.
+func checkEdition(license *string) error {
+	if license != nil && *license == "apache" {
+		return errors.New("this TimescaleDB is the Apache-only edition, SyMon needs the Community edition " +
+			"(continuous aggregates, compression and retention policies). Self-hosted TimescaleDB and " +
+			"Timescale's own cloud have it")
 	}
 	return nil
 }

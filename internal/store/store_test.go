@@ -108,6 +108,18 @@ func testSnapshot(host string, at time.Time) *monitor.MonitorData {
 	}
 }
 
+func TestCheckEdition(t *testing.T) {
+	text := func(s string) *string { return &s }
+	if err := checkEdition(text("apache")); err == nil || !strings.Contains(err.Error(), "Community edition") {
+		t.Errorf("apache: expected the edition error, got %v", err)
+	}
+	for _, license := range []*string{text("timescale"), nil} {
+		if err := checkEdition(license); err != nil {
+			t.Errorf("%v: %v", license, err)
+		}
+	}
+}
+
 func TestMigrateIsRepeatable(t *testing.T) {
 	st := testStore(t)
 	if err := st.Migrate(context.Background()); err != nil {
