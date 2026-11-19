@@ -27,13 +27,10 @@ var (
 // getInstallScript serves the script that installs and enrolls an agent,
 // filled in with how this host reached the dashboard
 func (s *server) getInstallScript(w http.ResponseWriter, r *http.Request) {
-	if !safeHost.MatchString(r.Host) {
+	dashboard, ok := dashboardBase(r)
+	if !ok {
 		http.Error(w, "unexpected Host header", http.StatusBadRequest)
 		return
-	}
-	scheme := "http"
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
-		scheme = "https"
 	}
 	collector := s.agentCollectorEndpoint(r.Host)
 	if !safeHost.MatchString(collector) {
@@ -44,9 +41,23 @@ func (s *server) getInstallScript(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/x-shellscript; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	installTemplate.Execute(w, map[string]string{
-		"Dashboard": scheme + "://" + r.Host,
+		"Dashboard": dashboard,
 		"Collector": collector,
 	})
+}
+
+// dashboardBase is the dashboard's address the way the browser reached it,
+// which new hosts and agent updates use too. ok is false for a Host header
+// that could not go into a shell command.
+func dashboardBase(r *http.Request) (string, bool) {
+	if !safeHost.MatchString(r.Host) {
+		return "", false
+	}
+	scheme := "http"
+	if isHTTPS(r) {
+		scheme = "https"
+	}
+	return scheme + "://" + r.Host, true
 }
 
 // agentCollectorEndpoint is how agents on other hosts reach the collector.

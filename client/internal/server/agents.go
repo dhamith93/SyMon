@@ -30,7 +30,8 @@ func (s *server) postAgentUpdate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "send the hosts to update")
 		return
 	}
-	if !safeHost.MatchString(r.Host) {
+	dashboard, ok := dashboardBase(r)
+	if !ok {
 		writeError(w, http.StatusBadRequest, "unexpected Host header")
 		return
 	}
@@ -41,15 +42,11 @@ func (s *server) postAgentUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	scheme := "http"
-	if isHTTPS(r) {
-		scheme = "https"
-	}
 	session, _ := s.sessionOf(r)
 	result, err := s.collector.RequestAgentUpdate(r.Context(), &api.AgentUpdateRequest{
 		Hosts:       body.Hosts,
 		Version:     version.String(),
-		DownloadUrl: scheme + "://" + r.Host,
+		DownloadUrl: dashboard,
 		By:          session.user,
 	})
 	if err != nil {

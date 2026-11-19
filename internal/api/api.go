@@ -142,6 +142,37 @@ func (s *Server) RequestAgentUpdate(ctx context.Context, in *AgentUpdateRequest)
 	return &AgentUpdateResult{Requested: int32(requested)}, nil
 }
 
+// limits on tokens made from the dashboard. The command line has none.
+const (
+	MaxEnrollUses = 100
+	MinEnrollTTL  = 10 * time.Minute
+	MaxEnrollTTL  = 7 * 24 * time.Hour
+)
+
+// CreateEnrollToken makes a token that enrolls new hosts, for the
+// dashboard's Add host
+func (s *Server) CreateEnrollToken(ctx context.Context, in *EnrollTokenRequest) (*EnrollToken, error) {
+	ttl := time.Duration(in.TtlSeconds) * time.Second
+	switch {
+	case in.Host != "" && !validHostName.MatchString(in.Host):
+		return nil, status.Error(codes.InvalidArgument, "host names may use letters, digits, dots, dashes and underscores, up to 63 characters")
+	case in.Uses < 1 || in.Uses > MaxEnrollUses:
+		return nil, status.Errorf(codes.InvalidArgument, "a token can enroll 1 to %d hosts", MaxEnrollUses)
+	case ttl < MinEnrollTTL || ttl > MaxEnrollTTL:
+		return nil, status.Error(codes.InvalidArgument, "a token can be valid for 10 minutes to 7 days")
+	}
+	token, expires, err := s.Store.CreateEnrollmentToken(ctx, in.Host, int(in.Uses), ttl)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	onlyFor := ""
+	if in.Host != "" {
+		onlyFor = " for " + in.Host
+	}
+	logger.Log("info", fmt.Sprintf("enrollment token%s, %d uses, made by %q", onlyFor, in.Uses, in.By))
+	return &EnrollToken{Token: token, Expires: expires.Unix()}, nil
+}
+
 func (s *Server) HandleMonitorData(ctx context.Context, in *MonitorData) (*Message, error) {
 	var monitorData monitor.MonitorData
 	if err := json.Unmarshal([]byte(in.MonitorData), &monitorData); err != nil {

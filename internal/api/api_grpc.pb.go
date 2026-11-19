@@ -49,6 +49,7 @@ const (
 	MonitorDataService_SaveRule_FullMethodName                = "/api.MonitorDataService/SaveRule"
 	MonitorDataService_DeleteRule_FullMethodName              = "/api.MonitorDataService/DeleteRule"
 	MonitorDataService_RequestAgentUpdate_FullMethodName      = "/api.MonitorDataService/RequestAgentUpdate"
+	MonitorDataService_CreateEnrollToken_FullMethodName       = "/api.MonitorDataService/CreateEnrollToken"
 	MonitorDataService_NextTask_FullMethodName                = "/api.MonitorDataService/NextTask"
 	MonitorDataService_ReportTask_FullMethodName              = "/api.MonitorDataService/ReportTask"
 	MonitorDataService_HostTasks_FullMethodName               = "/api.MonitorDataService/HostTasks"
@@ -116,6 +117,8 @@ type MonitorDataServiceClient interface {
 	DeleteRule(ctx context.Context, in *RuleRequest, opts ...grpc.CallOption) (*Message, error)
 	// ask agents to update themselves, from the dashboard
 	RequestAgentUpdate(ctx context.Context, in *AgentUpdateRequest, opts ...grpc.CallOption) (*AgentUpdateResult, error)
+	// enrollment tokens for new hosts, from the dashboard's Add host
+	CreateEnrollToken(ctx context.Context, in *EnrollTokenRequest, opts ...grpc.CallOption) (*EnrollToken, error)
 	// host tasks. The agent waits in NextTask and reports how the run goes.
 	NextTask(ctx context.Context, in *TaskWait, opts ...grpc.CallOption) (*TaskAssignment, error)
 	ReportTask(ctx context.Context, in *TaskProgress, opts ...grpc.CallOption) (*Message, error)
@@ -458,6 +461,16 @@ func (c *monitorDataServiceClient) RequestAgentUpdate(ctx context.Context, in *A
 	return out, nil
 }
 
+func (c *monitorDataServiceClient) CreateEnrollToken(ctx context.Context, in *EnrollTokenRequest, opts ...grpc.CallOption) (*EnrollToken, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnrollToken)
+	err := c.cc.Invoke(ctx, MonitorDataService_CreateEnrollToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *monitorDataServiceClient) NextTask(ctx context.Context, in *TaskWait, opts ...grpc.CallOption) (*TaskAssignment, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TaskAssignment)
@@ -712,6 +725,8 @@ type MonitorDataServiceServer interface {
 	DeleteRule(context.Context, *RuleRequest) (*Message, error)
 	// ask agents to update themselves, from the dashboard
 	RequestAgentUpdate(context.Context, *AgentUpdateRequest) (*AgentUpdateResult, error)
+	// enrollment tokens for new hosts, from the dashboard's Add host
+	CreateEnrollToken(context.Context, *EnrollTokenRequest) (*EnrollToken, error)
 	// host tasks. The agent waits in NextTask and reports how the run goes.
 	NextTask(context.Context, *TaskWait) (*TaskAssignment, error)
 	ReportTask(context.Context, *TaskProgress) (*Message, error)
@@ -843,6 +858,9 @@ func (UnimplementedMonitorDataServiceServer) DeleteRule(context.Context, *RuleRe
 }
 func (UnimplementedMonitorDataServiceServer) RequestAgentUpdate(context.Context, *AgentUpdateRequest) (*AgentUpdateResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestAgentUpdate not implemented")
+}
+func (UnimplementedMonitorDataServiceServer) CreateEnrollToken(context.Context, *EnrollTokenRequest) (*EnrollToken, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateEnrollToken not implemented")
 }
 func (UnimplementedMonitorDataServiceServer) NextTask(context.Context, *TaskWait) (*TaskAssignment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NextTask not implemented")
@@ -1468,6 +1486,24 @@ func _MonitorDataService_RequestAgentUpdate_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MonitorDataService_CreateEnrollToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrollTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitorDataServiceServer).CreateEnrollToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MonitorDataService_CreateEnrollToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitorDataServiceServer).CreateEnrollToken(ctx, req.(*EnrollTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MonitorDataService_NextTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TaskWait)
 	if err := dec(in); err != nil {
@@ -1972,6 +2008,10 @@ var MonitorDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestAgentUpdate",
 			Handler:    _MonitorDataService_RequestAgentUpdate_Handler,
+		},
+		{
+			MethodName: "CreateEnrollToken",
+			Handler:    _MonitorDataService_CreateEnrollToken_Handler,
 		},
 		{
 			MethodName: "NextTask",

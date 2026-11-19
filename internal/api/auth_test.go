@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/dhamith93/SyMon/internal/auth"
 	"github.com/dhamith93/SyMon/internal/store"
@@ -105,10 +106,28 @@ func TestAgentKeyAndTasks(t *testing.T) {
 		MonitorDataService_Clusters_FullMethodName,
 		MonitorDataService_Cluster_FullMethodName,
 		MonitorDataService_RemoveCluster_FullMethodName,
+		MonitorDataService_CreateEnrollToken_FullMethodName,
 	}
 	for _, method := range denied {
 		if _, ran, err := call(t, method, key); ran || status.Code(err) != codes.PermissionDenied {
 			t.Errorf("%s: expected an agent to be denied, got %v", method, err)
+		}
+	}
+}
+
+// the limits are checked before the store is used
+func TestCreateEnrollTokenLimits(t *testing.T) {
+	bad := []*EnrollTokenRequest{
+		{Uses: 0, TtlSeconds: 3600},
+		{Uses: MaxEnrollUses + 1, TtlSeconds: 3600},
+		{Uses: 1, TtlSeconds: 60},
+		{Uses: 1, TtlSeconds: int64(MaxEnrollTTL/time.Second) + 1},
+		{Uses: 1, TtlSeconds: 3600, Host: "web 1"},
+		{Uses: 1, TtlSeconds: 3600, Host: "web1;reboot"},
+	}
+	for _, in := range bad {
+		if _, err := (&Server{}).CreateEnrollToken(context.Background(), in); status.Code(err) != codes.InvalidArgument {
+			t.Errorf("%+v: expected InvalidArgument, got %v", in, err)
 		}
 	}
 }

@@ -37,6 +37,7 @@ type fakeCollector struct {
 	loggedOut       atomic.Value
 	lastRuleBy      atomic.Value
 	lastAgentUpdate atomic.Value
+	lastEnrollToken atomic.Value
 	lastTaskRun     atomic.Value
 	lastChannel     atomic.Value
 }
@@ -199,6 +200,16 @@ func (f *fakeCollector) DeleteRule(ctx context.Context, in *api.RuleRequest) (*a
 func (f *fakeCollector) RequestAgentUpdate(ctx context.Context, in *api.AgentUpdateRequest) (*api.AgentUpdateResult, error) {
 	f.lastAgentUpdate.Store(in)
 	return &api.AgentUpdateResult{Requested: int32(len(in.Hosts))}, nil
+}
+
+// CreateEnrollToken hands out the same token, and refuses no uses the way
+// the collector does
+func (f *fakeCollector) CreateEnrollToken(ctx context.Context, in *api.EnrollTokenRequest) (*api.EnrollToken, error) {
+	if in.Uses < 1 {
+		return nil, status.Error(codes.InvalidArgument, "a token can enroll 1 to 100 hosts")
+	}
+	f.lastEnrollToken.Store(in)
+	return &api.EnrollToken{Token: "tok123", Expires: 1700003600}, nil
 }
 
 func floatPtr(v float64) *float64 {

@@ -48,6 +48,20 @@ message AgentUpdateResult {
     int32 requested = 1;
 }
 
+// A token that enrolls new hosts, made from the dashboard. host, when set,
+// limits it to a host with that name.
+message EnrollTokenRequest {
+    string host = 1;
+    int32 uses = 2;
+    int64 ttlSeconds = 3;
+    string by = 4;
+}
+
+message EnrollToken {
+    string token = 1;
+    int64 expires = 2;
+}
+
 // Host tasks. A host lists the commands it is willing to run in its own
 // tasks file. An admin starts one on the dashboard, and the agent runs it
 // only when its file still has that name and command.
@@ -665,6 +679,9 @@ service MonitorDataService {
 
     // ask agents to update themselves, from the dashboard
     rpc RequestAgentUpdate(AgentUpdateRequest) returns (AgentUpdateResult) {}
+
+    // enrollment tokens for new hosts, from the dashboard's Add host
+    rpc CreateEnrollToken(EnrollTokenRequest) returns (EnrollToken) {}
 
     // host tasks. The agent waits in NextTask and reports how the run goes.
     rpc NextTask(TaskWait) returns (TaskAssignment) {}
