@@ -51,8 +51,10 @@ for arch in amd64 arm64; do
 	cp collector/alerts.json "$DIST/bundle/collector_linux_$name/"
 	mkdir -p "$DIST/bundle/client_linux_$name/downloads"
 	cp "$DIST"/agents/agent-linux-* "$DIST/bundle/client_linux_$name/downloads/"
+	# owned by root, so extracting as root does not hand the binaries to
+	# whoever has the build machine's uid on the server
 	for component in collector client; do
-		tar -czf "$DIST/upload/${component}_linux_$name.tar.gz" -C "$DIST/bundle" "${component}_linux_$name"
+		tar --owner=0 --group=0 --numeric-owner -czf "$DIST/upload/${component}_linux_$name.tar.gz" -C "$DIST/bundle" "${component}_linux_$name"
 	done
 done
 

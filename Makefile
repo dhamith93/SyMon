@@ -69,14 +69,14 @@ pack-collector: build-collector
 	cp collector/collector_linux_x86_64 release/collector_linux_x86_64
 	cp collector/.env-example release/collector_linux_x86_64
 	cp collector/alerts.json release/collector_linux_x86_64
-	cd release/ && tar -cvf collector_linux_x86_64.tar.gz collector_linux_x86_64
+	cd release/ && tar --owner=0 --group=0 --numeric-owner -cvf collector_linux_x86_64.tar.gz collector_linux_x86_64
 	rm -rf release/collector_linux_x86_64
 
 pack-agent: signing-key build-agent
 	mkdir -p release/agent_linux_x86_64
 	cp agent/agent_linux_x86_64 release/agent_linux_x86_64
 	cp agent/.env-example release/agent_linux_x86_64
-	cd release/ && tar -cvf agent_linux_x86_64.tar.gz agent_linux_x86_64
+	cd release/ && tar --owner=0 --group=0 --numeric-owner -cvf agent_linux_x86_64.tar.gz agent_linux_x86_64
 	rm -rf release/agent_linux_x86_64
 
 # the agent builds are what new hosts download from the dashboard.
@@ -90,5 +90,5 @@ pack-client: signing-key build-client
 	go run ./tools/sign sign -key $(SIGNING_KEY) release/client_linux_x86_64/downloads/agent-linux-amd64 release/client_linux_x86_64/downloads/agent-linux-arm64 release/client_linux_x86_64/downloads/agent-linux-arm
 	cp client/.env-example release/client_linux_x86_64
 	cp client/Dockerfile release/client_linux_x86_64
-	cd release/ && tar -cvf client_linux_x86_64.tar.gz client_linux_x86_64
+	cd release/ && tar --owner=0 --group=0 --numeric-owner -cvf client_linux_x86_64.tar.gz client_linux_x86_64
 	rm -rf release/client_linux_x86_64

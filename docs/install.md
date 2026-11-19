@@ -110,8 +110,8 @@ Copy the bundles to the server and extract them:
 
 ```sh
 sudo mkdir -p /opt/symon /etc/symon
-sudo tar -xf collector_linux_x86_64.tar.gz -C /opt/symon
-sudo tar -xf client_linux_x86_64.tar.gz -C /opt/symon
+sudo tar --no-same-owner -xf collector_linux_x86_64.tar.gz -C /opt/symon
+sudo tar --no-same-owner -xf client_linux_x86_64.tar.gz -C /opt/symon
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin symon
 ```
 
@@ -685,8 +685,8 @@ docker compose pull && docker compose up -d
 
 ```sh
 sudo systemctl stop symon_client symon_collector
-sudo tar -xf collector_linux_x86_64.tar.gz -C /opt/symon
-sudo tar -xf client_linux_x86_64.tar.gz -C /opt/symon
+sudo tar --no-same-owner -xf collector_linux_x86_64.tar.gz -C /opt/symon
+sudo tar --no-same-owner -xf client_linux_x86_64.tar.gz -C /opt/symon
 sudo systemctl start symon_collector symon_client
 ```
 
