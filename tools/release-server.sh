@@ -68,6 +68,7 @@ chmod 755 "$DIST/upload/setup.sh"
 checksums() {
 	if command -v sha256sum >/dev/null; then sha256sum -- "$@"; else shasum -a 256 -- "$@"; fi
 }
+# shellcheck disable=SC2035 # checksums puts -- before the names itself
 (cd "$DIST/upload" && checksums * >../SHA256SUMS)
 mv "$DIST/SHA256SUMS" "$DIST/upload/SHA256SUMS"
 echo "release assets in $DIST/upload:"
