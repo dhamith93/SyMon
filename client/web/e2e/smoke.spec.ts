@@ -232,3 +232,19 @@ test('logging out brings back the login page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible();
   expect((await page.request.get('/api/v1/fleet')).status()).toBe(401);
 });
+
+// only looks: a token made here would be a real way to enroll a host
+test('admins can open add host', async ({ page }) => {
+  const errors = watchErrors(page);
+  const session = await (await page.request.get('/api/v1/session')).json();
+  test.skip(session.role !== 'admin', 'the e2e user is not an admin');
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Add host' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Add a host' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Create install command' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
+  expect(errors).toEqual([]);
+});

@@ -687,6 +687,8 @@ export const api = {
   changePassword: (current: string, next: string) => post<object>('/api/v1/password', { current, new: next }),
   rules: () => get<{ rules: AlertRule[] }>('/api/v1/rules'),
   updateAgents: (hosts: string[]) => post<{ requested: number; version: string }>('/api/v1/agents/update', { hosts }),
+  createEnrollToken: (host: string, uses: number, hours: number) =>
+    post<{ token: string; expires: number; command: string }>('/api/v1/enroll-tokens', { host, uses, hours }),
   createRule: (enabled: boolean, rule: RuleConfig) => post<{ id: number }>('/api/v1/rules', { enabled, rule }),
   updateRule: (id: number, enabled: boolean, rule: RuleConfig) => send<{ id: number }>('PUT', `/api/v1/rules/${id}`, { enabled, rule }),
   deleteRule: (id: number) => send<{ id: number }>('DELETE', `/api/v1/rules/${id}`),

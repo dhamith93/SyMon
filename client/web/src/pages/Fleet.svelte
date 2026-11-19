@@ -11,6 +11,7 @@
   import Sparkline from '../components/Sparkline.svelte';
   import StatTile from '../components/StatTile.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
+  import AddHost from '../components/AddHost.svelte';
 
   let hosts = $state<HostSummary[]>([]);
   let loaded = $state(false);
@@ -101,8 +102,9 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
+  <header class="page-header heading">
     <h1>Hosts</h1>
+    {#if isAdmin() && hosts.length > 0}<AddHost />{/if}
   </header>
 
   <section class="tiles" aria-label="Fleet summary">
@@ -153,11 +155,13 @@
     <p class="card message">Could not load hosts: {error}</p>
   {:else if loaded && hosts.length === 0}
     <div class="card message">
-      <h2>No agents yet</h2>
-      <p class="secondary">
-        Install the agent on a server, set <code>SYMON_KEY</code> and <code>SYMON_COLLECTOR_ENDPOINT</code>, then run
-        <code>agent -init</code> once and start it.
-      </p>
+      <h2>No hosts yet</h2>
+      {#if isAdmin()}
+        <p class="secondary">Add a host to start monitoring it. You get one command to run on it.</p>
+        <div class="first"><AddHost primary /></div>
+      {:else}
+        <p class="secondary">An admin can add hosts.</p>
+      {/if}
     </div>
   {:else if loaded && visible.length === 0}
     <p class="card message secondary">No hosts match "{search}".</p>
@@ -219,6 +223,14 @@
 </div>
 
 <style>
+  .heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   .tiles {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -329,10 +341,7 @@
     margin: 6px 0 0;
   }
 
-  code {
-    font-size: 12px;
-    padding: 1px 4px;
-    border-radius: 4px;
-    background: var(--hover);
+  .first {
+    margin-top: 12px;
   }
 </style>

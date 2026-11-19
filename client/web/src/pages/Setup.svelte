@@ -10,6 +10,8 @@
       password.
     </p>
     <pre><code>sudo /opt/symon/collector_linux_x86_64/collector_linux_x86_64 -add-user &lt;name&gt;</code></pre>
+    <p class="secondary">With Docker, in the folder with <code>compose.yml</code>:</p>
+    <pre><code>docker compose exec collector ./collector -add-user &lt;name&gt;</code></pre>
     <button class="control" onclick={checkSession}>I have created a user</button>
   </div>
 </div>
