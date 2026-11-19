@@ -50,23 +50,27 @@ func (s *server) getInstallScript(w http.ResponseWriter, r *http.Request) {
 }
 
 // agentCollectorEndpoint is how agents on other hosts reach the collector.
-// A collector on localhost is reached through the dashboard's host name.
+// A collector on localhost is reached through the dashboard's host name, and
+// so is a setting without a host, like ":9000" in Docker, where the client
+// reaches the collector by a name only the containers know.
 func (s *server) agentCollectorEndpoint(dashboardHost string) string {
+	endpoint := s.collectorEndpoint
 	if s.agentCollector != "" {
-		return s.agentCollector
+		endpoint = s.agentCollector
 	}
-	host, port, err := net.SplitHostPort(s.collectorEndpoint)
+	host, port, err := net.SplitHostPort(endpoint)
 	if err != nil {
-		return s.collectorEndpoint
+		return endpoint
 	}
-	if host == "" || host == "localhost" || net.ParseIP(host).IsLoopback() {
-		name := dashboardHost
-		if withoutPort, _, err := net.SplitHostPort(dashboardHost); err == nil {
-			name = withoutPort
-		}
-		return net.JoinHostPort(name, port)
+	local := host == "" || (s.agentCollector == "" && (host == "localhost" || net.ParseIP(host).IsLoopback()))
+	if !local {
+		return endpoint
 	}
-	return s.collectorEndpoint
+	name := dashboardHost
+	if withoutPort, _, err := net.SplitHostPort(dashboardHost); err == nil {
+		name = withoutPort
+	}
+	return net.JoinHostPort(name, port)
 }
 
 // getDownload serves an agent build from the downloads folder

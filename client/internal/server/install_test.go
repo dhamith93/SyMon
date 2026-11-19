@@ -39,6 +39,11 @@ func TestInstallScriptCollectorEndpoint(t *testing.T) {
 		{"db.lan:9000", "", "symon:8080", "db.lan:9000"},
 		{"localhost:9000", "monitor.example.com:443", "symon:8080", "monitor.example.com:443"},
 		{"localhost:9000", "", "[fd00::5]:8080", "[fd00::5]:9000"},
+		// docker compose: the client reaches the collector by its service name
+		{"collector:9000", ":9000", "monitor.example.com", "monitor.example.com:9000"},
+		{"collector:9000", ":9443", "10.0.0.5:8080", "10.0.0.5:9443"},
+		// an override is taken as it is, even on localhost
+		{"collector:9000", "localhost:9000", "symon:8080", "localhost:9000"},
 	}
 	for _, tt := range tests {
 		s := &server{collectorEndpoint: tt.collector, agentCollector: tt.override}
