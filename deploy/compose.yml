@@ -1,0 +1,76 @@
+# SyMon server: TimescaleDB, the collector and the dashboard.
+#
+# setup.sh writes this file and a .env next to it. By hand, put these in .env:
+#   SYMON_VERSION        the release, like v4.5.0
+#   SYMON_KEY            a long random string the collector and dashboard share
+#   POSTGRES_PASSWORD    letters and digits only, it goes into a URL
+#   SYMON_DASHBOARD_URL  how people and hosts reach the dashboard, for alert links
+#   SYMON_DASHBOARD_PORT, SYMON_COLLECTOR_PORT  published ports, 8080 and 9000
+# then run docker compose up -d. Other settings from the .env-example files
+# go under a service's environment below.
+
+name: symon
+
+x-logging: &logging
+  # rotates, unlike the default json-file driver
+  driver: local
+
+services:
+  db:
+    image: timescale/timescaledb:2.30.1-pg18
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: symon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: symon
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "symon", "-d", "symon"]
+      interval: 5s
+      retries: 30
+
+  collector:
+    image: ghcr.io/dhamith93/symon-collector:${SYMON_VERSION:?set SYMON_VERSION in .env}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      SYMON_KEY: ${SYMON_KEY:?set SYMON_KEY in .env}
+      SYMON_PORT: "9000"
+      SYMON_DATABASE_URL: postgres://symon:${POSTGRES_PASSWORD}@db:5432/symon?sslmode=disable
+      SYMON_DASHBOARD_URL: ${SYMON_DASHBOARD_URL:-}
+    ports:
+      - "${SYMON_COLLECTOR_PORT:-9000}:9000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9000"]
+      interval: 5s
+      retries: 30
+      # the first start creates the tables
+      start_period: 60s
+
+  client:
+    image: ghcr.io/dhamith93/symon-client:${SYMON_VERSION}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      SYMON_KEY: ${SYMON_KEY}
+      SYMON_CLIENT_PORT: "8080"
+      SYMON_CLIENT_COLLECTOR_ENDPOINT: collector:9000
+      # hosts reach the collector by the dashboard's host name, on this port
+      SYMON_CLIENT_AGENT_COLLECTOR_ENDPOINT: ":${SYMON_COLLECTOR_PORT:-9000}"
+    ports:
+      - "${SYMON_DASHBOARD_PORT:-8080}:8080"
+    depends_on:
+      collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 5s
+      retries: 30
+
+volumes:
+  db-data:
