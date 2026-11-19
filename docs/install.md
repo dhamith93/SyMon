@@ -26,11 +26,73 @@ Agents send data to the collector on port 9000. The dashboard only talks to the 
 
 ## Install the server
 
+With Docker it is one command. Without Docker it takes more steps, but needs nothing besides PostgreSQL.
+
+### With Docker
+
+On a Linux server (amd64 or arm64) with Docker and its compose plugin, as root or as a user in the `docker` group:
+
+```sh
+curl -fsSL https://github.com/dhamith93/SyMon/releases/latest/download/setup.sh | sh
+```
+
+The script:
+- writes `compose.yml` and `.env` into `./symon`, with a new shared key and database password in `.env`, readable by you only;
+- starts TimescaleDB, the collector and the dashboard, which Docker restarts after a reboot;
+- creates the dashboard user `admin` and prints its password.
+
+Open the address it prints, log in and [add hosts](#add-hosts). Open port 8080 to browsers and new hosts, and port 9000 to monitored hosts.
+
+- `--url https://monitor.example.com` sets how people and hosts reach the dashboard when that is not the server's first address on port 8080. It goes into `.env` as `SYMON_DASHBOARD_URL`, which links in alert messages use.
+- `--dir /srv/symon` puts the files somewhere else.
+- Collector commands run inside its container, from that folder, for example `docker compose exec collector ./collector -add-user alice` or `-enroll-token`.
+- Other settings from [collector/.env-example](../collector/.env-example) and [client/.env-example](../client/.env-example) go under that service's `environment` in `compose.yml`. Apply them with `docker compose up -d`.
+
+**By hand.** Read the script first, or set it up yourself:
+
+```sh
+mkdir symon && cd symon
+curl -fsSLO https://github.com/dhamith93/SyMon/releases/latest/download/compose.yml
+umask 077
+cat > .env <<EOF
+SYMON_VERSION=v4.5.0
+SYMON_DASHBOARD_URL=http://symon.example.lan:8080
+SYMON_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 32)
+EOF
+docker compose up -d
+docker compose exec collector ./collector -add-user admin
+```
+
+`SYMON_VERSION` is the release to run, from the [releases page](https://github.com/dhamith93/SyMon/releases). `SYMON_DASHBOARD_PORT` and `SYMON_COLLECTOR_PORT` change the published ports from 8080 and 9000.
+
+**HTTPS.** Put Caddy in front of the dashboard, so passwords and the session cookie are encrypted. With Caddy on the same server, this `Caddyfile` gets a certificate by itself:
+
+```
+monitor.example.com {
+	reverse_proxy localhost:8080
+}
+```
+
+Then set `SYMON_DASHBOARD_URL=https://monitor.example.com` in `.env` and run `docker compose up -d`. Install commands made on the dashboard then use HTTPS too. Agents still send data to port 9000 without TLS unless you set it up (see [Settings reference](#settings-reference)), so keep that port to networks you trust.
+
+### Without Docker
+
 These steps use Ubuntu 24.04. Any systemd based Linux works, with its own package names.
 
-### 1. Build the release bundles
+### 1. Get the release bundles
 
-On a machine with Go 1.26 and Node.js 22 or newer:
+Download the bundles for your server from the [latest release](https://github.com/dhamith93/SyMon/releases/latest) and check them:
+
+```sh
+base=https://github.com/dhamith93/SyMon/releases/latest/download
+curl -fsSL -O $base/collector_linux_x86_64.tar.gz -O $base/client_linux_x86_64.tar.gz -O $base/SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+On an arm64 server use the `_arm64` bundles, and `arm64` instead of `x86_64` in the paths below. The client bundle includes the agent builds new hosts download, for Linux amd64, arm64 and 32 bit ARM (every Raspberry Pi), signed with the release key.
+
+**Or build them.** On a machine with Go 1.26 and Node.js 22 or newer:
 
 ```sh
 git clone https://github.com/dhamith93/SyMon.git
@@ -38,9 +100,11 @@ cd SyMon
 make pack-all
 ```
 
-`release/` then holds one bundle per component. The client bundle includes the agent builds that new hosts download: Linux amd64, arm64 and 32 bit ARM (every Raspberry Pi).
+`release/` then holds one bundle per component, for amd64.
 
 The first `make pack-all` also creates `~/.config/symon/agent-signing.key` and signs the agent builds with it. Agents are built with its public key and only install updates from the dashboard that are signed with it, so keep the key on the machine you build on, never on the servers, and back it up. Without it, a new key means every agent needs one manual upgrade before the dashboard can update it again. `SIGNING_KEY=<file>` picks another location.
+
+Release agents carry the release key and your builds carry yours. A host moving from one to the other needs the install command run on it once, see [Upgrades](#upgrades).
 
 Copy the bundles to the server and extract them:
 
@@ -67,6 +131,8 @@ sudo apt install -y postgresql-18 timescaledb-2-postgresql-18
 sudo timescaledb-tune --quiet --yes
 sudo systemctl restart postgresql
 ```
+
+SyMon needs TimescaleDB's Community edition, for continuous aggregates, compression and retention policies. Self-hosted TimescaleDB, as here or in the `timescale/timescaledb` image, and Timescale's own cloud have it. Most managed PostgreSQL services do not: Amazon RDS has no TimescaleDB, and services that offer it often ship only the Apache-2 edition, which the collector refuses when it starts.
 
 Create a database and a user for SyMon. The extension has to be created by a superuser:
 
@@ -151,13 +217,17 @@ The dashboard is now at `http://<server>:8080`. It stays empty until a host is a
 
 ## Add hosts
 
-On the server, create an enrollment token:
+On the dashboard, open Hosts and press Add host (admins only). Pick how many hosts the command may add and for how long, or give a host name to add only that host, then copy the command.
+
+Or create an enrollment token on the server:
 
 ```sh
 sudo /opt/symon/collector_linux_x86_64/collector_linux_x86_64 -enroll-token
+# with Docker, in the folder with compose.yml
+docker compose exec collector ./collector -enroll-token
 ```
 
-It prints a command. Run it on the host you want to monitor:
+Either way you get a command. Run it on the host you want to monitor:
 
 ```sh
 curl -fsSL --connect-timeout 10 http://symon.example.lan:8080/install.sh | sudo sh -s -- --token <token>
@@ -165,7 +235,7 @@ curl -fsSL --connect-timeout 10 http://symon.example.lan:8080/install.sh | sudo 
 
 The script downloads the agent for the host's CPU, enrolls it, and starts it as the `symon_agent` systemd service. The host appears on the dashboard within a minute.
 
-- A token works once and expires after an hour. `-uses 10` lets one token enroll ten hosts, `-ttl 24h` keeps it valid longer, and `-host web-3` limits it to one host name.
+- A token works once and expires after an hour. `-uses 10` lets one token enroll ten hosts, `-ttl 24h` keeps it valid longer, and `-host web-3` limits it to one host name. Add host offers the same, up to 100 hosts and 7 days.
 - The host is named after the machine unless you add `--host <name>` to the script.
 - The agent keeps its own key in `/etc/symon/agent.key`. Data sent with that key is always stored under that host.
 - Agent settings are in `/etc/symon/agent.env`. The script writes the file once and never overwrites it, so your edits survive upgrades. Restart the agent after changing it: `sudo systemctl restart symon_agent`.
@@ -605,7 +675,13 @@ To switch `/metrics` off, add `SYMON_CLIENT_METRICS_ENABLED=false` to `/etc/symo
 
 Upgrade the server first, then the hosts.
 
-**Server.** Build the new bundles and extract them over the old ones. Settings in `/etc/symon` are not touched. Then restart:
+**Server with Docker.** Set `SYMON_VERSION` in `.env` to the new release, then in that folder:
+
+```sh
+docker compose pull && docker compose up -d
+```
+
+**Server without Docker.** Download or build the new bundles and extract them over the old ones. Settings in `/etc/symon` are not touched. Then restart:
 
 ```sh
 sudo systemctl stop symon_client symon_collector
@@ -622,9 +698,9 @@ Coming from a version with rules in `alerts.json`, the collector imports the fil
 
 **Checking versions.** Every binary prints its version with `-version`, for example `/opt/symon/collector_linux_x86_64/collector_linux_x86_64 -version`, and logs it when it starts. The dashboard footer shows its own version, and the collector's too when they differ. The hosts page flags agents that are not on the dashboard's version.
 
-**Hosts.** After the server upgrade, the hosts page offers to update every outdated agent, and each host's page has an Update agent button. Both are for admins. The agent picks the request up within a minute, downloads its build from the dashboard, and installs it only when it is signed with your key, runs on the host, and is the version asked for. Then it restarts, and the host's page shows the new version, or why it failed.
+**Hosts.** After the server upgrade, the hosts page offers to update every outdated agent, and each host's page has an Update agent button. Both are for admins. The agent picks the request up within a minute, downloads its build from the dashboard, and installs it only when it is signed with the key the agent was built with, runs on the host, and is the version asked for. Then it restarts, and the host's page shows the new version, or why it failed.
 
-Agents from before this feature cannot update themselves yet. Run the install command on each of them once. No token is needed: the script sees the host is already enrolled, replaces the agent with the build the dashboard now serves, and keeps the key and the settings.
+Agents from before this feature cannot update themselves yet, and an agent built with another key refuses the dashboard's builds, for example when moving from your own builds to release ones. Run the install command on each of them once. No token is needed: the script sees the host is already enrolled, replaces the agent with the build the dashboard now serves, and keeps the key and the settings.
 
 ```sh
 curl -fsSL --connect-timeout 10 http://symon.example.lan:8080/install.sh | sudo sh
@@ -632,11 +708,13 @@ curl -fsSL --connect-timeout 10 http://symon.example.lan:8080/install.sh | sudo 
 
 ## Backups
 
-Everything SyMon knows is in the database, apart from the files in `/etc/symon`.
+Everything SyMon knows is in the database, apart from the files in `/etc/symon`, or `.env` with Docker.
 
 ```sh
 sudo -u postgres pg_dump -Fc symon > symon.dump
 sudo tar -czf symon-etc.tar.gz /etc/symon
+# with Docker, in the folder with compose.yml
+docker compose exec -T db pg_dump -U symon -Fc symon > symon.dump
 ```
 
 TimescaleDB needs two extra calls when restoring into a fresh database:
@@ -676,6 +754,8 @@ sudo -u postgres dropuser symon
 ```
 
 ## Troubleshooting
+
+**The collector stops with "this TimescaleDB is the Apache-only edition".** The database has the Apache-2 build of TimescaleDB, which lacks what SyMon needs. Use self-hosted TimescaleDB or Timescale's cloud, see [Install TimescaleDB](#2-install-timescaledb).
 
 **The install command prints nothing, or times out.** The host cannot reach the dashboard. Check it with `curl -I http://<server>:8080/install.sh`. If the name does not resolve, use the server's IP address, and set `SYMON_DASHBOARD_URL` to the IP so the printed command uses it too. If it hangs, a firewall is blocking port 8080.
 

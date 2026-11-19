@@ -81,12 +81,15 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 
 The **[install guide](docs/install.md)** covers setting up the server, adding hosts, Kubernetes, network devices, alerts, upgrades, backups and troubleshooting.
 
-In short:
+On a Linux server with Docker and its compose plugin:
 
-1. Install PostgreSQL with TimescaleDB and create a database.
-2. Build the bundles with `make pack-all`, and extract the collector and client on the server.
-3. Put the settings in `/etc/symon/collector.env` and `/etc/symon/client.env`, run `collector -init`, and start both with the units in [custom_scripts](custom_scripts).
-4. Run `collector -enroll-token` and paste the command it prints on each host you want to monitor.
+```sh
+curl -fsSL https://github.com/dhamith93/SyMon/releases/latest/download/setup.sh | sh
+```
+
+It starts TimescaleDB, the collector and the dashboard in `./symon`, and prints the dashboard's address and the password of the user `admin`. Log in, open Hosts, press Add host, and run the command it gives you on each host you want to monitor. Hosts need to reach the server on ports 8080 and 9000.
+
+Without Docker, download the bundles from the [latest release](https://github.com/dhamith93/SyMon/releases/latest) (Linux amd64 and arm64), or build them with `make pack-all`, and follow the [install guide](docs/install.md#without-docker).
 
 ## Components
 
@@ -106,10 +109,10 @@ The web dashboard and its JSON API, on port 8080. It reads everything from the C
 ## Security
 
 - **Agent keys.** Each enrolled host gets its own key, stored hashed on the server. It can only send data, and only as that host. `collector -remove-agent <name>` revokes it.
-- **Shared key.** The Collector and Client use a shared key from `collector -init`. Each call carries a short-lived token signed with it.
+- **Shared key.** The Collector and Client use a shared key, `SYMON_KEY`, which `setup.sh` or `collector -init` makes. Each call carries a short-lived token signed with it.
 - **TLS.** Traffic between components can be encrypted. See the `*_TLS_*` and `*_CERT_PATH` settings in each component's `.env-example`.
 - **Dashboard login.** The dashboard stays locked until a user exists. `collector -add-user <name>` creates one and prints its password, `-reset-password`, `-remove-user` and `-list-users` manage them, and users change their own password on the dashboard. A login lasts 30 days. After 10 wrong passwords a user name is locked for 15 minutes. The install script and agent downloads stay public, so new hosts can enroll.
-- **Agent updates.** Agent builds are signed with a key that stays where you build them (`~/.config/symon/agent-signing.key`). Agents only install updates signed with it, so a tampered download or a spoofed update request cannot run code on your hosts.
+- **Agent updates.** Agent builds are signed with a key that stays where they are built: the maintainer's machine for releases ([deploy/agent-signing.pub](deploy/agent-signing.pub) is its public key), `~/.config/symon/agent-signing.key` for your own builds. Agents only install updates signed with the key they were built with, so a tampered download or a spoofed update request cannot run code on your hosts. The release workflow checks the signatures before it publishes, and every release lists SHA-256 checksums.
 - **Tasks.** A host only runs commands from its own tasks file, which the dashboard can start but not change. The agent refuses a run whose command is not the one in its file, so a stolen dashboard login cannot run anything the host's owner did not list. See [Tasks](docs/install.md#tasks).
 - **SNMP communities.** The devices file with the community strings stays on the polling host, readable by its owner only, and the agent refuses it otherwise. Communities are never sent to the collector. SNMP v2c itself sends them unencrypted, so keep it on a trusted network.
 - **Kubernetes.** The agent that reads a cluster uses a service account that may only list nodes, pods, events and workloads. It never reads secrets or config maps. See [symon-reader.yaml](docs/kubernetes/symon-reader.yaml).
@@ -166,6 +169,8 @@ The Client exposes a JSON API under `/api/v1`. Times are unix seconds. Errors re
     * Alerts, newest first. `open=1` leaves out resolved ones. Endpoint, Kubernetes and device alerts have an empty `host`
 * `POST /api/v1/agents/update` with `{"hosts": ["..."]}` as JSON
     * For admins only. Asks those hosts' agents to update to the dashboard's version, and answers how many were asked. Agents from before updates are left out
+* `POST /api/v1/enroll-tokens` with `{"host": "", "uses": 1, "hours": 1}` as JSON
+    * For admins only. Makes an enrollment token for up to 100 hosts (one when `host` limits it to that name), valid for 1 to 168 hours, and answers `token`, `expires` and the install `command`, built from the address the request came to
 * `GET /api/v1/hosts/{host}/tasks`
     * The tasks the host lists in its tasks file. `command` is only there for admins
 * `GET /api/v1/hosts/{host}/task-runs?limit=`
