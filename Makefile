@@ -1,4 +1,4 @@
-.PHONY: proto bpf web signing-key clean build-all build-collector build-agent build-client pack-all pack-collector pack-agent pack-client
+.PHONY: proto bpf web signing-key release-agents release-server clean build-all build-collector build-agent build-client pack-all pack-collector pack-agent pack-client
 
 # the version -version and the dashboard show, like v3.0.0-16-g2519821
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -29,6 +29,16 @@ signing-key:
 web:
 	cd client/web && npm ci && npm run build
 
+# a release: push the tag, then run this where the signing key is. It signs
+# the agents, uploads them to a draft GitHub release and starts the release
+# workflow, which builds the rest and publishes.
+release-agents:
+	tools/release-agents.sh $(VERSION)
+
+# what the release workflow runs, around the signed agents in dist/agents
+release-server:
+	tools/release-server.sh $(VERSION)
+
 clean:	
 	rm -f agent/agent_linux_x86_64
 	rm -f client/client_linux_x86_64
@@ -36,7 +46,7 @@ clean:
 	rm -f agent/agent
 	rm -f client/client
 	rm -f collector/collector
-	rm -rf release
+	rm -rf release dist
 	rm -rf collector/release/
 	rm -rf agent/release/
 	rm -rf client/release/

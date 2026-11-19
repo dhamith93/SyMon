@@ -6,3 +6,5 @@ release
 png
 **/node_modules
 client/web/dist
+dist/bundle
+dist/upload

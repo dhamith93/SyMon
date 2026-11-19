@@ -43,3 +43,17 @@ func TestSignAndVerify(t *testing.T) {
 		t.Error("expected a garbled key file to fail")
 	}
 }
+
+// a public key file ends with a newline
+func TestVerifyWithKeyFile(t *testing.T) {
+	private, public, _ := NewKey()
+	key, _ := ParsePrivateKey(private)
+	build := []byte("an agent build")
+	signature := Sign(key, build)
+	if err := VerifyWith(public+"\n", build, []byte(signature)); err != nil {
+		t.Errorf("expected the signature to check out, got %v", err)
+	}
+	if err := VerifyWith(public+"\n", []byte("another build"), []byte(signature)); err == nil {
+		t.Error("expected a changed build to fail")
+	}
+}

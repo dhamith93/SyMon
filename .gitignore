@@ -40,6 +40,8 @@ alerts-local.json
 # release dirs
 */release
 release
+# tools/release-*.sh
+/dist
 
 # binaries
 agent_linux_x86_64

@@ -1,0 +1,114 @@
+name: Release
+
+# Started by tools/release-agents.sh, run where the signing key is, after it
+# uploaded the signed agents to a draft release:
+#   gh workflow run release.yml --ref v4.5.0 -f tag=v4.5.0
+# Builds everything else from the same tag, checks the agents' signatures
+# against deploy/agent-signing.pub, pushes the images and publishes the
+# release. The signing key is never here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag, like v4.5.0
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release-${{ inputs.tag }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+    - name: Check the tag
+      run: |
+        echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$' || { echo "not a release tag: $TAG"; exit 1; }
+        # the workflow file and the source both come from the tag
+        if [ "$GITHUB_REF" != "refs/tags/$TAG" ]; then
+          echo "run this on the tag: gh workflow run release.yml --ref $TAG -f tag=$TAG"
+          exit 1
+        fi
+
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: '1.26.x'
+        check-latest: true
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: client/web/package-lock.json
+
+    - name: Download the signed agents
+      run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'agent-linux-*' --dir dist/agents
+
+    - name: Check the agents
+      run: |
+        go run ./tools/sign verify -pub deploy/agent-signing.pub \
+          dist/agents/agent-linux-amd64 dist/agents/agent-linux-arm64 dist/agents/agent-linux-arm
+        chmod +x dist/agents/agent-linux-amd64
+        version=$(dist/agents/agent-linux-amd64 -version)
+        if [ "$version" != "SyMon agent $TAG" ]; then
+          echo "the amd64 agent says \"$version\", not $TAG"
+          exit 1
+        fi
+
+    - name: Build the release
+      run: tools/release-server.sh "$TAG"
+
+    - name: Upload the assets
+      run: gh release upload "$TAG" dist/upload/* --clobber --repo "$GITHUB_REPOSITORY"
+
+    - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+    - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+
+    - name: Image tags
+      id: tags
+      run: |
+        for component in collector client; do
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/symon-$component"
+          tags="$image:$TAG"
+          # release candidates never become latest
+          case "$TAG" in *-rc.*) ;; *) tags="$tags,$image:latest" ;; esac
+          echo "$component=$tags" >> "$GITHUB_OUTPUT"
+        done
+
+    - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      with:
+        context: .
+        file: deploy/Dockerfile
+        target: collector
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.tags.outputs.collector }}
+
+    - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      with:
+        context: .
+        file: deploy/Dockerfile
+        target: client
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.tags.outputs.client }}
+
+    - name: Publish the release
+      run: gh release edit "$TAG" --draft=false --repo "$GITHUB_REPOSITORY"

@@ -3,6 +3,10 @@
 //
 //	go run ./tools/sign keygen -key ~/.config/symon/agent-signing.key
 //	go run ./tools/sign sign -key ~/.config/symon/agent-signing.key agent-linux-amd64 ...
+//	go run ./tools/sign verify -pub deploy/agent-signing.pub agent-linux-amd64 ...
+//
+// verify checks each build against the .sig file next to it, with only the
+// public key, so release builds can be checked where the key is not.
 //
 // keygen writes the public key next to the key, as <key>.pub, which the
 // Makefile builds into agents. It leaves an existing key alone.
@@ -24,15 +28,17 @@ func main() {
 	}
 	flags := flag.NewFlagSet(os.Args[1], flag.ExitOnError)
 	keyPath := flags.String("key", "", "the signing key file")
+	publicPath := flags.String("pub", "", "with verify: the public key file")
 	flags.Parse(os.Args[2:])
-	if *keyPath == "" {
-		usage()
-	}
 
-	switch os.Args[1] {
-	case "keygen":
+	switch {
+	case os.Args[1] == "verify" && *publicPath != "":
+		verify(*publicPath, flags.Args())
+	case *keyPath == "":
+		usage()
+	case os.Args[1] == "keygen":
 		keygen(*keyPath)
-	case "sign":
+	case os.Args[1] == "sign":
 		sign(*keyPath, flags.Args())
 	default:
 		usage()
@@ -66,6 +72,24 @@ func sign(path string, builds []string) {
 	}
 }
 
+func verify(path string, builds []string) {
+	public, err := os.ReadFile(path)
+	check(err)
+	if len(builds) == 0 {
+		usage()
+	}
+	for _, build := range builds {
+		data, err := os.ReadFile(build)
+		check(err)
+		signature, err := os.ReadFile(build + ".sig")
+		check(err)
+		if err := update.VerifyWith(string(public), data, signature); err != nil {
+			fail(build + ": " + err.Error())
+		}
+		fmt.Println(build + ": signed")
+	}
+}
+
 func check(err error) {
 	if err != nil {
 		fail(err.Error())
@@ -78,5 +102,5 @@ func fail(message string) {
 }
 
 func usage() {
-	fail("usage: sign keygen -key FILE | sign sign -key FILE BUILD...")
+	fail("usage: sign keygen -key FILE | sign sign -key FILE BUILD... | sign verify -pub FILE BUILD...")
 }

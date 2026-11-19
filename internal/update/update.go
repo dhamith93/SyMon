@@ -25,7 +25,13 @@ func Verify(build []byte, signature []byte) error {
 	if PublicKey == "" {
 		return ErrNoKey
 	}
-	key, err := base64.StdEncoding.DecodeString(PublicKey)
+	return VerifyWith(PublicKey, build, signature)
+}
+
+// VerifyWith checks a build against its signature file with the given base64
+// public key, the way release builds are checked before they are published
+func VerifyWith(publicKey string, build []byte, signature []byte) error {
+	key, err := base64.StdEncoding.DecodeString(strings.TrimSpace(publicKey))
 	if err != nil || len(key) != ed25519.PublicKeySize {
 		return errors.New("this agent's update key is broken")
 	}

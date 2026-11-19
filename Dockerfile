@@ -1,6 +1,8 @@
 # Builds any SyMon component. Pick one with --target, for example:
 #   docker build --target collector -t symon-collector .
-# docker-compose.yml uses this to run the whole stack for development.
+# docker-compose.yml uses this to run the whole stack for development. Its
+# agent downloads are not signed, so dashboards built from it cannot update
+# agents. Release images come from deploy/Dockerfile.
 
 FROM node:22-alpine AS web
 WORKDIR /web
