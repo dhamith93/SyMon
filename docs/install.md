@@ -795,7 +795,7 @@ sudo -u postgres dropuser symon
 
 **An agent update fails with "not signed with this agent's update key".** The dashboard's agent builds were signed with another key than the agent was built with, or not signed at all, for example after building on another machine. Rebuild with the original key, or run the install command on the host once to switch it to the new key.
 
-**Forgot a password.** On the collector's host, `collector -reset-password <name>` prints a new one. Logged in users change their own on the Account page, which the user name in the header links to.
+**Forgot a password.** On the collector's host, `collector -reset-password <name>` prints a new one. Logged in users change their own under Account and password, in the menu under their user name at the top right.
 
 **The collector does not start after an upgrade, with an error about the alert rules.** On its first start it imports `SYMON_ALERTS_CONFIG_PATH`, and refuses a file with a mistake rather than dropping rules. Fix the line the error names, or unset the setting to start without the file's rules.
 

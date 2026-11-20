@@ -56,7 +56,7 @@ SyMon is a self-hosted monitoring tool for Linux servers, home labs, Raspberry P
 **Dashboard**
 - Every host at a glance, and a page per host with charts from 15 minutes to 30 days, or any custom range
 - Drag across a chart to zoom in, click a point to see the processes running then, and switch any chart to a table
-- Follows the system light or dark theme
+- Light and dark themes, following the system unless you pick one in the menu under your user name
 
 **Running it**
 - Add a host with one command, with a single-use token
