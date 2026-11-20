@@ -223,7 +223,7 @@
   code {
     font-size: 12px;
     padding: 1px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
   }
 </style>

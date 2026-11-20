@@ -86,7 +86,7 @@
     {#if error}<span class="error">Could not load disk latency: {error}</span>{/if}
   </div>
 
-  <div class="grid">
+  <div class="panels">
     <ChartCard
       title="Time per {op === 'write' ? 'write' : 'read'}, p50 to p99"
       unit="ms"
@@ -150,7 +150,7 @@
   .tabs {
     display: inline-flex;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
   }
 
@@ -166,12 +166,6 @@
     background: var(--hover);
     color: var(--ink);
     font-weight: 600;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
-    gap: 12px;
   }
 
   .error {

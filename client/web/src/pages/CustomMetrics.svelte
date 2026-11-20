@@ -99,7 +99,7 @@
       {/each}
     </fieldset>
 
-    <div class="grid">
+    <div class="panels">
       {#each picked as name (name)}
         {@const chart = charts[name]}
         <ChartCard
@@ -153,19 +153,13 @@
     gap: 6px;
     padding: 4px 10px;
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     background: var(--surface-raised);
     cursor: pointer;
   }
 
   .chip.selected {
     border-color: var(--accent);
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
-    gap: 12px;
   }
 
   .empty {
@@ -179,7 +173,7 @@
   code {
     font-size: 12px;
     padding: 1px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
   }
 </style>

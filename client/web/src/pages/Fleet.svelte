@@ -187,7 +187,7 @@
             <Meter label="Disk" value={host.diskUsedPct} />
           </div>
           <div class="bottom">
-            <span class="net secondary num">↓ {formatRate(host.rxBps)} · ↑ {formatRate(host.txBps)}</span>
+            <span class="net secondary">↓ {formatRate(host.rxBps)} · ↑ {formatRate(host.txBps)}</span>
             <Sparkline points={sparklines[host.name] ?? []} label="CPU over the last hour" />
           </div>
         {:else}
@@ -285,8 +285,9 @@
   }
 
   .name {
-    font-weight: 600;
-    font-size: 15px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 14px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -309,6 +310,10 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
+  }
+
+  .net {
+    font-variant-numeric: tabular-nums;
   }
 
   .update {

@@ -34,7 +34,7 @@
   pre {
     margin: 0 0 16px;
     padding: 10px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
     white-space: pre-wrap;
     overflow-wrap: anywhere;

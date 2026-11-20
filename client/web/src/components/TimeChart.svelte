@@ -4,7 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Aligned } from '../lib/align';
   import { formatAxis, formatDateTime, formatValue, type Unit } from '../lib/format';
-  import { cssVar, theme } from '../lib/theme.svelte';
+  import { chartFont, cssVar, theme } from '../lib/theme.svelte';
 
   interface Props {
     data: Aligned;
@@ -46,8 +46,6 @@
   }
   let tooltip = $state<{ left: number; top: number; time: number; rows: TooltipRow[]; flipped: boolean } | null>(null);
 
-  const font = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
-
   // one color per series, from its palette slot
   function seriesColors(): string[] {
     const palette = Array.from({ length: 8 }, (_, i) => cssVar(`--series-${i + 1}`));
@@ -63,6 +61,7 @@
     const colors = seriesColors();
     const muted = cssVar('--ink-muted');
     const grid = cssVar('--grid');
+    const font = chartFont(11);
     const single = data.labels.length === 1;
 
     const options: uPlot.Options = {
@@ -181,7 +180,7 @@
   $effect(() => {
     // a series gains or loses its lone dot only on a rebuild
     const lonePoints = data.values.map((values) => values.filter((v) => v != null).length === 1);
-    const key = [theme.resolved, unit, yMax, height, area, projection, ...data.labels, ...(data.colors ?? []), ...lonePoints].join('|');
+    const key = [theme.resolved, theme.fontsLoaded, unit, yMax, height, area, projection, ...data.labels, ...(data.colors ?? []), ...lonePoints].join('|');
     // a new range only needs the x scale to move, not a rebuild
     void from;
     void to;
@@ -263,7 +262,7 @@
     padding: 8px 10px;
     background: var(--surface-raised);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
     font-size: 12px;
   }

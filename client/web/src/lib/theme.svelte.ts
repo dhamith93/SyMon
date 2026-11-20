@@ -20,6 +20,8 @@ export const theme = $state({
   choice: load(),
   // what is on screen, charts redraw when this changes
   resolved: 'light' as 'light' | 'dark',
+  // canvas text only gets the mono face once it has loaded, so charts redraw then too
+  fontsLoaded: false,
 });
 
 function apply() {
@@ -33,6 +35,11 @@ function apply() {
 
 media.addEventListener('change', apply);
 apply();
+
+document.fonts?.load(chartFont(12)).then(
+  () => (theme.fontsLoaded = true),
+  () => {},
+);
 
 export function setTheme(choice: ThemeChoice) {
   theme.choice = choice;
@@ -48,4 +55,9 @@ export function setTheme(choice: ThemeChoice) {
 // reads a color role from the stylesheet, for canvas drawing
 export function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// the font canvas charts write their labels in
+export function chartFont(size: number): string {
+  return `${size}px ${cssVar('--font-mono')}`;
 }

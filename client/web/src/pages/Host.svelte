@@ -254,7 +254,7 @@
     {#if specs.length > 0 || (section.title === 'CPU' && showCores)}
       <section>
         <h2>{section.title}</h2>
-        <div class="grid">
+        <div class="panels">
           {#each specs as spec (spec.key)}
             {@render chartCard(spec)}
             {#if spec.key === 'disk_used' && projection}
@@ -346,7 +346,7 @@
       <h2>{processActivityTitle}</h2>
       <ProcessActivity {host} from={range.from} to={range.to}>
         {#snippet chartGrid()}
-          <div class="grid">
+          <div class="panels">
             {#each activitySpecs as spec (spec.key)}
               {@render chartCard(spec)}
             {/each}
@@ -509,7 +509,7 @@
   .upgrade code {
     font-size: 12px;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
     overflow-wrap: anywhere;
   }
@@ -535,9 +535,17 @@
     margin-bottom: 24px;
   }
 
+  h1 {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
   h2 {
-    font-size: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    font: 500 12px/1.4 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-secondary);
   }
 
   .grid {

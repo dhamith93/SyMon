@@ -134,7 +134,7 @@
       </p>
       {#if endpoint.error}<p class="error secondary">{endpoint.error}</p>{/if}
 
-      <div class="grid">
+      <div class="panels">
         {#each [{ metric: 'latency', title: 'Response time', unit: 'ms' }, { metric: 'availability', title: 'Checks passing', unit: 'percent' }] as const as chart (chart.metric)}
           {@const state = charts[chartKey(endpoint.name, chart.metric)]}
           <ChartCard
@@ -220,16 +220,10 @@
     overflow-wrap: anywhere;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
-    gap: 12px;
-  }
-
   code {
     font-size: 12px;
     padding: 1px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
   }
 </style>

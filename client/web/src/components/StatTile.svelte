@@ -25,8 +25,9 @@
   }
 
   .value {
+    font-family: var(--font-mono);
     font-size: 26px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.2;
   }
 

@@ -198,7 +198,7 @@
       </label>
     </div>
 
-    <div class="grid">
+    <div class="panels">
       <ChartCard
         title="Pods"
         unit="number"
@@ -475,6 +475,10 @@
     margin-bottom: 24px;
   }
 
+  .panels {
+    margin-bottom: 24px;
+  }
+
   .grid.tables {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
     align-items: start;
@@ -494,8 +498,11 @@
   }
 
   h2 {
-    font-size: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    font: 500 12px/1.4 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-secondary);
   }
 
   .check {
@@ -545,7 +552,7 @@
   code {
     font-size: 12px;
     padding: 1px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
   }
 </style>

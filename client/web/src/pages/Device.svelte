@@ -278,7 +278,7 @@
             </div>
           {/if}
 
-          <div class="grid">
+          <div class="panels">
             {#each section.charts as spec (spec.key)}
               {#if !isErrors(spec) || hadErrors(spec.key)}
                 {@const chart = charts[spec.key]}
@@ -391,14 +391,11 @@
   }
 
   h2 {
-    font-size: 15px;
-    margin-bottom: 10px;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
-    gap: 12px;
+    margin-bottom: 8px;
+    font: 500 12px/1.4 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-secondary);
   }
 
   .box {

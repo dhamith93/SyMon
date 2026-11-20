@@ -114,7 +114,7 @@
   .tabs {
     display: inline-flex;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
   }
 

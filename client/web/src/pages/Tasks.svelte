@@ -413,13 +413,13 @@
 
   code,
   pre {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
   }
 
   code {
     padding: 1px 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
     overflow-wrap: anywhere;
   }
@@ -427,7 +427,7 @@
   pre {
     margin: 0 0 8px;
     padding: 10px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
     overflow: auto;
   }

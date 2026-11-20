@@ -27,7 +27,7 @@
 
   .track {
     height: 6px;
-    border-radius: 3px;
+    border-radius: 1px;
     background: var(--track);
     overflow: hidden;
   }
@@ -35,7 +35,7 @@
   .fill {
     display: block;
     height: 100%;
-    border-radius: 3px;
+    border-radius: 1px;
     background: var(--accent);
   }
 

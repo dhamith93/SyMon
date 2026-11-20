@@ -136,7 +136,7 @@
     width: min(560px, calc(100vw - 32px));
     padding: 20px;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius);
     background: var(--surface-raised);
     color: var(--ink);
   }
@@ -207,7 +207,7 @@
   pre {
     margin: 0 0 12px;
     padding: 10px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: var(--hover);
     white-space: pre-wrap;
     overflow-wrap: anywhere;

@@ -459,7 +459,7 @@
   textarea.control {
     height: auto;
     padding: 6px 10px;
-    font-family: ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
   }
 
@@ -475,7 +475,7 @@
     gap: 6px;
     padding: 4px 10px;
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     color: var(--ink);
     cursor: pointer;
   }

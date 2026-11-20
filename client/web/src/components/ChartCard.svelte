@@ -137,7 +137,7 @@
   .toggle {
     border: 1px solid var(--border);
     background: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 2px 8px;
     font-size: 12px;
     color: var(--ink-secondary);

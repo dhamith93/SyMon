@@ -235,7 +235,7 @@
   .tabs {
     display: inline-flex;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
   }
 
@@ -267,7 +267,7 @@
   .more {
     margin-top: 8px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: none;
     padding: 4px 12px;
     font-size: 12px;

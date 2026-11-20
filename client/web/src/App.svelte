@@ -123,7 +123,7 @@
 </main>
 
 {#if auth.state === 'in' && appConfig.version}
-  <footer class="app-footer muted">
+  <footer class="app-footer muted mono">
     {#if sameVersion}
       SyMon {appConfig.version}
     {:else}
@@ -165,7 +165,7 @@
 
   nav a {
     padding: 6px 10px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     color: var(--ink-secondary);
     text-decoration: none;
   }

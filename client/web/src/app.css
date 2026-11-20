@@ -1,29 +1,40 @@
 /* Colors are roles. Light values here, dark values below, applied either
-   by the OS setting or by the theme toggle (data-theme on <html>). */
+   by the OS setting or by the theme toggle (data-theme on <html>).
+   The series colors were checked with the dataviz palette validator against
+   --surface in both modes: neighbours stay apart for color blind readers
+   and the first three stay apart from each other. Slot 4 (amber) is under
+   3:1 on white, which is fine because every chart has a table view. */
 :root {
   color-scheme: light;
-  --page: #f9f9f7;
-  --surface: #fcfcfb;
-  --surface-raised: #ffffff;
-  --ink: #0b0b0b;
-  --ink-secondary: #52514e;
-  --ink-muted: #6f6d68;
-  --grid: #e1e0d9;
-  --baseline: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.1);
-  --hover: rgba(11, 11, 11, 0.04);
-  --accent: #2a78d6;
-  --accent-ink: #1c5cab;
-  --track: #cde2fb;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 3px;
+  --radius-sm: 2px;
 
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #4a3aa7;
-  --series-8: #e34948;
+  --page: #f3f5f7;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --ink: #10151b;
+  --ink-secondary: #46505c;
+  --ink-muted: #636d79;
+  --grid: #e6e9ed;
+  --baseline: #c4cbd3;
+  --border: #dce1e6;
+  /* lines between panels, solid so overlapping edges do not darken */
+  --rule: #dce1e6;
+  --hover: rgba(16, 21, 27, 0.045);
+  --accent: #018d82;
+  --accent-ink: #036961;
+  --track: #ccede7;
+
+  --series-1: #018d82;
+  --series-2: #e56806;
+  --series-3: #7a4ecf;
+  --series-4: #e4a409;
+  --series-5: #db5392;
+  --series-6: #449d2e;
+  --series-7: #1d6ec9;
+  --series-8: #c92f33;
 
   /* status colors only mean good or bad, never a series */
   --good: #0ca30c;
@@ -34,90 +45,92 @@
   --critical-ink: #b02e2e;
 
   /* sequential ramp, near zero first */
-  --heat-0: #cde2fb;
-  --heat-1: #9ec5f4;
-  --heat-2: #6da7ec;
-  --heat-3: #3987e5;
-  --heat-4: #256abf;
-  --heat-5: #184f95;
-  --heat-6: #0d366b;
+  --heat-0: #cef4f1;
+  --heat-1: #97ddd8;
+  --heat-2: #55c2bc;
+  --heat-3: #02a49e;
+  --heat-4: #05837e;
+  --heat-5: #06625f;
+  --heat-6: #004744;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme='light'])) {
     color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-raised: #222221;
-    --ink: #ffffff;
-    --ink-secondary: #c3c2b7;
-    --ink-muted: #9a9892;
-    --grid: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255, 255, 255, 0.1);
-    --hover: rgba(255, 255, 255, 0.05);
-    --accent: #3987e5;
-    --accent-ink: #86b6ef;
-    --track: #1f3350;
+    --page: #0b0e12;
+    --surface: #12171d;
+    --surface-raised: #182027;
+    --ink: #e7ebf0;
+    --ink-secondary: #b2bbc6;
+    --ink-muted: #8893a1;
+    --grid: #222a33;
+    --baseline: #34404d;
+    --border: #28313b;
+    --rule: #28313b;
+    --hover: rgba(231, 235, 240, 0.05);
+    --accent: #02a99b;
+    --accent-ink: #5cd5c7;
+    --track: #133a36;
 
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
-    --series-8: #e66767;
+    --series-1: #02a99b;
+    --series-2: #db640e;
+    --series-3: #9575e2;
+    --series-4: #bd8703;
+    --series-5: #d85891;
+    --series-6: #449630;
+    --series-7: #4087de;
+    --series-8: #d74745;
 
     --good-ink: #0ca30c;
     --critical-ink: #e66767;
 
     /* near zero recedes into the dark surface */
-    --heat-0: #0d366b;
-    --heat-1: #184f95;
-    --heat-2: #256abf;
-    --heat-3: #3987e5;
-    --heat-4: #6da7ec;
-    --heat-5: #9ec5f4;
-    --heat-6: #cde2fb;
+    --heat-0: #004744;
+    --heat-1: #06625f;
+    --heat-2: #05837e;
+    --heat-3: #02a49e;
+    --heat-4: #55c2bc;
+    --heat-5: #97ddd8;
+    --heat-6: #cef4f1;
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-raised: #222221;
-  --ink: #ffffff;
-  --ink-secondary: #c3c2b7;
-  --ink-muted: #9a9892;
-  --grid: #2c2c2a;
-  --baseline: #383835;
-  --border: rgba(255, 255, 255, 0.1);
-  --hover: rgba(255, 255, 255, 0.05);
-  --accent: #3987e5;
-  --accent-ink: #86b6ef;
-  --track: #1f3350;
+  --page: #0b0e12;
+  --surface: #12171d;
+  --surface-raised: #182027;
+  --ink: #e7ebf0;
+  --ink-secondary: #b2bbc6;
+  --ink-muted: #8893a1;
+  --grid: #222a33;
+  --baseline: #34404d;
+  --border: #28313b;
+  --rule: #28313b;
+  --hover: rgba(231, 235, 240, 0.05);
+  --accent: #02a99b;
+  --accent-ink: #5cd5c7;
+  --track: #133a36;
 
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
-  --series-5: #d55181;
-  --series-6: #008300;
-  --series-7: #9085e9;
-  --series-8: #e66767;
+  --series-1: #02a99b;
+  --series-2: #db640e;
+  --series-3: #9575e2;
+  --series-4: #bd8703;
+  --series-5: #d85891;
+  --series-6: #449630;
+  --series-7: #4087de;
+  --series-8: #d74745;
 
   --good-ink: #0ca30c;
   --critical-ink: #e66767;
 
-  --heat-0: #0d366b;
-  --heat-1: #184f95;
-  --heat-2: #256abf;
-  --heat-3: #3987e5;
-  --heat-4: #6da7ec;
-  --heat-5: #9ec5f4;
-  --heat-6: #cde2fb;
+  --heat-0: #004744;
+  --heat-1: #06625f;
+  --heat-2: #05837e;
+  --heat-3: #02a49e;
+  --heat-4: #55c2bc;
+  --heat-5: #97ddd8;
+  --heat-6: #cef4f1;
 }
 
 *,
@@ -131,7 +144,7 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.45;
 }
@@ -159,9 +172,16 @@ h3 {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   color: inherit;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
 }
 
 button {
@@ -176,7 +196,11 @@ button {
   color: var(--ink-secondary);
 }
 
-.num {
+/* numbers, host names, paths: anything read character by character */
+.num,
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.93em;
   font-variant-numeric: tabular-nums;
 }
 
@@ -185,7 +209,7 @@ button {
   height: 32px;
   padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface-raised);
 }
 
@@ -196,7 +220,21 @@ button {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
+}
+
+/* charts in a grid share hairlines instead of each being its own card */
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 1px;
+  padding: 1px;
+}
+
+.panels > .card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px var(--rule);
 }
 
 table.data {
@@ -215,7 +253,9 @@ table.data td {
 table.data th {
   color: var(--ink-muted);
   font-weight: 500;
-  font-size: 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 table.data td.right,

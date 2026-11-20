@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { NamedSeries } from '../lib/align';
   import { formatDateTime, formatPercent, formatTime } from '../lib/format';
-  import { cssVar, theme } from '../lib/theme.svelte';
+  import { chartFont, cssVar, theme } from '../lib/theme.svelte';
 
   // one row per series, colored by value from 0 to 100. from and to set
   // the time span, so columns line up with the line charts beside it. The
@@ -102,7 +102,7 @@
     });
 
     ctx.fillStyle = cssVar('--ink-muted');
-    ctx.font = '11px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.font = chartFont(11);
     ctx.textBaseline = 'middle';
     const labelEvery = Math.ceil(12 / rowHeight);
     labels.forEach((label, r) => {
@@ -142,6 +142,7 @@
     void grid;
     void height;
     void theme.resolved;
+    void theme.fontsLoaded;
     draw();
   });
 
@@ -186,7 +187,7 @@
     padding: 6px 10px;
     background: var(--surface-raised);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
     font-size: 12px;
     white-space: nowrap;
@@ -204,7 +205,7 @@
   .bar {
     width: 120px;
     height: 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: linear-gradient(
       to right,
       var(--heat-0),
