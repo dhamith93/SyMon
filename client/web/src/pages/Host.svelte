@@ -13,6 +13,7 @@
   import { rangeOnly, rangeQuery, resolveRange } from '../lib/timerange';
   import BusiestProcesses from '../components/BusiestProcesses.svelte';
   import ChartCard from '../components/ChartCard.svelte';
+  import Info from '../components/Info.svelte';
   import ContainerTable from '../components/ContainerTable.svelte';
   import DiskLatency from '../components/DiskLatency.svelte';
   import Heatmap from '../components/Heatmap.svelte';
@@ -226,7 +227,7 @@
 
   <div class="filters">
     <TimeRangePicker {range} />
-    <span class="muted hint">Drag across a chart to zoom in</span>
+    <span class="zoom-tip"><Info text="Drag across a chart to zoom in. Click a point to see the processes at that time." label="About the charts" /></span>
   </div>
 
   {#snippet chartCard(spec: ChartSpec)}
@@ -237,6 +238,7 @@
       yMax={spec.yMax}
       area={spec.area}
       note={spec.note}
+      info={spec.info}
       data={chart?.data ?? null}
       loading={chart?.loading ?? true}
       error={chart?.error}
@@ -262,7 +264,7 @@
                 title="Disk space, projected"
                 unit="percent"
                 yMax={100}
-                note="Where each filling disk is headed at last week's growth. The time range does not apply."
+                info="Where each filling disk is headed at last week's growth. The time range does not apply."
                 data={projection.data}
                 syncKey="{host}-projection"
                 from={projection.from}
@@ -527,10 +529,6 @@
     background: var(--page);
   }
 
-  .hint {
-    font-size: 12px;
-  }
-
   section {
     margin-bottom: 24px;
   }
@@ -573,5 +571,12 @@
   .box h3 {
     font-size: 14px;
     margin-bottom: 6px;
+  }
+
+  /* dragging to zoom needs a mouse */
+  @media (max-width: 560px), (pointer: coarse) {
+    .zoom-tip {
+      display: none;
+    }
   }
 </style>

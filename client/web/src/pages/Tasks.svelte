@@ -6,6 +6,7 @@
   import { poll } from '../lib/poll';
   import { hostPath } from '../lib/router.svelte';
   import { describeRun, isActive, lastRuns, runDuration } from '../lib/tasks';
+  import Info from '../components/Info.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
 
   // The commands a host lists in its own tasks file. Admins start them
@@ -119,11 +120,13 @@
 <div class="page">
   <header class="page-header">
     <p class="crumbs muted"><a href="/">Hosts</a> / <a href={hostPath(host)}>{host}</a> /</p>
-    <h1>Tasks</h1>
-    <p class="secondary intro">
-      Commands this host lists in its own tasks file. Nothing else can be run from here.
-      {#if !isAdmin()}Only admins can run them.{/if}
-    </p>
+    <div class="title-row">
+      <h1>Tasks</h1>
+      <Info
+        text="Commands this host lists in its own tasks file. Nothing else can be run from here.{isAdmin() ? '' : ' Only admins can run them.'}"
+        label="About tasks"
+      />
+    </div>
   </header>
 
   {#if error}
@@ -278,10 +281,6 @@
   .crumbs {
     margin: 0 0 2px;
     font-size: 12px;
-  }
-
-  .intro {
-    margin: 4px 0 0;
   }
 
   section {

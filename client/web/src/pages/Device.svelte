@@ -22,6 +22,7 @@
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
   import ChartCard from '../components/ChartCard.svelte';
+  import Info from '../components/Info.svelte';
   import StatTile from '../components/StatTile.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
   import TimeRangePicker from '../components/TimeRangePicker.svelte';
@@ -220,18 +221,17 @@
           <h2>{section.title}</h2>
           {#if section.key === 'ports'}
             <div class="card box">
-              <div class="heading">
-                <p class="muted hint">
-                  Tick up to {maxSeries} ports to chart.{#if full}
-                    All {maxSeries} colors are taken, untick one first.{/if}
-                </p>
-                {#if anyUp && portList.some((p) => !p.Up)}
-                  <label class="check secondary">
-                    <input type="checkbox" bind:checked={allPorts} />
-                    Show ports without a link
-                  </label>
-                {/if}
-              </div>
+              {#if full || (anyUp && portList.some((p) => !p.Up))}
+                <div class="heading">
+                  <p class="muted hint">{#if full}All {maxSeries} colors are taken, untick a port first.{/if}</p>
+                  {#if anyUp && portList.some((p) => !p.Up)}
+                    <label class="check secondary">
+                      <input type="checkbox" bind:checked={allPorts} />
+                      Show ports without a link
+                    </label>
+                  {/if}
+                </div>
+              {/if}
               <div class="table-scroll">
                 <table class="data">
                   <caption class="sr-only">Ports</caption>
@@ -313,8 +313,8 @@
           <button class="control danger" onclick={remove}>Remove</button>
           <button class="control" onclick={() => (confirmRemove = false)}>Keep</button>
         {:else}
-          <span class="muted">Moving the poller to another host? Remove the device first, only its host may report it.</span>
           <button class="control" onclick={() => (confirmRemove = true)}>Remove device</button>
+          <Info text="Only the host that polls a device may report it, so remove it before moving the poller to another host." label="About removing" />
         {/if}
         {#if removeError}<p class="error" role="alert">{removeError}</p>{/if}
       </section>

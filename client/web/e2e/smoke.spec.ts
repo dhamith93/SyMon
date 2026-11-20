@@ -65,7 +65,8 @@ test('fleet, host, zoom, processes at a time, alerts', async ({ page }) => {
 
 test('theme can be picked and is remembered', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('Theme').selectOption('dark');
+  await page.getByRole('button', { name: user, exact: true }).click();
+  await page.getByRole('radio', { name: 'Dark' }).check();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -228,6 +229,7 @@ test('a reporting device has a devices page', async ({ page }) => {
 
 test('logging out brings back the login page', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: user, exact: true }).click();
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible();
   expect((await page.request.get('/api/v1/fleet')).status()).toBe(401);

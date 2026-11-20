@@ -17,6 +17,7 @@
     type ChannelForm,
   } from '../lib/notifications';
   import { poll } from '../lib/poll';
+  import Info from '../components/Info.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
 
   // Where alerts are sent. Admins set channels up here, and everyone can
@@ -111,6 +112,10 @@
 
   const fields = $derived(kindFields[form.kind]);
   const namePlaceholders: Record<ChannelKind, string> = { email: 'ops email', slack: 'team slack', pagerduty: 'on call', webhook: 'home assistant' };
+  const about = $derived(
+    'Where alerts go when they open, change and resolve. Rules pick channels, and rules that pick none go to the default channels.' +
+      (isAdmin() ? '' : ' Only admins can change them.'),
+  );
 </script>
 
 {#snippet state(status: string, lastError?: string)}
@@ -172,11 +177,10 @@
   <header class="page-header top">
     <div>
       <p class="crumbs muted"><a href="/rules">Alert rules</a> /</p>
-      <h1>Notifications</h1>
-      <p class="secondary">
-        Where alerts go when they open, change and resolve. Rules pick channels, and rules that pick none go to the default channels.
-        {#if !isAdmin()}Only admins can change them.{/if}
-      </p>
+      <div class="title-row">
+        <h1>Notifications</h1>
+        <Info text={about} label="About notifications" />
+      </div>
     </div>
     {#if isAdmin() && editing === null}<button class="control new" onclick={startNew}>Add channel</button>{/if}
   </header>

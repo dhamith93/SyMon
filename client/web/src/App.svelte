@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { auth, checkSession, logOut } from './lib/auth.svelte';
+  import { auth, checkSession } from './lib/auth.svelte';
   import { appConfig, loadConfig } from './lib/config.svelte';
   import { handleLinkClick, location, match } from './lib/router.svelte';
-  import { setTheme, theme, type ThemeChoice } from './lib/theme.svelte';
+  import UserMenu from './components/UserMenu.svelte';
   import Account from './pages/Account.svelte';
   import Alerts from './pages/Alerts.svelte';
   import CustomMetrics from './pages/CustomMetrics.svelte';
@@ -60,18 +60,7 @@
         <a href="/rules" class:active={onRules} aria-current={onRules ? 'page' : undefined}>Rules</a>
       {/if}
     </nav>
-    {#if auth.state === 'in'}
-      <a class="user secondary" href="/account" title="Your account">{auth.user}</a>
-      <button class="control" onclick={logOut}>Log out</button>
-    {/if}
-    <label class="theme secondary">
-      <span class="sr-only">Theme</span>
-      <select class="control" value={theme.choice} onchange={(e) => setTheme(e.currentTarget.value as ThemeChoice)}>
-        <option value="system">System theme</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </label>
+    {#if auth.state !== 'checking'}<UserMenu />{/if}
   </div>
 </header>
 
@@ -143,8 +132,9 @@
     align-items: center;
     gap: 24px;
     max-width: 1440px;
+    min-height: 48px;
     margin: 0 auto;
-    padding: 10px 16px;
+    padding: 0 16px;
   }
 
   .brand {
@@ -160,33 +150,28 @@
   nav {
     display: flex;
     gap: 4px;
-    flex: 1;
+    align-self: stretch;
   }
 
+  /* the underline sits on the header's bottom border */
   nav a {
-    padding: 6px 10px;
-    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    padding: 14px 10px 12px;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
     color: var(--ink-secondary);
     text-decoration: none;
   }
 
   nav a:hover {
-    background: var(--hover);
-  }
-
-  .user {
-    font-size: 13px;
-    text-decoration: none;
-  }
-
-  .user:hover {
-    text-decoration: underline;
+    color: var(--ink);
+    border-bottom-color: var(--baseline);
   }
 
   nav a.active {
     color: var(--ink);
-    font-weight: 600;
-    background: var(--hover);
+    border-bottom-color: var(--accent);
   }
 
   main :global(.page) {
@@ -213,12 +198,20 @@
   @media (max-width: 560px) {
     .inner {
       flex-wrap: wrap;
-      gap: 10px;
+      row-gap: 0;
+      padding-top: 8px;
     }
 
     nav {
       order: 3;
       flex-basis: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    nav a {
+      margin-bottom: 0;
+      padding: 10px 8px;
     }
   }
 </style>

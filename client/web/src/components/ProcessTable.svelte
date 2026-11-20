@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api, type Process } from '../lib/api';
   import { formatDateTime, formatPercent } from '../lib/format';
+  import Info from './Info.svelte';
 
   // top processes at `at`, or the latest when at is 0. A new tick reloads.
   let { host, at, tick, onlatest }: { host: string; at: number; tick: number; onlatest: () => void } = $props();
@@ -36,7 +37,10 @@
 
 <div class="card processes" class:refreshing={loading}>
   <div class="heading">
-    <h3>Top processes</h3>
+    <div class="title-row">
+      <h3>Top processes</h3>
+      <Info text="Click a point on any chart to see the processes at that time." label="About top processes" />
+    </div>
     <div class="tabs" role="group" aria-label="Sort processes by">
       <button aria-pressed={view === 'CPU'} class:selected={view === 'CPU'} onclick={() => (view = 'CPU')}>By CPU</button>
       <button aria-pressed={view === 'Memory'} class:selected={view === 'Memory'} onclick={() => (view = 'Memory')}>By memory</button>
@@ -46,7 +50,7 @@
     {#if at}
       At {formatDateTime(snapshotTime || at)} · <button class="link" onclick={onlatest}>Show latest</button>
     {:else}
-      Latest{snapshotTime ? `, ${formatDateTime(snapshotTime)}` : ''} · click a point on any chart to see the processes at that time
+      Latest{snapshotTime ? `, ${formatDateTime(snapshotTime)}` : ''}
     {/if}
   </p>
 

@@ -11,7 +11,10 @@ export interface ChartSpec {
   unit: Unit;
   yMax?: number;
   area?: boolean;
+  // shown under the title
   note?: string;
+  // what the chart shows, behind an (i)
+  info?: string;
   // left out when the host has no data for it, like temperatures in a VM
   optional?: boolean;
   metrics: { metric: string; name?: string }[];
@@ -59,7 +62,7 @@ export const hostSections: Section[] = [
         title: 'Pressure stall',
         unit: 'percent',
         optional: true,
-        note: 'Share of time tasks waited on each resource, 10 second average',
+        info: 'Share of time tasks waited on each resource, 10 second average',
         metrics: [
           { metric: 'psi_cpu', name: 'CPU' },
           { metric: 'psi_memory', name: 'Memory' },
@@ -80,7 +83,7 @@ export const hostSections: Section[] = [
         title: 'Read latency',
         unit: 'ms',
         optional: true,
-        note: 'Average time a read took, queueing included',
+        info: 'Average time a read took, queueing included',
         metrics: [{ metric: 'disk_read_latency' }],
       },
       {
@@ -88,7 +91,7 @@ export const hostSections: Section[] = [
         title: 'Write latency',
         unit: 'ms',
         optional: true,
-        note: 'Average time a write took, queueing included',
+        info: 'Average time a write took, queueing included',
         metrics: [{ metric: 'disk_write_latency' }],
       },
       {
@@ -96,7 +99,7 @@ export const hostSections: Section[] = [
         title: 'Disk queue depth',
         unit: 'number',
         optional: true,
-        note: 'IOs in flight on average',
+        info: 'IOs in flight on average',
         metrics: [{ metric: 'disk_queue' }],
       },
     ],
@@ -112,7 +115,7 @@ export const hostSections: Section[] = [
         title: 'Received by program',
         unit: 'rate',
         optional: true,
-        note: 'Loopback is left out',
+        info: 'Loopback is left out',
         metrics: [{ metric: 'proc_net_rx' }],
       },
       {
@@ -120,7 +123,7 @@ export const hostSections: Section[] = [
         title: 'Sent by program',
         unit: 'rate',
         optional: true,
-        note: 'Loopback is left out',
+        info: 'Loopback is left out',
         metrics: [{ metric: 'proc_net_tx' }],
       },
       {
@@ -142,8 +145,8 @@ export const hostSections: Section[] = [
     charts: [
       { key: 'container_cpu', title: 'Container CPU, share of the host', unit: 'percent', optional: true, metrics: [{ metric: 'container_cpu' }] },
       { key: 'container_memory', title: 'Container memory', unit: 'bytes', optional: true, metrics: [{ metric: 'container_memory' }] },
-      { key: 'container_rx', title: 'Container traffic received', unit: 'rate', optional: true, note: 'Containers on the host network are left out', metrics: [{ metric: 'container_rx' }] },
-      { key: 'container_tx', title: 'Container traffic sent', unit: 'rate', optional: true, note: 'Containers on the host network are left out', metrics: [{ metric: 'container_tx' }] },
+      { key: 'container_rx', title: 'Container traffic received', unit: 'rate', optional: true, info: 'Containers on the host network are left out', metrics: [{ metric: 'container_rx' }] },
+      { key: 'container_tx', title: 'Container traffic sent', unit: 'rate', optional: true, info: 'Containers on the host network are left out', metrics: [{ metric: 'container_tx' }] },
     ],
   },
   {
@@ -170,7 +173,7 @@ export const hostSections: Section[] = [
         title: 'Exits with an error or a signal',
         unit: 'perMinute',
         optional: true,
-        note: 'OOM kills count as signals',
+        info: 'OOM kills count as signals',
         metrics: [
           { metric: 'proc_failed', name: 'Exit status' },
           { metric: 'proc_signaled', name: 'Signal' },

@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte';
   import type { Aligned } from '../lib/align';
   import { formatDateTime, formatValue, type Unit } from '../lib/format';
+  import Info from './Info.svelte';
   import TimeChart from './TimeChart.svelte';
 
   interface Props {
@@ -15,8 +16,10 @@
     from?: number;
     to?: number;
     area?: boolean;
-    // shown under the title, like what a click does
+    // shown under the title, like the unit or what to do first
     note?: string;
+    // what the chart shows, behind an (i) next to the title
+    info?: string;
     onzoom?: (from: number, to: number) => void;
     onpick?: (time: number) => void;
     // a picked time to mark on the chart, 0 for none
@@ -29,7 +32,7 @@
     table?: Snippet;
   }
 
-  let { title, unit, data, loading = false, error = '', yMax, syncKey, from, to, area = false, note, onzoom, onpick, marker = 0, projection = false, body, table }: Props =
+  let { title, unit, data, loading = false, error = '', yMax, syncKey, from, to, area = false, note, info, onzoom, onpick, marker = 0, projection = false, body, table }: Props =
     $props();
 
   let showTable = $state(false);
@@ -51,7 +54,10 @@
 <figure class="card" class:refreshing={loading && !empty}>
   <figcaption>
     <div class="heading">
-      <h3>{title}</h3>
+      <div class="title">
+        <h3>{title}</h3>
+        {#if info}<Info text={info} label="About {title}" />{/if}
+      </div>
       {#if !empty || body}
         <button class="toggle" onclick={() => (showTable = !showTable)} aria-pressed={showTable}>
           {showTable ? 'Chart' : 'Table'}
@@ -128,6 +134,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
   }
 
   h3 {

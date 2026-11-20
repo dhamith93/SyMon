@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api, type ProcessNetworkReport, type ProcessUsage } from '../lib/api';
   import { formatBytes, formatDateTime, formatPercent, formatRate } from '../lib/format';
+  import Info from './Info.svelte';
 
   // the programs that used the most CPU, memory or network over the range
   let { host, from, to }: { host: string; from: number; to: number } = $props();
@@ -71,7 +72,13 @@
 
 <div class="card busiest" class:refreshing={loading}>
   <div class="heading">
-    <h3>Busiest over this range</h3>
+    <div class="title-row">
+      <h3>Busiest over this range</h3>
+      <Info
+        text={shown === 'Network' ? 'Traffic on loopback is left out.' : 'Each snapshot keeps only the top 10 processes, so averages are a lower bound.'}
+        label="About busiest processes"
+      />
+    </div>
     <div class="tabs" role="group" aria-label="Rank programs by">
       <button aria-pressed={shown === 'CPU'} class:selected={shown === 'CPU'} onclick={() => (view = 'CPU')}>By CPU</button>
       <button aria-pressed={shown === 'Memory'} class:selected={shown === 'Memory'} onclick={() => (view = 'Memory')}>By memory</button>
@@ -84,11 +91,10 @@
   </div>
   <p class="when muted">
     {#if shown === 'Network' && network}
-      {formatBytes(network.rxBytes)} received and {formatBytes(network.txBytes)} sent by all programs, loopback left out.
+      {formatBytes(network.rxBytes)} received and {formatBytes(network.txBytes)} sent by all programs.
     {:else if snapshots > 0}
       {start > from ? 'The last 24 hours of this range, from' : 'From'}
-      {snapshots.toLocaleString()} snapshots since {formatDateTime(firstTime)}. Each keeps only the top 10 processes, so averages
-      are a lower bound.
+      {snapshots.toLocaleString()} snapshots since {formatDateTime(firstTime)}.
     {:else if !error && !loading}
       No process lists recorded in this range.
     {/if}

@@ -90,7 +90,7 @@
     <ChartCard
       title="Time per {op === 'write' ? 'write' : 'read'}, p50 to p99"
       unit="ms"
-      note="Half of the {ios} took less than p50, all but 1% less than p99. Queueing included."
+      info="Half of the {ios} took less than p50, all but 1% less than p99. Queueing included."
       data={quantiles}
       {loading}
       syncKey={host}
@@ -98,7 +98,7 @@
       {to}
       {onzoom}
     />
-    <ChartCard title="Where the {ios} fell" unit="percent" data={null} {loading} syncKey={host} note="Each column is 100% of that time's {ios}">
+    <ChartCard title="Where the {ios} fell" unit="percent" data={null} {loading} syncKey={host} info="Each column is 100% of that time's {ios}.">
       {#snippet body()}
         {#if heat && heat.series.length > 0}
           <Heatmap

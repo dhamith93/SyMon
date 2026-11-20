@@ -3,6 +3,7 @@
   import { api, type ProcessActivityReport } from '../lib/api';
   import { formatAgo, formatDateTime, formatNumber, formatTime } from '../lib/format';
   import { describeExit, formatLifetime, formatUser, perMinute, sortGroups } from '../lib/proctrace';
+  import Info from './Info.svelte';
   import StatTile from './StatTile.svelte';
   import StatusBadge from './StatusBadge.svelte';
 
@@ -97,7 +98,10 @@
 
   <div class="card exits">
     <div class="heading">
-      <h3>Processes that ended badly</h3>
+      <div class="title-row">
+        <h3>Processes that ended badly</h3>
+        <Info text="By program lists the worst first: out of memory, then crashes, then kills. Latest lists the newest first." label="About exits" />
+      </div>
       <div class="tabs" role="group" aria-label="List exits">
         <button aria-pressed={view === 'groups'} class:selected={view === 'groups'} onclick={() => pick('groups')}>By program</button>
         <button aria-pressed={view === 'latest'} class:selected={view === 'latest'} onclick={() => pick('latest')}>Latest</button>
@@ -109,10 +113,7 @@
     {:else if report && report.totals.listed === 0}
       <p class="secondary">No process ended badly in this range.</p>
     {:else if view === 'groups'}
-      <p class="when muted">
-        The worst first: out of memory, then crashes, then kills.
-        {#if groups.length >= 100}Only the 100 worst kinds are listed.{/if}
-      </p>
+      {#if groups.length >= 100}<p class="when muted">Only the 100 worst kinds are listed.</p>{/if}
       <div class="table-scroll">
         <table class="data">
           <thead>
@@ -143,10 +144,9 @@
         </table>
       </div>
     {:else}
-      <p class="when muted">
-        Newest first.
-        {#if report && report.totals.listed > latest.length}The newest {latest.length} of {report.totals.listed.toLocaleString()}.{/if}
-      </p>
+      {#if report && report.totals.listed > latest.length}
+        <p class="when muted">The newest {latest.length} of {report.totals.listed.toLocaleString()}.</p>
+      {/if}
       <div class="table-scroll">
         <table class="data">
           <thead>

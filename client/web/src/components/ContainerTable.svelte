@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Container } from '../lib/api';
   import { formatBytes, formatPercent, formatRate } from '../lib/format';
+  import Info from './Info.svelte';
 
   // running containers from the latest snapshot, grouped by compose project
   // or Kubernetes namespace
@@ -48,7 +49,15 @@
 
 <div class="card box">
   <div class="heading">
-    <h3>Running containers</h3>
+    <div class="title-row">
+      <h3>Running containers</h3>
+      {#if !anyNamed}
+        <Info
+          text="Shown by ID. Names and images need the agent to reach the Docker or Podman socket, or the CRI socket for Kubernetes pods."
+          label="Why containers have no names"
+        />
+      {/if}
+    </div>
     <label class="secondary">
       Sort by
       <select class="control" bind:value={sortBy}>
@@ -58,9 +67,6 @@
       </select>
     </label>
   </div>
-  {#if !anyNamed}
-    <p class="muted note">Names and images need the agent to reach the Docker or Podman socket, or the CRI socket for Kubernetes pods. Containers are shown by ID.</p>
-  {/if}
   <div class="table-scroll">
     <table class="data">
       <caption class="sr-only">Running containers</caption>
@@ -126,11 +132,6 @@
 
   h3 {
     font-size: 14px;
-  }
-
-  .note {
-    margin: 0 0 6px;
-    font-size: 12px;
   }
 
   .group th {

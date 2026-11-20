@@ -10,6 +10,7 @@
   import { hostPath, location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
   import ChartCard from '../components/ChartCard.svelte';
+  import Info from '../components/Info.svelte';
   import StatTile from '../components/StatTile.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
   import TimeRangePicker from '../components/TimeRangePicker.svelte';
@@ -202,7 +203,7 @@
       <ChartCard
         title="Pods"
         unit="number"
-        note="The whole cluster"
+        info="The whole cluster"
         data={charts.pods.data}
         loading={charts.pods.loading}
         error={charts.pods.error}
@@ -214,7 +215,7 @@
       <ChartCard
         title="Container restarts"
         unit="number"
-        note="Seen between two reports"
+        info="Seen between two reports"
         data={charts.restarts.data}
         loading={charts.restarts.loading}
         error={charts.restarts.error}
@@ -227,7 +228,12 @@
 
     <section>
       <div class="heading">
-        <h2>Pods</h2>
+        <div class="title-row">
+          <h2>Pods</h2>
+          {#if pods.length > 0 && usage.size === 0}
+            <Info text="CPU and memory come from the agents on the nodes, with the CRI socket readable." label="Why pods have no CPU or memory" />
+          {/if}
+        </div>
         <label class="check secondary">
           <input type="checkbox" bind:checked={allPods} />
           Show every pod
@@ -277,9 +283,6 @@
               </tbody>
             </table>
           </div>
-          {#if usage.size === 0}
-            <p class="muted note">CPU and memory come from the agents on the nodes, with the CRI socket readable.</p>
-          {/if}
         {/if}
       </div>
     </section>
@@ -409,8 +412,8 @@
           <button class="control danger" onclick={remove}>Remove</button>
           <button class="control" onclick={() => (confirmRemove = false)}>Keep</button>
         {:else}
-          <span class="muted">Moving the reader to another node? Remove the cluster first, only its host may report it.</span>
           <button class="control" onclick={() => (confirmRemove = true)}>Remove cluster</button>
+          <Info text="Only the host that reports a cluster may report it, so remove it before moving the reader to another node." label="About removing" />
         {/if}
         {#if removeError}<p class="error" role="alert">{removeError}</p>{/if}
       </section>
@@ -519,11 +522,6 @@
 
   .box p.muted {
     margin: 0;
-  }
-
-  .note {
-    margin-top: 8px !important;
-    font-size: 12px;
   }
 
   td :global(.badge) + :global(.badge) {

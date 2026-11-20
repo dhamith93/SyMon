@@ -8,6 +8,7 @@
   import { location, navigate } from '../lib/router.svelte';
   import { rangeQuery, resolveRange } from '../lib/timerange';
   import ChartCard from '../components/ChartCard.svelte';
+  import Info from '../components/Info.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
   import TimeRangePicker from '../components/TimeRangePicker.svelte';
 
@@ -93,7 +94,7 @@
 
   <div class="filters">
     <TimeRangePicker {range} />
-    <span class="muted hint">Drag across a chart to zoom in</span>
+    <span class="zoom-tip"><Info text="Drag across a chart to zoom in." label="About the charts" /></span>
   </div>
 
   {#if error}
@@ -102,7 +103,7 @@
     <div class="card message">
       <h2>No endpoint checks in this time range</h2>
       <p class="secondary">
-        The collector checks the <code>endpoint</code> rules in <code>alerts.json</code> when it runs with
+        Add an endpoint rule on the <a href="/rules">Rules</a> page. The collector checks them when it runs with
         <code>SYMON_ENABLE_ENDPOINT_MONITORING=true</code>.
       </p>
     </div>
@@ -142,7 +143,7 @@
             unit={chart.unit}
             yMax={chart.metric === 'availability' ? 100 : undefined}
             area={chart.metric === 'latency'}
-            note={chart.metric === 'latency' ? 'Until the response headers arrived' : undefined}
+            info={chart.metric === 'latency' ? 'Until the response headers arrived' : undefined}
             data={state?.data ?? null}
             loading={state?.loading ?? true}
             error={state?.error}
@@ -165,10 +166,6 @@
     gap: 12px;
     padding: 10px 0;
     margin-bottom: 8px;
-  }
-
-  .hint {
-    font-size: 12px;
   }
 
   .message {
@@ -225,5 +222,12 @@
     padding: 1px 4px;
     border-radius: var(--radius-sm);
     background: var(--hover);
+  }
+
+  /* dragging to zoom needs a mouse */
+  @media (max-width: 560px), (pointer: coarse) {
+    .zoom-tip {
+      display: none;
+    }
   }
 </style>

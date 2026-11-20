@@ -188,6 +188,13 @@ button {
   cursor: pointer;
 }
 
+/* a heading with an (i) next to it */
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .muted {
   color: var(--ink-muted);
 }

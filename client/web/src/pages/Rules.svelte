@@ -3,6 +3,7 @@
   import { isAdmin } from '../lib/auth.svelte';
   import { formatAgo } from '../lib/format';
   import { describeHosts, describeLevels, describeWatch, notifies } from '../lib/rules';
+  import Info from '../components/Info.svelte';
   import NoChannelsNotice from '../components/NoChannelsNotice.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
 
@@ -42,8 +43,13 @@
 <div class="page">
   <header class="page-header top">
     <div>
-      <h1>Alert rules</h1>
-      <p class="secondary">The collector checks the rules that are on every 15 seconds, so changes apply right away.</p>
+      <div class="title-row">
+        <h1>Alert rules</h1>
+        <Info
+          text="The collector checks the rules that are on every 15 seconds, so changes apply right away.{isAdmin() ? '' : ' Only admins can change them.'}"
+          label="About rules"
+        />
+      </div>
     </div>
     <div class="actions">
       <a class="control link" href="/notifications">Notification channels</a>
@@ -52,8 +58,6 @@
   </header>
 
   <NoChannelsNotice />
-
-  {#if !isAdmin()}<p class="muted">You can see the rules. Only admins can change them.</p>{/if}
 
   <div class="card list">
     {#if error}
@@ -117,10 +121,6 @@
     align-items: flex-end;
     gap: 16px;
     flex-wrap: wrap;
-  }
-
-  .top p {
-    margin: 4px 0 0;
   }
 
   .actions {
